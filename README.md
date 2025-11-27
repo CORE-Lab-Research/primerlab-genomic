@@ -1,6 +1,6 @@
-# 🧬 PrimerLab
+# 🧬 PrimerLab Genomic
 
-**A modular, AI-friendly bioinformatics framework for automated primer and probe design.**
+A modular bioinformatics framework for automated **primer and probe design**, built with clean architecture and reproducible workflows.
 
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
@@ -10,20 +10,23 @@
 
 ## 📋 Overview
 
-PrimerLab is a Python-based toolkit designed to automate primer design, validation, and analysis for molecular biology workflows. Built with clean architecture and strict modularity, it supports:
+**PrimerLab Genomic** is a Python-based toolkit for automated primer and probe design in molecular biology workflows.
+It provides a structured and reproducible framework for:
 
-- **PCR** - Standard primer design with comprehensive QC
-- **qPCR** - Probe design with efficiency estimation
-- **Future**: CRISPR, Cloning, Mutagenesis, and more
+* **PCR** — Standard primer design with quality control
+* **qPCR** — Probe design with thermodynamic checks
+* **(Future)** CRISPR guides, mutagenesis primers, cloning primers, and multiplex workflows
 
-### Key Features
+PrimerLab focuses on **deterministic, transparent bioinformatics**, following strict modularity and best practices.
 
-✅ **End-to-End Automation** - Sequence input → Primer design → QC → Report generation  
-✅ **Scientific Accuracy** - ViennaRNA integration for secondary structure prediction  
-✅ **Robust QC** - Hairpin, dimer, Tm validation with configurable thresholds  
-✅ **qPCR Support** - TaqMan probe design with efficiency estimation  
-✅ **Timeout Protection** - Prevents hanging on difficult sequences  
-✅ **Structured Output** - JSON + Markdown reports with detailed metrics  
+### 🔑 Key Features
+
+* **End-to-End Workflow**: Sequence input → Primer/Probe design → QC → Report
+* **Thermodynamic Validation**: Secondary structure prediction via ViennaRNA
+* **QC Framework**: Hairpins, dimers, GC%, Tm ranges, amplicon checks
+* **qPCR Support**: TaqMan-style probe design with efficiency estimation
+* **Safe Execution**: Timeout protection for complex sequences
+* **Structured Output**: JSON + Markdown reports with interpretable metrics
 
 ---
 
@@ -36,7 +39,7 @@ PrimerLab is a Python-based toolkit designed to automate primer design, validati
 git clone https://github.com/engkinandatama/primerlab-genomic.git
 cd primerlab-genomic
 
-# Create virtual environment (recommended in home directory for WSL users)
+# Create virtual environment (recommended for WSL users)
 python3 -m venv ~/primerlab_venv
 source ~/primerlab_venv/bin/activate
 
@@ -47,14 +50,18 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-### Basic Usage
+---
 
-#### PCR Workflow
+## 🔧 Basic Usage
+
+### PCR Workflow
+
 ```bash
 python3 -m primerlab.cli.main run pcr --config test_pcr.yaml
 ```
 
-#### qPCR Workflow
+### qPCR Workflow
+
 ```bash
 python3 -m primerlab.cli.main run qpcr --config test_qpcr.yaml
 ```
@@ -63,23 +70,22 @@ python3 -m primerlab.cli.main run qpcr --config test_qpcr.yaml
 
 ## 📖 Documentation
 
-Comprehensive documentation is available in the [`Docs/`](Docs/) directory:
+Full documentation is available in the [`Docs/`](Docs/) directory:
 
-- **[Project Overview](Docs/High-Level%20Documentation/project-overview.md)** - Vision and goals
-- **[Development Rules](Docs/Development%20Rules/rules-development.md)** - Coding standards
-- **[Architecture](Docs/High-Level%20Documentation/architecture.md)** - System design
-- **[WSL Quickstart](Docs/Guide/wsl_quickstart.md)** - Setup guide for Windows users
+* **Project Overview** — Vision, scope, and future development
+* **Development Rules** — Architecture constraints and coding standards
+* **System Architecture** — Workflow structure and data flow
+* **WSL Quickstart** — Setup guide for Windows environments
 
 ---
 
-## 🧪 Example Configuration
+## 🧪 Example Configuration (qPCR)
 
-### qPCR Configuration
 ```yaml
 workflow: qpcr
 
 input:
-  sequence: "ATGGGGAAGGTGAAGGTCGGAGT..."  # Your target sequence
+  sequence: "ATGGGGAAGGTGAAGGTCGGAGT..."
 
 parameters:
   primer_size:
@@ -94,7 +100,7 @@ parameters:
 
   probe:
     tm:
-      min: 68.0  # Probe Tm should be 8-10°C higher than primers
+      min: 68.0
       opt: 70.0
       max: 72.0
 
@@ -104,17 +110,18 @@ output:
 
 ---
 
-## 📊 Output Example
+## 📊 Output Overview
 
-PrimerLab generates structured reports with:
+PrimerLab generates a structured report containing:
 
-- **Primers & Probe** - Sequences, Tm, GC%, positions
-- **qPCR Metrics** - Estimated efficiency (e.g., 98.0%)
-- **Amplicon Details** - Size, suitability for qPCR
-- **Quality Control** - Hairpin, dimer, Tm balance checks
-- **Warnings** - Specific QC flags for optimization
+* **Primer & Probe Details** — Sequences, GC%, Tm, positions
+* **qPCR Metrics** — Estimated amplification efficiency
+* **Amplicon Properties** — Length, GC%, suitability
+* **QC Checks** — Dimers, hairpins, Tm balance
+* **Warnings** — Optimization suggestions
 
-Example report: [`report.md`](test_qpcr_out/20251127_163137_QPCR/report.md)
+Example report:
+[`report.md`](test_qpcr_out/20251127_163137_QPCR/report.md)
 
 ---
 
@@ -126,68 +133,78 @@ primerlab-genomic/
 │   ├── cli/              # Command-line interface
 │   ├── core/             # Reusable utilities (sequence, QC, tools)
 │   │   ├── tools/        # Primer3, ViennaRNA wrappers
-│   │   └── models/       # Data models
+│   │   └── models/       # Data models and schema
 │   ├── workflows/        # Workflow modules
-│   │   ├── pcr/          # PCR workflow
-│   │   └── qpcr/         # qPCR workflow
+│   │   ├── pcr/          # PCR workflow implementation
+│   │   └── qpcr/         # qPCR workflow implementation
 │   └── config/           # Default configurations
-├── Docs/                 # Comprehensive documentation
+├── Docs/                 # High-level documentation
+```
 
-- **v0.1** - Core foundation (config, logging, output system)
-- **v0.2** - PCR basic workflow (Primer3 integration)
-- **v0.3** - QC extended (ViennaRNA, secondary structure)
-- **v0.4** - qPCR workflow (probe design, efficiency estimation)
+### 📌 Version Roadmap
 
-### 🔜 Upcoming (Mid-Term)
+* **v0.1** — Core foundation (config, logging, output system)
+* **v0.2** — PCR workflow (Primer3 integration)
+* **v0.3** — Extended QC (secondary structure, dimer models)
+* **v0.4** — qPCR workflow (probes + efficiency estimation)
 
-- CRISPR guide design
-- Multiplex PCR support
-- Docker environment
-- Enhanced thermodynamic models
+### 🔜 Mid-Term Goals
+
+* CRISPR guide design
+* Multiplex PCR support
+* Dockerized environment
+* Enhanced thermodynamic models
 
 ---
 
 ## 🛠️ Requirements
 
-- **Python** 3.10+
-- **Primer3** (via `primer3-py` package)
-- **ViennaRNA** (for secondary structure prediction)
-- **WSL** (recommended for Windows users)
+* **Python 3.10+**
+* **Primer3** (`primer3-py`)
+* **ViennaRNA** for structure prediction
+* **WSL recommended for Windows**
 
 ---
 
 ## 🤝 Contributing
 
-PrimerLab follows strict development guidelines to ensure:
-- Clean architecture (no cross-layer imports)
-- Consistent naming conventions
-- Comprehensive error handling
-- Deterministic outputs
+PrimerLab follows strict architecture guidelines:
 
-See [Development Rules](Docs/Development%20Rules/rules-development.md) for details.
+* No cross-layer imports
+* Consistent naming conventions
+* Explicit error handling
+* Deterministic, reproducible outputs
+
+See:
+📄 [`rules-development.md`](Docs/Development%20Rules/rules-development.md)
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **BSD 3-Clause License** - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **BSD 3-Clause License**.
+See the [LICENSE](LICENSE) file for details.
 
-Copyright (c) 2025–present, Engki Nandatama
+© 2025–present — **Engki Nandatama**
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **Primer3** - Primer design engine
-- **ViennaRNA** - RNA secondary structure prediction
+* **Primer3** — Primary primer design engine
+* **ViennaRNA** — Thermodynamic folding & secondary structure analysis
 
 ---
 
 ## 📬 Contact
 
-For questions, issues, or suggestions:
-- Open an issue on [GitHub](https://github.com/engkinandatama/primerlab-genomic/issues)
+For issues, suggestions, or contributions:
+➡️ Open an issue on GitHub:
+[Github Issues](https://github.com/engkinandatama/primerlab-genomic/issues)
 
 ---
 
-**Built with ❤️ for the bioinformatics community**
+### **Built with scientific care for the molecular biology community.** 🧪💻
+
+---
+
