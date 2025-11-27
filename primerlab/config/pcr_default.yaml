@@ -9,6 +9,8 @@ parameters:
     min: 18
     opt: 20
     max: 27
+    
+  product_size_range: "100-300"
 
   tm:
     min: 57.0

@@ -85,8 +85,6 @@ class Primer3Wrapper:
 
         logger.info(f"Calling Primer3 binding with {len(p3_settings)} settings...")
         
-        logger.info(f"Calling Primer3 binding with {len(p3_settings)} settings...")
-        
         # Use multiprocessing to enforce timeout and allow killing stuck processes
         import multiprocessing
         

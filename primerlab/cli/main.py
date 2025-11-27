@@ -2,7 +2,7 @@ import argparse
 import sys
 import logging
 from pathlib import Path
-from primerlab.core.logger import setup_logger, get_logger
+from primerlab.core.logger import setup_logger
 from primerlab.core.config_loader import load_and_merge_config
 from primerlab.core.exceptions import PrimerLabException
 
@@ -33,7 +33,7 @@ def main():
 
     if not args.command:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(0)  # Changed to 0 for better UX
 
     if args.command == "version":
         print(f"PrimerLab v{__version__}")
@@ -46,6 +46,11 @@ def main():
         
         logger.info(f"Starting PrimerLab v{__version__}")
         logger.info(f"Workflow: {args.workflow.upper()}")
+
+        # Early check for unimplemented workflows
+        if args.workflow == "crispr":
+            logger.error("CRISPR workflow is not yet implemented. Please use 'pcr' or 'qpcr'.")
+            sys.exit(2)
 
         try:
             # 2. Prepare CLI Overrides
@@ -76,7 +81,7 @@ def main():
                 from primerlab.workflows.qpcr import run_qpcr_workflow
                 result = run_qpcr_workflow(config)
             
-            if result:
+            if result is not None:
                 # 5. Save Output
                 from primerlab.core.output import OutputManager
                 

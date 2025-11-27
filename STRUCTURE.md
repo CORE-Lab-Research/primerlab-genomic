@@ -12,7 +12,7 @@ primerlab-genomic/
 │   │
 │   ├── core/                       # Core utilities (workflow-agnostic)
 │   │   ├── __init__.py
-│   │   ├── config.py               # Configuration loader & merger
+│   │   ├── config_loader.py        # Configuration loader & merger
 │   │   ├── exceptions.py           # Custom exceptions & error codes
 │   │   ├── logger.py               # Logging system
 │   │   ├── models.py               # Data models (Primer, Amplicon, etc.)
