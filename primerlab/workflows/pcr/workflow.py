@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from primerlab.core.models import WorkflowResult, Primer, Amplicon, QCResult, RunMetadata
 from primerlab.core.tools.primer3_wrapper import Primer3Wrapper
 from primerlab.core.logger import get_logger
@@ -113,7 +113,7 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
     # 5. Create Metadata
     metadata = RunMetadata(
         workflow="pcr",
-        timestamp=datetime.utcnow().isoformat(),
+        timestamp=datetime.now(timezone.utc).isoformat(),
         version="0.1.0",
         parameters=config.get("parameters", {})
     )

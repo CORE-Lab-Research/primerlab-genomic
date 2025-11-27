@@ -1,0 +1,44 @@
+name: Tests
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest
+        pip install -e .
+        
+    - name: Install Primer3 (System Dependency)
+      run: |
+        # primer3-py wheels usually include the binary, but just in case
+        echo "Installing primer3-py handled by pip"
+        
+    - name: Install ViennaRNA (Optional but recommended for full QC)
+      run: |
+        # ViennaRNA is tricky on GitHub Actions. 
+        # For v0.1.0, we accept that ViennaRNA might be missing and QC will warn.
+        # We can add a proper install step later or use a container.
+        echo "Skipping ViennaRNA install for now (QC will warn but pass)"
+
+    - name: Run Tests
+      run: |
+        pytest -v

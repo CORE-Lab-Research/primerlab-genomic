@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from primerlab.core.models import WorkflowResult, Amplicon, RunMetadata
 from primerlab.core.tools.primer3_wrapper import Primer3Wrapper
 from primerlab.core.sequence import SequenceLoader
@@ -93,7 +93,6 @@ def run_qpcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
         # Estimate efficiency
         probe = primers.get("probe")
         efficiency = qc_engine.estimate_efficiency(fwd, rev, probe)
-        logger.info(f"Estimated PCR efficiency: {efficiency}%")
         
         if qc_result.warnings:
             logger.warning(f"QC Warnings: {qc_result.warnings}")
@@ -101,7 +100,7 @@ def run_qpcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
     # 6. Metadata & Result
     metadata = RunMetadata(
         workflow="qpcr",
-        timestamp=datetime.utcnow().isoformat(),
+        timestamp=datetime.now(timezone.utc).isoformat(),
         version="0.1.0",
         parameters=config.get("parameters", {})
     )

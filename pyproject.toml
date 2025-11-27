@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "primerlab-genomic"
+version = "0.1.0"
+description = "A modular, AI-friendly bioinformatics framework for automated primer and probe design."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "BSD-3-Clause"}
+authors = [
+    {name = "Engki Nandatama", email = "engkinandatama@example.com"}
+]
+keywords = ["bioinformatics", "genomics", "primer-design", "pcr", "qpcr", "crispr", "python"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "primer3-py>=2.0.0",
+    "pyyaml>=6.0",
+    "rich>=13.0.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/engkinandatama/primerlab-genomic"
+Repository = "https://github.com/engkinandatama/primerlab-genomic.git"
+Issues = "https://github.com/engkinandatama/primerlab-genomic/issues"
+
+[project.scripts]
+primerlab = "primerlab.cli.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["primerlab*"]
+namespaces = false
