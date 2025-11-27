@@ -55,10 +55,13 @@ pip install -e .
 ```
 
 #### Option 2: For End Users (Using Release Files)
-If you downloaded the release files (`.whl` or `.tar.gz`) from GitHub:
+Download the release files (`.whl` or `.tar.gz`) from the [GitHub Releases page](https://github.com/engkinandatama/primerlab-genomic/releases), then:
 
 **Using the Wheel (.whl) - Recommended:**
 ```bash
+# Navigate to the directory where you downloaded the file, or use the full path
+cd ~/Downloads  # Example: where browser downloads files
+
 # Create a virtual environment first
 python3 -m venv ~/primerlab_venv
 source ~/primerlab_venv/bin/activate
@@ -72,26 +75,53 @@ pip install primerlab_genomic-0.1.0-py3-none-any.whl
 pip install primerlab_genomic-0.1.0.tar.gz
 ```
 
-Once installed, you can run PrimerLab from anywhere in your terminal:
+Once installed, you can run PrimerLab from anywhere:
 ```bash
 primerlab --version
-primerlab run pcr --config my_config.yaml
 ```
 
 ---
 
-## 🔧 Basic Usage
+## 🔧 Usage
 
-### PCR Workflow
+### Command-Line Interface (CLI)
 
+**PCR Workflow:**
 ```bash
-python3 -m primerlab.cli.main run pcr --config test_pcr.yaml
+primerlab run pcr --config test_pcr.yaml
 ```
 
-### qPCR Workflow
-
+**qPCR Workflow:**
 ```bash
-python3 -m primerlab.cli.main run qpcr --config test_qpcr.yaml
+primerlab run qpcr --config test_qpcr.yaml
+```
+
+### Programmatic API (Python)
+
+For integration into your own Python scripts:
+
+```python
+from primerlab.api.public import design_pcr_primers, design_qpcr_assays
+
+# PCR primer design
+sequence = "ATGAGTAAAGGAGAAGAACTTTTCACTGGAGT..."
+result = design_pcr_primers(sequence)
+
+print(f"Forward: {result.primers['forward'].sequence}")
+print(f"Reverse: {result.primers['reverse'].sequence}")
+print(f"Amplicon: {result.amplicons[0].length} bp")
+
+# qPCR assay design (with custom parameters)
+config = {
+    "parameters": {
+        "product_size_range": [[70, 200]],
+        "probe": {"tm": {"min": 68.0, "opt": 70.0, "max": 72.0}}
+    }
+}
+result = design_qpcr_assays(sequence, config)
+
+print(f"Probe: {result.primers['probe'].sequence}")
+print(f"Efficiency: {result.efficiency}%")
 ```
 
 ---
@@ -100,41 +130,54 @@ python3 -m primerlab.cli.main run qpcr --config test_qpcr.yaml
 
 Full documentation is available in the [`Docs/`](Docs/) directory:
 
-* **Project Overview** — Vision, scope, and future development
-* **Development Rules** — Architecture constraints and coding standards
-* **System Architecture** — Workflow structure and data flow
-* **WSL Quickstart** — Setup guide for Windows environments
+* **[Project Overview](Docs/High-Level%20Documentation/project-overview.md)** — Vision, scope, and future development
+* **[Development Rules](Docs/Development%20Rules/rules-development.md)** — Architecture constraints and coding standards
+* **[System Architecture](Docs/Manual%20Plan/)** — Workflow structure, data flow, and roadmap
+* **[WSL Quickstart](Docs/Guide/wsl_quickstart.md)** — Setup guide for Windows environments
+* **[CHANGELOG](CHANGELOG.md)** — Version history and release notes
 
 ---
 
-## 🧪 Example Configuration (qPCR)
+## 🧪 Example Configurations
+
+### PCR Configuration (`test_pcr.yaml`)
+
+```yaml
+workflow: pcr
+
+input:
+  sequence: "ATGAGTAAAGGAGAAGAACTTTTCACTGGAGT..."  # Or use sequence_path: "input.fasta"
+
+parameters:
+  primer_size: {min: 18, opt: 20, max: 24}
+  tm: {min: 58.0, opt: 60.0, max: 62.0}
+  product_size_range: [[200, 600]]  # Amplicon size range
+
+output:
+  directory: "test_output"
+```
+
+### qPCR Configuration (`test_qpcr.yaml`)
 
 ```yaml
 workflow: qpcr
 
 input:
-  sequence: "ATGGGGAAGGTGAAGGTCGGAGT..."
+  sequence: "ATGGGGAAGGTGAAGGTCGGAGT..."  # GAPDH example
 
 parameters:
-  primer_size:
-    min: 18
-    opt: 20
-    max: 24
+  primer_size: {min: 18, opt: 20, max: 24}
+  tm: {min: 55.0, opt: 60.0, max: 65.0}
   
-  tm:
-    min: 58.0
-    opt: 60.0
-    max: 62.0
-
   probe:
-    tm:
-      min: 68.0
-      opt: 70.0
-      max: 72.0
+    size: {min: 18, opt: 24, max: 30}
+    tm: {min: 68.0, opt: 70.0, max: 72.0}  # Probe Tm should be ~8-10°C higher than primers
 
 output:
-  directory: "output"
+  directory: "test_output"
 ```
+
+Sample config files are included in the repository root for immediate testing.
 
 ---
 
