@@ -278,9 +278,3 @@ For issues, suggestions, or contributions:
 ➡️ Open an issue on GitHub:
 [Github Issues](https://github.com/engkinandatama/primerlab-genomic/issues)
 
----
-
-### **Built with scientific care for the molecular biology community.** 🧪💻
-
----
-
