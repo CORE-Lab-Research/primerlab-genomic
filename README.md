@@ -5,9 +5,27 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.1.0-orange.svg)]()
+[![Status](https://img.shields.io/badge/status-v0.1.1-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.1)
 
-> 🔰 **Latest Release**: **v0.1.0 Technical Preview** is now available! 🎉  
+> 🔰 **Latest Release**: [**v0.1.1 Patch Release**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.1) 🎉
+
+---
+
+## 📋 Overview
+
+**PrimerLab Genomic** is a Python-based toolkit for automated primer and probe design in molecular biology workflows.
+It provides a structured and reproducible framework for:
+
+* **PCR** — Standard primer design with quality control
+* **qPCR** — Probe design with thermodynamic checks
+* **(Future)** CRISPR guides, multiplex PCR, and specialized workflows
+
+PrimerLab focuses on **deterministic, transparent bioinformatics**, following strict modularity and best practices.
+
+### 🔑 Key Features
+
+* **End-to-End Workflow**: Sequence input → Primer/Probe design → QC → Report
+* **Thermodynamic Validation**: Secondary structure prediction via ViennaRNA
 * **QC Framework**: Hairpins, dimers, GC%, Tm ranges, amplicon checks
 * **qPCR Support**: TaqMan-style probe design with efficiency estimation
 * **Safe Execution**: Timeout protection for complex sequences
@@ -35,28 +53,13 @@ source ~/primerlab_venv/bin/activate  # Linux/WSL
 pip install -e .
 ```
 
-#### Option 2: For End Users (Using Release Files)
-Download the release files (`.whl` or `.tar.gz`) from the [GitHub Releases page](https://github.com/engkinandatama/primerlab-genomic/releases), then:
-
-**Using the Wheel (.whl) - Recommended:**
+#### Option 2: For End Users (From GitHub Release)
 ```bash
-# Navigate to the directory where you downloaded the file, or use the full path
-cd ~/Downloads  # Example: where browser downloads files
-
-# Create a virtual environment first
-python3 -m venv ~/primerlab_venv
-source ~/primerlab_venv/bin/activate
-
-# Install directly from the file
-pip install primerlab_genomic-0.1.0-py3-none-any.whl
+# Install directly from GitHub (latest release)
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.1.1
 ```
 
-**Using the Source Tarball (.tar.gz):**
-```bash
-pip install primerlab_genomic-0.1.0.tar.gz
-```
-
-Once installed, you can run PrimerLab from anywhere:
+Once installed, verify the installation:
 ```bash
 primerlab --version
 ```
@@ -121,7 +124,7 @@ Full documentation is available in the [`Docs/`](Docs/) directory:
 
 ## 🧪 Example Configurations
 
-### PCR Configuration (`test_pcr.yaml`)
+### PCR Configuration
 
 ```yaml
 workflow: pcr
@@ -132,17 +135,17 @@ input:
 parameters:
   primer_size: {min: 18, opt: 20, max: 24}
   tm: {min: 58.0, opt: 60.0, max: 62.0}
-  product_size: {min: 200, opt: 400, max: 600}  # New in v0.1.1: Simple min/opt/max
+  product_size: {min: 200, opt: 400, max: 600}  # v0.1.1: Simplified syntax
 
 output:
-  directory: "test_output"
+  directory: "output_pcr"
 ```
 
 ### qPCR Configuration (TaqMan - Default)
 
 ```yaml
 workflow: qpcr
-# mode: taqman (default)
+# mode: taqman (default - includes probe design)
 
 input:
   sequence: "ATGGGGAAGGTGAAGGTCGGAGT..."
@@ -156,7 +159,7 @@ parameters:
     tm: {min: 68.0, opt: 70.0, max: 72.0}
 
 output:
-  directory: "test_output"
+  directory: "output_qpcr"
 ```
 
 ### qPCR Configuration (SYBR Green)
@@ -165,10 +168,128 @@ output:
 workflow: qpcr
 
 parameters:
-  mode: sybr  # New in v0.1.1: Disables probe design automatically
+  mode: sybr  # v0.1.1: Disables probe design automatically
+  
+  primer_size: {min: 18, opt: 20, max: 24}
+  tm: {min: 58.0, opt: 60.0, max: 62.0}
+  product_size: {min: 70, opt: 100, max: 150}
+
+output:
+  directory: "output_qpcr_sybr"
+```
+
+---
+
+## 📊 Output Overview
+
+PrimerLab generates a structured report containing:
+
+* **Primer & Probe Details** — Sequences, GC%, Tm, positions
+* **qPCR Metrics** — Estimated amplification efficiency
+* **Amplicon Properties** — Length, GC%, suitability
+* **QC Checks** — Dimers, hairpins, Tm balance
+* **Warnings** — Optimization suggestions
+
+Run a workflow to generate your own report!
+
+---
+
+## 🏗️ Project Structure
+
+```
+primerlab-genomic/
+├── primerlab/
+│   ├── cli/              # Command-line interface
+│   ├── core/             # Reusable utilities (sequence, QC, tools)
+│   │   ├── tools/        # Primer3, ViennaRNA wrappers
+│   │   └── models/       # Data models and schema
+│   ├── workflows/        # Workflow modules
 │   │   ├── pcr/          # PCR workflow implementation
 │   │   └── qpcr/         # qPCR workflow implementation
+│   ├── api/              # Public API
 │   └── config/           # Default configurations
-➡️ Open an issue on GitHub:
-[Github Issues](https://github.com/engkinandatama/primerlab-genomic/issues)
+├── tests/                # Automated test suite
+├── Docs/                 # High-level documentation
+└── examples/             # Example configurations (coming in v0.1.2)
+```
 
+---
+
+## 📌 Development Status
+
+### ✅ **v0.1.1 Patch Release** (Current)
+
+The current release includes:
+
+* **Configuration Enhancements**: 
+  - `product_size` parameter with simplified syntax (`min`, `opt`, `max`)
+  - Preset configurations (`long_range`, `standard_pcr`)
+* **qPCR Modes**: Explicit `mode: sybr` (primers only) & `mode: taqman` (primers + probe)
+* **Core Foundation**: PCR/qPCR workflows, Primer3 integration, Extended QC
+* **Public API**: `design_pcr_primers`, `design_qpcr_assays`
+* **Testing**: pytest suite with GitHub Actions CI/CD
+
+### 🚧 **Roadmap**
+
+**Near-term:**
+- Usability & Examples (Example packages, CSV export, CLI improvements)
+- QC Enhancements (GC clamp, poly-X detection, ranking system)
+- Advanced Reporting (HTML reports, explanations)
+- Smart Features (Auto-suggestions, interactive wizard)
+
+**Mid-term:**
+- CRISPR Workflow (PAM finding, guide extraction, off-target scoring)
+- Multiplex PCR support
+
+**Long-term:**
+- Performance optimizations & parallel processing
+- ML-based primer prediction
+- Web interface & cloud deployment
+
+**v1.0.0 — Production Ready**: Stable public release with full documentation
+
+---
+
+## 🛠️ Requirements
+
+* **Python 3.10+**
+* **Primer3** (`primer3-py`)
+* **ViennaRNA** for secondary structure prediction
+* **WSL recommended for Windows users**
+
+---
+
+## 🤝 Contributing
+
+PrimerLab follows strict architecture guidelines:
+
+* No cross-layer imports
+* Consistent naming conventions
+* Explicit error handling
+* Deterministic, reproducible outputs
+
+See: 📄 [`rules-development.md`](Docs/Development%20Rules/rules-development.md)
+
+---
+
+## 📄 License
+
+This project is licensed under the **BSD 3-Clause License**.
+See the [LICENSE](LICENSE) file for details.
+
+© 2025–present — **Engki Nandatama**
+
+---
+
+## 🙏 Acknowledgments
+
+* **Primer3** — Primary primer design engine
+* **ViennaRNA** — Thermodynamic folding & secondary structure analysis
+
+---
+
+## 📬 Contact
+
+For issues, suggestions, or contributions:
+
+➡️ **[Open an issue on GitHub](https://github.com/engkinandatama/primerlab-genomic/issues)**
