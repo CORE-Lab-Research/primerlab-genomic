@@ -170,6 +170,21 @@ class ReportGenerator:
                 
                 md.append(f"| #{i} | `{fwd_seq}` | `{rev_seq}` | {penalty:.2f} | {qc_status} | {product} bp |")
             
+            # Ranking Rationale
+            md.append("")
+            md.append("### Ranking Rationale")
+            md.append("*Why weren't alternatives selected as best?*")
+            md.append("")
+            
+            for i, alt in enumerate(result.alternatives, start=2):
+                reasons = alt.get("qc_details", {}).get("rejection_reasons", [])
+                penalty = alt.get("primer3_penalty", 0.0)
+                
+                if reasons:
+                    md.append(f"- **#{i}:** {', '.join(reasons)}")
+                else:
+                    md.append(f"- **#{i}:** Higher Primer3 penalty ({penalty:.2f}) than best candidate")
+            
             md.append("")
         
         md.append("")

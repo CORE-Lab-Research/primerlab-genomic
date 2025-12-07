@@ -114,3 +114,7 @@ test_*/
 
 # Pytest logs
 pytest_error.log
+
+# Output directories (test runs, workflow results)
+output/
+output_*/

@@ -1,3 +1,0 @@
-Name,Sequence,Length,Tm,GC%,Hairpin_dG,Homodimer_dG,Heterodimer_dG,Start,End,Warnings
-forward_0,GATTTGGTCGTATTGGGCGC,20,59.97,55.0,-2.6,-6.4,-7.9,28,47,
-reverse_0,TTCCCGTTCTCAGCCTTGAC,20,59.97,55.0,,-3.1,-7.9,177,196,
