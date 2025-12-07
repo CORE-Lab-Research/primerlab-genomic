@@ -70,6 +70,8 @@ class RerankingEngine:
         Returns:
             Tuple of (passes_qc, details_dict)
         """
+        from primerlab.core.sequence_qc import check_gc_clamp, check_poly_x
+        
         details = {
             "primer3_penalty": primer3_penalty,
             "hairpin_fwd_dg": 0.0,
@@ -77,14 +79,49 @@ class RerankingEngine:
             "homodimer_fwd_dg": 0.0,
             "homodimer_rev_dg": 0.0,
             "heterodimer_dg": 0.0,
+            "gc_clamp_fwd": True,
+            "gc_clamp_rev": True,
+            "poly_x_fwd": True,
+            "poly_x_rev": True,
             "passes_qc": True,
             "rejection_reasons": []
         }
         
+        # 0. Sequence-level QC (GC Clamp, Poly-X) - v0.1.3
+        # GC Clamp checks
+        fwd_gc_ok, fwd_gc_msg = check_gc_clamp(fwd_seq)
+        rev_gc_ok, rev_gc_msg = check_gc_clamp(rev_seq)
+        
+        details["gc_clamp_fwd"] = fwd_gc_ok
+        details["gc_clamp_rev"] = rev_gc_ok
+        
+        if not fwd_gc_ok:
+            details["passes_qc"] = False
+            details["rejection_reasons"].append(f"Fwd: {fwd_gc_msg}")
+        
+        if not rev_gc_ok:
+            details["passes_qc"] = False
+            details["rejection_reasons"].append(f"Rev: {rev_gc_msg}")
+        
+        # Poly-X checks
+        fwd_poly_ok, fwd_poly_msg = check_poly_x(fwd_seq)
+        rev_poly_ok, rev_poly_msg = check_poly_x(rev_seq)
+        
+        details["poly_x_fwd"] = fwd_poly_ok
+        details["poly_x_rev"] = rev_poly_ok
+        
+        if not fwd_poly_ok:
+            details["passes_qc"] = False
+            details["rejection_reasons"].append(f"Fwd: {fwd_poly_msg}")
+        
+        if not rev_poly_ok:
+            details["passes_qc"] = False
+            details["rejection_reasons"].append(f"Rev: {rev_poly_msg}")
+        
         # Skip ViennaRNA checks if not available
         if not self.vienna.is_available:
             logger.debug("ViennaRNA not available, skipping secondary structure checks")
-            return True, details
+            return details["passes_qc"], details
         
         # 1. Hairpin checks
         fwd_fold = self.vienna.fold(fwd_seq)
