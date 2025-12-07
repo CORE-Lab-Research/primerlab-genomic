@@ -33,7 +33,9 @@ def test_pcr_workflow_success(gapdh_sequence, test_output_dir):
     assert 18 <= len(rev.sequence) <= 25
 
 def test_pcr_workflow_no_primers():
-    """Verifies handling of impossible constraints."""
+    """Verifies handling of impossible constraints - should raise ToolExecutionError."""
+    from primerlab.core.exceptions import ToolExecutionError
+    
     config = {
         "workflow": "pcr",
         "input": {"sequence": "ATGC" * 20}, # Short repetitive sequence
@@ -43,7 +45,10 @@ def test_pcr_workflow_no_primers():
         "output": {"directory": "dummy"}
     }
     
-    result = run_pcr_workflow(config)
-    # Workflow returns empty dict {} not None when no primers found
-    assert not result.primers, "Primers should be empty or None"
-    # assert len(result.errors) > 0 or len(result.warnings) > 0 # Relaxed check
+    # v0.1.2: Error handling now raises ToolExecutionError with detailed message
+    with pytest.raises(ToolExecutionError) as exc_info:
+        run_pcr_workflow(config)
+    
+    # Verify error contains helpful information
+    assert "Primer3 failed to find any primers" in str(exc_info.value)
+    assert "ERR_TOOL_P3_NO_PRIMERS" == exc_info.value.error_code
