@@ -146,23 +146,46 @@ def load_and_merge_config(workflow: str, user_config_path: Optional[str] = None,
 
 def _process_enhancements(config: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Applies v0.1.1 enhancements:
-    1. Presets (e.g., preset: "long_range")
+    Applies v0.1.1+ enhancements:
+    1. Presets (e.g., preset: "long_range", "dna_barcoding", "rt_pcr")
     2. product_size (min/opt/max) -> product_size_range
     """
     params = config.get("parameters", {})
     
-    # 1. Presets
+    # 1. Presets - v0.1.3: Load from YAML files or use inline defaults
     preset = config.get("preset")
     if preset:
         logger.info(f"Applying preset: {preset}")
-        if preset == "long_range":
-            # Long-range PCR defaults
-            params["product_size"] = {"min": 1000, "opt": 2000, "max": 3000}
-            params["tm"] = {"min": 60.0, "opt": 62.0, "max": 65.0} # Higher Tm for long PCR
-        elif preset == "standard_pcr":
-             params["product_size"] = {"min": 100, "opt": 200, "max": 600}
-        # Add more presets here as needed
+        
+        # Try to load preset from file first
+        preset_file = Path(__file__).parent.parent / "config" / f"{preset}_default.yaml"
+        
+        if preset_file.exists():
+            preset_config = load_yaml(str(preset_file))
+            # Merge preset params with current params (user params override preset)
+            preset_params = preset_config.get("parameters", {})
+            for key, value in preset_params.items():
+                if key not in params:
+                    params[key] = value
+            # Also merge QC settings if not already set
+            preset_qc = preset_config.get("qc", {})
+            if preset_qc and "qc" not in config:
+                config["qc"] = preset_qc
+            logger.debug(f"Loaded preset from {preset_file}")
+        else:
+            # Fallback to inline presets for backward compatibility
+            if preset == "long_range":
+                params.setdefault("product_size", {"min": 1000, "opt": 2000, "max": 3000})
+                params.setdefault("tm", {"min": 60.0, "opt": 62.0, "max": 65.0})
+            elif preset == "standard_pcr":
+                params.setdefault("product_size", {"min": 100, "opt": 200, "max": 600})
+            elif preset == "dna_barcoding":
+                params.setdefault("product_size", {"min": 400, "opt": 550, "max": 700})
+                params.setdefault("tm", {"min": 50.0, "opt": 55.0, "max": 60.0})
+            elif preset == "rt_pcr":
+                params.setdefault("product_size", {"min": 80, "opt": 130, "max": 200})
+                params.setdefault("tm", {"min": 58.0, "opt": 60.0, "max": 62.0})
+            logger.debug(f"Applied inline preset: {preset}")
         
     # 2. product_size -> product_size_range
     # Primer3 expects [[min, max]] for PRIMER_PRODUCT_SIZE_RANGE

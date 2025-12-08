@@ -5,6 +5,7 @@ This module evaluates multiple primer candidates from Primer3,
 applies ViennaRNA QC thresholds, and selects the best candidate.
 """
 
+import random
 from typing import Dict, Any, List, Tuple, Optional
 from dataclasses import dataclass
 from primerlab.core.models import Primer
@@ -49,6 +50,7 @@ class RerankingEngine:
         
         params = config.get("parameters", {})
         qc_config = config.get("qc", {})
+        advanced = config.get("advanced", {})
         
         # Get QC mode preset or individual thresholds
         qc_mode = qc_config.get("mode", "standard")
@@ -60,8 +62,13 @@ class RerankingEngine:
         
         self.show_alternatives = params.get("show_alternatives", 5)
         
+        # v0.1.3: Seed for reproducible selection
+        self.seed = advanced.get("seed", None)
+        if self.seed is not None:
+            random.seed(self.seed)
+            logger.info(f"Reproducibility seed set: {self.seed}")
+        
         logger.info(f"Re-ranking Engine initialized with QC mode: {qc_mode}")
-        logger.debug(f"Thresholds: hairpin={self.hairpin_dg_max}, homodimer={self.homodimer_dg_max}, heterodimer={self.heterodimer_dg_max}")
     
     def evaluate_candidate(self, fwd_seq: str, rev_seq: str, primer3_penalty: float = 0.0) -> Tuple[bool, Dict[str, Any]]:
         """

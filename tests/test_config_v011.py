@@ -17,7 +17,7 @@ def test_product_size_conversion():
     assert p_range == [[200, 600]]
 
 def test_preset_loading():
-    """Verify preset loading logic."""
+    """Verify preset loading logic from YAML file."""
     config = {
         "preset": "long_range",
         "parameters": {}
@@ -25,8 +25,10 @@ def test_preset_loading():
     processed = _process_enhancements(config)
     params = processed["parameters"]
     
-    assert params["product_size"]["min"] == 1000
-    assert params["tm"]["min"] == 60.0
+    # long_range_default.yaml has tm.min: 62.0
+    assert params["tm"]["min"] == 62.0
+    # long_range_default.yaml has product_size_range: "3000-10000"
+    assert params["product_size_range"] == "3000-10000"
 
 def test_qpcr_mode_sybr():
     """Verify SYBR mode disables probe design."""

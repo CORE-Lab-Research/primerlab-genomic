@@ -1,0 +1,55 @@
+# RT-PCR Preset for PrimerLab v0.1.3
+# Optimized for Reverse Transcription PCR (gene expression analysis)
+# Shorter amplicons for efficient cDNA amplification
+
+workflow: pcr
+
+input:
+  sequence: null
+  sequence_path: null
+
+parameters:
+  primer_size:
+    min: 18
+    opt: 20
+    max: 24
+    
+  # RT-PCR prefers shorter amplicons for efficiency
+  product_size_range: "80-200"
+
+  # Standard Tm range for RT-PCR
+  tm:
+    min: 58.0
+    opt: 60.0
+    max: 62.0
+
+  # Standard GC content
+  gc:
+    min: 40.0
+    max: 60.0
+
+qc:
+  mode: standard
+  hairpin_dg_min: -3.0
+  dimer_dg_min: -6.0
+  tm_diff_max: 2.0  # Tighter Tm match for RT-PCR
+
+offtarget:
+  enabled: false
+  blast_path: "blastn"
+  database: null
+
+output:
+  directory: "output_rt_pcr"
+  report_format: "md"
+  save_intermediate: true
+
+advanced:
+  num_candidates: 50
+  primer3_raw: false
+  debug: false
+
+# RT-PCR specific notes:
+# - Consider designing primers spanning exon-exon junctions
+# - Short amplicons improve efficiency with fragmented RNA
+# - Tighter Tm difference ensures consistent amplification

@@ -120,7 +120,15 @@ def main():
                 output_mgr.save_csv(result)
                 
                 # Export vendor formats (v0.1.3)
+                # Priority: CLI --export flag > config output.export_formats > default ["idt"]
                 export_formats = ["idt"]  # Default
+                
+                # Check config for export_formats
+                config_formats = config.get("output", {}).get("export_formats", [])
+                if config_formats:
+                    export_formats = [f.strip().lower() for f in config_formats]
+                
+                # CLI flag overrides config
                 if args.export:
                     export_formats = [f.strip().lower() for f in args.export.split(",")]
                 
@@ -150,10 +158,18 @@ def main():
                     output_mgr.save_debug_data(result.raw, "primer3_raw.json")
                     output_mgr.save_debug_data(config, "final_config.json")
 
-                logger.info(f"Primers found: {list(result.primers.keys())}")
-                if result.amplicons:
-                    logger.info(f"Amplicon size: {result.amplicons[0].length} bp")
-                logger.info("Workflow finished successfully.")
+                # 7. Print colorized summary (v0.1.3)
+                try:
+                    from primerlab.cli.console import print_primer_summary, print_qc_status, print_success
+                    print_primer_summary(result)
+                    print_qc_status(result)
+                    print_success(f"Workflow finished! Output: {output_mgr.run_dir}")
+                except ImportError:
+                    # Fallback if rich not available
+                    logger.info(f"Primers found: {list(result.primers.keys())}")
+                    if result.amplicons:
+                        logger.info(f"Amplicon size: {result.amplicons[0].length} bp")
+                    logger.info("Workflow finished successfully.")
             else:
                 logger.warning("Workflow returned no results.")
 

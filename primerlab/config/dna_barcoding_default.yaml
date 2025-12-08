@@ -1,0 +1,51 @@
+# DNA Barcoding Preset for PrimerLab v0.1.3
+# Optimized for DNA barcoding applications (COI, rbcL, ITS, etc.)
+# Longer amplicons (400-700bp) typical for species identification
+
+workflow: pcr
+
+input:
+  sequence: null
+  sequence_path: null
+
+parameters:
+  primer_size:
+    min: 20
+    opt: 23
+    max: 28
+    
+  # DNA barcoding typically requires longer amplicons
+  product_size_range: "400-700"
+
+  # Slightly lower Tm for degenerate primers (common in barcoding)
+  tm:
+    min: 50.0
+    opt: 55.0
+    max: 60.0
+
+  # Broader GC range for diverse taxa
+  gc:
+    min: 35.0
+    max: 70.0
+
+qc:
+  mode: relaxed  # More permissive for diverse templates
+  hairpin_dg_min: -4.0
+  dimer_dg_min: -8.0
+  tm_diff_max: 5.0
+
+offtarget:
+  enabled: false
+  blast_path: "blastn"
+  database: null
+
+output:
+  directory: "output_barcoding"
+  report_format: "md"
+  save_intermediate: true
+
+advanced:
+  # DNA barcoding often requires more candidates due to sequence diversity
+  num_candidates: 50
+  primer3_raw: false
+  debug: false

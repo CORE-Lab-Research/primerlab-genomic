@@ -1,0 +1,56 @@
+# Long Range PCR Preset for PrimerLab v0.1.3
+# Optimized for amplifying long DNA fragments (3-10+ kb)
+# Requires specialized polymerases and conditions
+
+workflow: pcr
+
+input:
+  sequence: null
+  sequence_path: null
+
+parameters:
+  primer_size:
+    min: 25
+    opt: 28
+    max: 35
+    
+  # Long range: 3kb to 10kb amplicons
+  product_size_range: "3000-10000"
+
+  # Higher Tm for longer primers
+  tm:
+    min: 62.0
+    opt: 65.0
+    max: 68.0
+
+  # GC content for stability
+  gc:
+    min: 40.0
+    max: 60.0
+
+qc:
+  mode: strict  # Long range requires very stable primers
+  hairpin_dg_min: -2.0
+  dimer_dg_min: -5.0
+  tm_diff_max: 2.0
+
+offtarget:
+  enabled: false
+  blast_path: "blastn"
+  database: null
+
+output:
+  directory: "output_long_range"
+  report_format: "md"
+  save_intermediate: true
+
+advanced:
+  num_candidates: 30  # Fewer candidates due to strict requirements
+  primer3_raw: false
+  debug: false
+
+# Long Range PCR notes:
+# - Requires specialized polymerases (e.g., LA Taq, LongAmp)
+# - Extension time: 1 min per kb
+# - Use hot-start to prevent mispriming
+# - Consider touchdown PCR protocol
