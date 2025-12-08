@@ -13,7 +13,7 @@ from primerlab.core.logger import get_logger
 logger = get_logger()
 
 
-def check_gc_clamp(sequence: str, window: int = 5, min_gc: int = 1, max_gc: int = 3) -> Tuple[bool, str]:
+def check_gc_clamp(sequence: str, window: int = 5, min_gc: int = 1, max_gc: int = 5) -> Tuple[bool, str, str]:
     """
     Check GC clamp at the 3' end of a primer.
     
@@ -24,10 +24,10 @@ def check_gc_clamp(sequence: str, window: int = 5, min_gc: int = 1, max_gc: int 
         sequence: Primer sequence (5' to 3')
         window: Number of bases to check from 3' end (default: 5)
         min_gc: Minimum G/C count for good clamp (default: 1)
-        max_gc: Maximum G/C count to avoid over-stability (default: 3)
+        max_gc: Maximum G/C count to avoid over-stability (default: 5)
     
     Returns:
-        Tuple of (passes_check, message)
+        Tuple of (passes_check, message, explanation)
     """
     if len(sequence) < window:
         window = len(sequence)
@@ -36,11 +36,20 @@ def check_gc_clamp(sequence: str, window: int = 5, min_gc: int = 1, max_gc: int 
     gc_count = three_prime.count('G') + three_prime.count('C')
     
     if gc_count < min_gc:
-        return False, f"Weak 3' GC clamp ({gc_count} G/C in last {window} bases, min: {min_gc})"
-    elif gc_count > max_gc:
-        return False, f"Strong 3' GC clamp ({gc_count} G/C in last {window} bases, max: {max_gc})"
+        msg = f"Weak 3' GC clamp ({gc_count} G/C in last {window} bases)"
+        explanation = ("Too few G/C at 3'-end may cause poor annealing and extension. "
+                      "G-C bonds are stronger than A-T bonds. Consider redesigning primer.")
+        return False, msg, explanation
+    elif gc_count > 3:  # Warning threshold (but not failure)
+        msg = f"Strong 3' GC clamp ({gc_count} G/C in last {window} bases)"
+        explanation = ("High G/C content at 3'-end may increase non-specific binding. "
+                      "Optimal is 1-3 G/C in last 5 bases, but primer may still work well.")
+        # Return True (PASS) with warning - strong is acceptable, just not optimal
+        return True, msg, explanation
     else:
-        return True, f"Good 3' GC clamp ({gc_count} G/C in last {window} bases)"
+        msg = f"Good 3' GC clamp ({gc_count} G/C in last {window} bases)"
+        explanation = "Optimal G/C content at 3'-end for stable annealing."
+        return True, msg, explanation
 
 
 def check_poly_x(sequence: str, max_run: int = 4) -> Tuple[bool, str]:
@@ -120,15 +129,17 @@ def run_sequence_qc(sequence: str, config: Dict[str, Any] = None) -> Dict[str, A
         "errors": []
     }
     
-    # GC Clamp check
+    # GC Clamp check - now returns (passed, message, explanation)
     gc_window = config.get("gc_clamp_window", 5)
     gc_min = config.get("gc_clamp_min", 1)
-    gc_max = config.get("gc_clamp_max", 3)
+    gc_max = config.get("gc_clamp_max", 5)
     
-    gc_ok, gc_msg = check_gc_clamp(sequence, gc_window, gc_min, gc_max)
-    results["checks"]["gc_clamp"] = {"passed": gc_ok, "message": gc_msg}
+    gc_ok, gc_msg, gc_explain = check_gc_clamp(sequence, gc_window, gc_min, gc_max)
+    results["checks"]["gc_clamp"] = {"passed": gc_ok, "message": gc_msg, "explanation": gc_explain}
     if not gc_ok:
-        results["warnings"].append(gc_msg)
+        results["warnings"].append(f"{gc_msg} - {gc_explain}")
+    elif "Strong" in gc_msg:
+        results["warnings"].append(f"{gc_msg} - {gc_explain}")
     
     # Poly-X check
     max_run = config.get("poly_x_max", 4)
@@ -141,7 +152,7 @@ def run_sequence_qc(sequence: str, config: Dict[str, Any] = None) -> Dict[str, A
     stability_ok, stability_msg = check_3prime_stability(sequence)
     results["checks"]["3prime_stability"] = {"passed": stability_ok, "message": stability_msg}
     
-    # Overall status
+    # Overall status - only fail on actual failures, not warnings
     results["passes_all"] = gc_ok and poly_ok and stability_ok
     
     return results

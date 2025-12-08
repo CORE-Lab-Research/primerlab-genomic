@@ -84,24 +84,30 @@ class RerankingEngine:
             "poly_x_fwd": True,
             "poly_x_rev": True,
             "passes_qc": True,
-            "rejection_reasons": []
+            "rejection_reasons": [],
+            "warnings": []  # v0.1.3: Separate warnings from failures
         }
         
         # 0. Sequence-level QC (GC Clamp, Poly-X) - v0.1.3
-        # GC Clamp checks
-        fwd_gc_ok, fwd_gc_msg = check_gc_clamp(fwd_seq)
-        rev_gc_ok, rev_gc_msg = check_gc_clamp(rev_seq)
+        # GC Clamp checks - now returns (passed, message, explanation)
+        fwd_gc_ok, fwd_gc_msg, fwd_gc_explain = check_gc_clamp(fwd_seq)
+        rev_gc_ok, rev_gc_msg, rev_gc_explain = check_gc_clamp(rev_seq)
         
         details["gc_clamp_fwd"] = fwd_gc_ok
         details["gc_clamp_rev"] = rev_gc_ok
         
         if not fwd_gc_ok:
             details["passes_qc"] = False
-            details["rejection_reasons"].append(f"Fwd: {fwd_gc_msg}")
+            details["rejection_reasons"].append(f"Fwd: {fwd_gc_msg} - {fwd_gc_explain}")
+        elif "Strong" in fwd_gc_msg:
+            # Strong GC is a warning, not failure
+            details["warnings"].append(f"Fwd: {fwd_gc_msg} - {fwd_gc_explain}")
         
         if not rev_gc_ok:
             details["passes_qc"] = False
-            details["rejection_reasons"].append(f"Rev: {rev_gc_msg}")
+            details["rejection_reasons"].append(f"Rev: {rev_gc_msg} - {rev_gc_explain}")
+        elif "Strong" in rev_gc_msg:
+            details["warnings"].append(f"Rev: {rev_gc_msg} - {rev_gc_explain}")
         
         # Poly-X checks
         fwd_poly_ok, fwd_poly_msg = check_poly_x(fwd_seq)

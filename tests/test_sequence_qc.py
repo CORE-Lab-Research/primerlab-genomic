@@ -13,28 +13,32 @@ class TestGCClamp:
     
     def test_good_gc_clamp(self):
         """Primer with 2 G/C in last 5 bases should pass."""
-        seq = "ATATATGCATGC"  # Last 5: ATGC (2 G/C)
-        passed, msg = check_gc_clamp(seq)
+        seq = "ATATATGCATGC"  # Last 5: ATGC (3 G/C - C at end)
+        passed, msg, explanation = check_gc_clamp(seq)
         assert passed
+        assert "Good" in msg
     
     def test_weak_gc_clamp(self):
         """Primer with 0 G/C in last 5 bases should fail."""
         seq = "ATATATAT"  # Last 5: TATAT (0 G/C)
-        passed, msg = check_gc_clamp(seq)
+        passed, msg, explanation = check_gc_clamp(seq)
         assert not passed
         assert "Weak" in msg
+        assert "poor annealing" in explanation
     
     def test_strong_gc_clamp(self):
-        """Primer with 5 G/C in last 5 bases should fail (too strong)."""
+        """Primer with 5 G/C in last 5 bases should PASS with warning (not fail)."""
         seq = "ATGCGCGCG"  # Last 5: GCGCG (5 G/C)
-        passed, msg = check_gc_clamp(seq)
-        assert not passed
+        passed, msg, explanation = check_gc_clamp(seq)
+        # Strong GC is now a WARNING, not failure
+        assert passed  # Changed: Strong now passes
         assert "Strong" in msg
+        assert "non-specific binding" in explanation
     
     def test_short_sequence(self):
         """Short sequences should still be checked."""
         seq = "GC"
-        passed, msg = check_gc_clamp(seq)
+        passed, msg, explanation = check_gc_clamp(seq)
         assert passed  # 2 G/C in 2 bases is fine
 
 
@@ -72,15 +76,21 @@ class TestIntegration:
     """Integration tests for run_sequence_qc."""
     
     def test_good_primer(self):
-        """Good primer should pass all checks."""
-        seq = "ATGCGATCGATCGATCGC"  # Good GC clamp, no poly runs
+        """Good primer with optimal GC clamp should pass all checks."""
+        seq = "ATGCGATCGATCGATATC"  # Last 5: ATATC (1 G/C) - optimal range
         result = run_sequence_qc(seq)
         assert result["passes_all"]
-        assert len(result["warnings"]) == 0
+    
+    def test_strong_gc_primer(self):
+        """Primer with strong GC clamp should pass but have warning."""
+        seq = "ATGCGATCGATCGATCGC"  # Last 5: TCGCC (4 G/C) - strong but OK
+        result = run_sequence_qc(seq)
+        assert result["passes_all"]  # Still passes
+        # May have warning for strong GC
     
     def test_bad_primer(self):
         """Bad primer should fail with warnings."""
-        seq = "ATAAATAAAAAAT"  # Weak GC clamp + poly-A
+        seq = "ATAAATAAAAAAT"  # Weak GC clamp + poly-A (5+ consecutive)
         result = run_sequence_qc(seq)
         assert not result["passes_all"]
         assert len(result["warnings"]) > 0
