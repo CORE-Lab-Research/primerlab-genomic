@@ -49,6 +49,7 @@ results/
 
 # Temporary/Debug Files
 debug_p3.py
+my_config.yaml
 *.tmp
 *.log
 
