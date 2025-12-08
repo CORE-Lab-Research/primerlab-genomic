@@ -9,6 +9,75 @@ from primerlab.core.exceptions import PrimerLabException
 # Version definition
 __version__ = "0.1.3-dev"
 
+
+def _run_health_check():
+    """
+    Check all dependencies and show system info.
+    Per v0.1.3 quick patches - helps debugging installation issues.
+    """
+    import platform
+    
+    print(f"\n🔬 PrimerLab Health Check v{__version__}")
+    print("=" * 45)
+    
+    # Python version
+    py_version = platform.python_version()
+    if py_version >= "3.10":
+        print(f"✅ Python {py_version}")
+    else:
+        print(f"⚠️ Python {py_version} (recommend 3.10+)")
+    
+    # Primer3-py
+    try:
+        import primer3
+        print(f"✅ primer3-py (installed)")
+    except ImportError:
+        print("❌ primer3-py NOT FOUND (required)")
+    
+    # ViennaRNA
+    try:
+        from primerlab.core.tools.vienna_wrapper import ViennaWrapper
+        vienna = ViennaWrapper()
+        if vienna.is_available:  # Property, not method
+            print(f"✅ ViennaRNA (available)")
+        else:
+            print("⚠️ ViennaRNA not found (optional, install for secondary structure QC)")
+    except Exception as e:
+        print(f"⚠️ ViennaRNA check failed: {e}")
+    
+    # PyYAML
+    try:
+        import yaml
+        print(f"✅ PyYAML (installed)")
+    except ImportError:
+        print("❌ PyYAML NOT FOUND (required)")
+    
+    # Rich
+    try:
+        import rich
+        version = getattr(rich, "__version__", "installed")
+        print(f"✅ Rich {version}")
+    except ImportError:
+        print("⚠️ Rich not found (optional, for colorized output)")
+    
+    # tqdm
+    try:
+        import tqdm
+        version = getattr(tqdm, "__version__", "installed")
+        print(f"✅ tqdm {version}")
+    except ImportError:
+        print("⚠️ tqdm not found (optional, for progress bars)")
+    
+    # Biopython (optional)
+    try:
+        import Bio
+        print(f"✅ Biopython {Bio.__version__}")
+    except ImportError:
+        print("⚠️ Biopython not found (optional, for advanced sequence parsing)")
+    
+    print("\n" + "=" * 45)
+    print("Health check complete.\n")
+
 def main():
     parser = argparse.ArgumentParser(
         description="PrimerLab: Automated Primer Design Framework",
@@ -45,6 +114,9 @@ def main():
     init_parser.add_argument("--output", "-o", type=str, default="config.yaml", 
                             help="Output filename (default: config.yaml)")
 
+    # --- HEALTH Command (v0.1.3) ---
+    subparsers.add_parser("health", help="Check all dependencies and show system info")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -53,6 +125,11 @@ def main():
 
     if args.command == "version":
         print(f"PrimerLab v{__version__}")
+        sys.exit(0)
+
+    # --- HEALTH Command Handler ---
+    if args.command == "health":
+        _run_health_check()
         sys.exit(0)
 
     if args.command == "run":

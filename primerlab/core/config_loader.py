@@ -95,6 +95,9 @@ def validate_config(config: Dict[str, Any]):
                 f"Invalid Tm range: min ({tm_min}) must be less than max ({tm_max}).",
                 "ERR_CONFIG_009"
             )
+        # v0.1.3: Soft warning for wide Tm range
+        elif tm_max - tm_min > 10:
+            logger.warning(f"Wide Tm range ({tm_min}°C - {tm_max}°C) may produce suboptimal primers. Consider tightening to 5-8°C range.")
     
     # Check product_size range validity
     p_size = params.get("product_size", {})
@@ -106,6 +109,17 @@ def validate_config(config: Dict[str, Any]):
                 f"Invalid product_size range: min ({p_min}) must be less than max ({p_max}).",
                 "ERR_CONFIG_010"
             )
+        # v0.1.3: Soft warning for very large products
+        if p_max > 5000:
+            logger.warning(f"Large product size (up to {p_max}bp) may require specialized long-range PCR conditions.")
+    
+    # v0.1.3: Soft warning for GC range
+    gc = params.get("gc", {})
+    if gc:
+        gc_min = gc.get("min", 40)
+        gc_max = gc.get("max", 60)
+        if gc_max - gc_min > 30:
+            logger.warning(f"Wide GC range ({gc_min}% - {gc_max}%) may reduce primer specificity.")
 
 def load_and_merge_config(workflow: str, user_config_path: Optional[str] = None, cli_overrides: Optional[Dict] = None) -> Dict[str, Any]:
     """
