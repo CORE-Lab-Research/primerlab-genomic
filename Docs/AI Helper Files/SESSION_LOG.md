@@ -95,6 +95,17 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 [2025-12-17 21:21] CHANGE  Updated cli/main.py - added compare command + suggestion integration
 [2025-12-17 21:22] CHANGE  Created tests/test_suggestion.py (145 lines)
 [2025-12-17 21:27] CHANGE  Created tests/test_comparison.py (200 lines)
+[2025-12-17 21:44] INFO    Git commit 8813829 - feat(v0.1.5): Add Auto Parameter Suggestion and Primer Comparison Tool
+[2025-12-17 21:51] INFO    All 29 tests passed (test_suggestion + test_comparison)
+
+# ===== v0.1.5 Priority 5: Export & Integration =====
+[2025-12-17 21:52] INFO    Started v0.1.5 Priority 5 implementation
+[2025-12-17 21:53] CHANGE  Added save_benchling_csv() to output.py
+[2025-12-17 21:53] CHANGE  Updated cli/main.py - added benchling export format
+[2025-12-17 21:54] CHANGE  Created core/batch_summary.py (280 lines) - batch summary reports
+[2025-12-17 21:55] CHANGE  Created config/schema.json - JSON Schema for YAML validation
+[2025-12-17 21:55] CHANGE  Created .vscode/settings.json - VSCode autocomplete
+[2025-12-17 21:56] CHANGE  Created tests/test_batch_summary.py (110 lines)
 ```
 
 ---

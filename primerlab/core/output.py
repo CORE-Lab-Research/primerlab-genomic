@@ -330,3 +330,44 @@ class OutputManager:
         except Exception as e:
             logger.error(f"Failed to save HTML report: {e}")
 
+    def save_benchling_csv(self, result: WorkflowResult, filename: str = "benchling_primers.csv"):
+        """
+        Saves primers in Benchling-compatible CSV format.
+        
+        Benchling import format:
+        - Name: Primer name
+        - Bases: DNA sequence
+        - Notes: Optional notes (Tm, GC%, etc.)
+        
+        v0.1.5: New export format
+        """
+        primers = result.primers
+        if not primers:
+            logger.warning("No primers to export for Benchling.")
+            return
+        
+        file_path = self.run_dir / filename
+        
+        try:
+            with open(file_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                # Benchling standard columns
+                writer.writerow(["Name", "Bases", "Notes"])
+                
+                for name, primer in primers.items():
+                    # Build notes with key metrics
+                    notes = f"Tm={primer.tm:.1f}°C, GC={primer.gc:.1f}%"
+                    if primer.length:
+                        notes += f", {primer.length}nt"
+                    
+                    writer.writerow([
+                        primer.id,
+                        primer.sequence,
+                        notes
+                    ])
+            
+            logger.info(f"Benchling export saved to: {file_path}")
+        except Exception as e:
+            logger.error(f"Failed to save Benchling CSV: {e}")
+
+

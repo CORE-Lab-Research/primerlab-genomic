@@ -324,6 +324,9 @@ def main():
                     elif fmt == "html":
                         # v0.1.4: HTML report
                         output_mgr.save_html(result)
+                    elif fmt == "benchling":
+                        # v0.1.5: Benchling CSV export
+                        output_mgr.save_benchling_csv(result)
                     elif fmt in ["json", "csv"]:
                         # json and csv are saved by default, no extra action needed
                         pass

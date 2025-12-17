@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Shows quality scores, Tm balance, GC content, hairpin/dimer ΔG.
   - Determines winner and lists pros/cons for each.
   - Supports custom labels: `--labels Design1,Design2`.
+- **Benchling CSV Export** (`--export benchling`):
+  - Generate Benchling-compatible CSV format for direct import.
+  - Columns: Name, Bases, Notes (with Tm and GC info).
+- **Batch Mode Summary** (`core/batch_summary.py`):
+  - Consolidated summary report for multi-sequence runs.
+  - Combined Excel output with summary sheet.
+  - CLI formatted summary output.
+- **JSON Schema for Config**:
+  - `config/schema.json` for YAML validation.
+  - VSCode autocomplete support via `.vscode/settings.json`.
 - **Structured Error Details**:
   - `ToolExecutionError` now includes detailed failure info.
   - Enables smart suggestion generation.

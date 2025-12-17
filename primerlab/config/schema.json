@@ -1,0 +1,195 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PrimerLab Configuration",
+  "description": "Configuration schema for PrimerLab primer design workflows",
+  "type": "object",
+  "properties": {
+    "workflow": {
+      "type": "string",
+      "enum": ["pcr", "qpcr"],
+      "description": "Workflow type"
+    },
+    "input": {
+      "type": "object",
+      "description": "Input sequence configuration",
+      "properties": {
+        "sequence": {
+          "type": "string",
+          "description": "Raw DNA sequence (ATCGN only)"
+        },
+        "sequence_path": {
+          "type": "string",
+          "description": "Path to FASTA file"
+        }
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Primer design parameters",
+      "properties": {
+        "primer_size": {
+          "type": "object",
+          "properties": {
+            "min": {"type": "integer", "minimum": 15, "maximum": 35, "default": 18},
+            "opt": {"type": "integer", "minimum": 15, "maximum": 35, "default": 20},
+            "max": {"type": "integer", "minimum": 15, "maximum": 35, "default": 27}
+          }
+        },
+        "tm": {
+          "type": "object",
+          "description": "Melting temperature constraints (°C)",
+          "properties": {
+            "min": {"type": "number", "default": 57.0},
+            "opt": {"type": "number", "default": 60.0},
+            "max": {"type": "number", "default": 63.0}
+          }
+        },
+        "gc": {
+          "type": "object",
+          "description": "GC content constraints (%)",
+          "properties": {
+            "min": {"type": "number", "minimum": 0, "maximum": 100, "default": 40.0},
+            "max": {"type": "number", "minimum": 0, "maximum": 100, "default": 60.0}
+          }
+        },
+        "product_size_range": {
+          "type": "array",
+          "description": "Amplicon size range(s) [[min, max], ...]",
+          "items": {
+            "type": "array",
+            "items": {"type": "integer"},
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "default": [[75, 300]]
+        },
+        "num_candidates": {
+          "type": "integer",
+          "description": "Number of primer candidates to evaluate",
+          "default": 50
+        },
+        "target_region": {
+          "type": "object",
+          "description": "Target region for primer placement",
+          "properties": {
+            "start": {"type": "integer", "minimum": 0},
+            "length": {"type": "integer", "minimum": 1}
+          }
+        },
+        "excluded_regions": {
+          "type": "array",
+          "description": "Regions to exclude from primer design [[start, length], ...]",
+          "items": {
+            "type": "array",
+            "items": {"type": "integer"},
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "probe": {
+          "type": "object",
+          "description": "qPCR probe settings (TaqMan)",
+          "properties": {
+            "size": {
+              "type": "object",
+              "properties": {
+                "min": {"type": "integer", "default": 18},
+                "opt": {"type": "integer", "default": 20},
+                "max": {"type": "integer", "default": 25}
+              }
+            },
+            "tm": {
+              "type": "object",
+              "properties": {
+                "min": {"type": "number", "default": 65.0},
+                "opt": {"type": "number", "default": 68.0},
+                "max": {"type": "number", "default": 72.0}
+              }
+            }
+          }
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["taqman", "sybr"],
+          "description": "qPCR detection mode",
+          "default": "taqman"
+        },
+        "primer_naming": {
+          "type": "object",
+          "description": "Custom primer naming convention",
+          "properties": {
+            "prefix": {"type": "string"},
+            "suffix_fwd": {"type": "string", "default": "_F1"},
+            "suffix_rev": {"type": "string", "default": "_R1"}
+          }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "description": "Output configuration",
+      "properties": {
+        "directory": {
+          "type": "string",
+          "description": "Output directory path",
+          "default": "./output"
+        },
+        "export_formats": {
+          "type": "array",
+          "description": "Export formats to generate",
+          "items": {
+            "type": "string",
+            "enum": ["json", "csv", "idt", "sigma", "thermo", "xlsx", "html", "idt_bulk", "benchling"]
+          }
+        }
+      }
+    },
+    "qc": {
+      "type": "object",
+      "description": "Quality control settings",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["strict", "standard", "relaxed"],
+          "default": "standard"
+        },
+        "hairpin_dg_min": {
+          "type": "number",
+          "description": "Hairpin ΔG threshold (kcal/mol)",
+          "default": -3.0
+        },
+        "dimer_dg_min": {
+          "type": "number",
+          "description": "Dimer ΔG threshold (kcal/mol)",
+          "default": -6.0
+        }
+      }
+    },
+    "advanced": {
+      "type": "object",
+      "description": "Advanced options",
+      "properties": {
+        "debug": {
+          "type": "boolean",
+          "description": "Enable debug output",
+          "default": false
+        },
+        "seed": {
+          "type": "integer",
+          "description": "Random seed for reproducibility"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Primer3 timeout in seconds",
+          "default": 60
+        }
+      }
+    },
+    "preset": {
+      "type": "string",
+      "description": "Use preset configuration",
+      "enum": ["standard_pcr", "long_range", "dna_barcoding", "rt_pcr"]
+    }
+  },
+  "required": ["workflow"]
+}
