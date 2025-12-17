@@ -1,0 +1,57 @@
+{
+    "workflow": "pcr",
+    "success": true,
+    "metadata": {
+        "sequence_name": "GAPDH_test",
+        "sequence_length": 800,
+        "timestamp": "2025-12-18T00:10:00Z",
+        "version": "0.1.5"
+    },
+    "primers": {
+        "forward": {
+            "sequence": "ATGGTGAAGGTCGGAGTCAA",
+            "start": 0,
+            "end": 20,
+            "length": 20,
+            "tm": 60.2,
+            "gc": 50.0
+        },
+        "reverse": {
+            "sequence": "TCCACCACCCTGTTGCTGTA",
+            "start": 380,
+            "end": 400,
+            "length": 20,
+            "tm": 60.8,
+            "gc": 50.0
+        }
+    },
+    "amplicons": [
+        {
+            "start": 0,
+            "end": 400,
+            "length": 400,
+            "gc": 52.5,
+            "sequence": "ATGGTGAAGGTCGGAGTCAACGGATTTGGTCGTATTGGGCGCCTGGTCACCAGGGCTGCTTTTAACTCTGGTAAAGTGGATATTGTTGCCATCAATGACCCCTTCATTGACCTCAACTACATGGTTTACATGTTCCAATATGATTCCACCCATGGCAAATTCCATGGCACCGTCAAGGCTGAGAACGGGAAGCTTGTCATCAATGGAAATCCCATCACCATCTTCCAGGAGCGAGATCCCTCCAAAATCAAGTGGGGCGATGCTGGCGCTGAGTACGTCGTGGAGTCCACTGGCGTCTTCACCACCATGGAGAAGGCTGGGGCTCATTTGCAGGGGGGAGCCAAAAGGGTCATCATCTCTGCCCCCTCTGCTGATGCCCC"
+        }
+    ],
+    "qc": {
+        "quality_score": 85.5,
+        "quality_category": "Excellent",
+        "tm_diff": 0.6,
+        "hairpin_fwd_dg": -2.1,
+        "hairpin_rev_dg": -1.8,
+        "homodimer_fwd_dg": -4.2,
+        "homodimer_rev_dg": -3.9,
+        "heterodimer_dg": -5.1,
+        "warnings": []
+    },
+    "rationale": {
+        "selection_reason": "Best combined score from Primer3 penalty and ViennaRNA thermodynamic analysis",
+        "candidates_evaluated": 50,
+        "candidates_passed_qc": 12,
+        "top_rejection_reasons": [
+            "Heterodimer too stable",
+            "Hairpin formation"
+        ]
+    }
+}

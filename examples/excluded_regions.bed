@@ -1,0 +1,7 @@
+# Example BED file for excluded regions
+# Format: chrom	start	end	name
+# These regions will be excluded from primer design
+TEST_MASKED_SEQUENCE	100	200	repeat_region_1
+TEST_MASKED_SEQUENCE	350	400	low_complexity
+TEST_MASKED_SEQUENCE	600	660	n_masked_region
+TEST_MASKED_SEQUENCE	900	950	user_excluded
