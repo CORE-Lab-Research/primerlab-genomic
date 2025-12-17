@@ -247,31 +247,30 @@ primerlab-genomic/
 
 ## 📌 Development Status
 
-### ✅ **v0.1.5** (Current)
+### ✅ **v0.1.6** (Current)
 
-The current release includes:
+The current release includes all v0.1.5 features plus:
 
-* **Batch Run Command** (`primerlab batch-run`):
-  * Process multiple configs or multi-FASTA files
-  * Consolidated summary with Excel export
-  * `--continue-on-error` for fault tolerance
-* **GC Profile Visualization** (`primerlab plot`):
-  * Professional-quality GC content plots
-  * Light/dark theme support
-  * Primer position highlighting
-* **Primer Database** (`primerlab history`):
-  * SQLite-based design history
-  * Search, export, and statistics
-  * Auto-save on successful runs
-* **Region Masking** (`--mask` flag):
-  * Detect lowercase and N-masked regions
-  * Exclude repeats from primer placement
-* **Primer Comparison** (`primerlab compare`):
-  * Side-by-side comparison of two designs
-  * Quality score and Tm balance analysis
-* **Auto Parameter Suggestion**:
-  * Smart suggestions when design fails
-  * Actionable relaxation recommendations
+* **Sequence Analysis** (`primerlab stats`):
+  * Quick sequence stats before design
+  * IUPAC code and RNA detection
+  * JSON output for pipelines
+* **IUPAC & RNA Support**:
+  * Auto-convert ambiguous codes to N
+  * Auto-convert RNA (U) to DNA (T)
+* **Quiet Mode** (`--quiet`):
+  * Suppress warnings for scripted pipelines
+* **Version Check** in `primerlab health`
+* **196 Tests** - Comprehensive test coverage
+
+### v0.1.5 Features
+
+* **Batch Run Command** (`primerlab batch-run`)
+* **GC Profile Visualization** (`primerlab plot`)
+* **Primer Database** (`primerlab history`)
+* **Region Masking** (`--mask` flag)
+* **Primer Comparison** (`primerlab compare`)
+* **Auto Parameter Suggestion**
 
 ---
 
