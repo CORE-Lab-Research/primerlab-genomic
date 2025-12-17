@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.1.4-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.4)
+[![Status](https://img.shields.io/badge/status-v0.1.5-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.5)
 
-> 🔰 **Latest Release**: [**v0.1.4 - Reporting & Transparency**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.4) 🎉
+> 🔰 **Latest Release**: [**v0.1.5 - Advanced Features & Batch Processing**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.5) 🎉
 
 ---
 
@@ -38,6 +38,7 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 ### Installation
 
 #### Option 1: For Developers (Source)
+
 ```bash
 # Clone the repository
 git clone https://github.com/engkinandatama/primerlab-genomic.git
@@ -54,12 +55,14 @@ pip install -e .
 ```
 
 #### Option 2: For End Users (From GitHub Release)
+
 ```bash
 # Install directly from GitHub (latest release)
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.1.4
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.1.5
 ```
 
 Once installed, verify the installation:
+
 ```bash
 primerlab --version
 ```
@@ -71,11 +74,13 @@ primerlab --version
 ### Command-Line Interface (CLI)
 
 **PCR Workflow:**
+
 ```bash
 primerlab run pcr --config test_pcr.yaml
 ```
 
 **qPCR Workflow:**
+
 ```bash
 primerlab run qpcr --config test_qpcr.yaml
 ```
@@ -217,24 +222,31 @@ primerlab-genomic/
 
 ## 📌 Development Status
 
-### ✅ **v0.1.4** (Current)
+### ✅ **v0.1.5** (Current)
 
 The current release includes:
 
-* **Primer Quality Score (0-100)**:
-  - Combined scoring from Primer3, ViennaRNA, and Sequence QC
-  - Mode-specific penalties (strict, standard, relaxed)
-  - Categories: Excellent, Good, Fair, Poor
-* **"Why This Primer?" Rationale**:
-  - Explains primer selection decision
-  - Shows rejected candidates and top rejection reasons
-* **Audit Log (audit.json)**: Reproducibility and troubleshooting
-* **New Export Formats**:
-  - Excel (.xlsx) with color-coded formatting
-  - IDT Bulk Ordering Template with plate positions
-  - Standalone HTML Report
-* **Target Region Specification**: Precise amplicon targeting
-* **New Dependency**: `openpyxl>=3.1.0` for Excel export
+* **Batch Run Command** (`primerlab batch-run`):
+  * Process multiple configs or multi-FASTA files
+  * Consolidated summary with Excel export
+  * `--continue-on-error` for fault tolerance
+* **GC Profile Visualization** (`primerlab plot`):
+  * Professional-quality GC content plots
+  * Light/dark theme support
+  * Primer position highlighting
+* **Primer Database** (`primerlab history`):
+  * SQLite-based design history
+  * Search, export, and statistics
+  * Auto-save on successful runs
+* **Region Masking** (`--mask` flag):
+  * Detect lowercase and N-masked regions
+  * Exclude repeats from primer placement
+* **Primer Comparison** (`primerlab compare`):
+  * Side-by-side comparison of two designs
+  * Quality score and Tm balance analysis
+* **Auto Parameter Suggestion**:
+  * Smart suggestions when design fails
+  * Actionable relaxation recommendations
 
 ---
 
