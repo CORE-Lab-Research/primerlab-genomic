@@ -7,7 +7,7 @@ Creates audit.json in output directory.
 
 import json
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -43,7 +43,7 @@ def create_audit_log(
     Returns:
         Path to audit.json file
     """
-    timestamp = datetime.utcnow().isoformat() + "Z"
+    timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     
     # Hash sensitive data
     config_str = json.dumps(config, sort_keys=True)
