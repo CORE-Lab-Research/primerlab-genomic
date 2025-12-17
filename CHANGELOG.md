@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Light/dark mode themes (`--theme light|dark`).
   - Primer position highlighting.
   - Configurable sliding window (`--window 20`).
+- **Primer Database** (`primerlab history`):
+  - SQLite-based storage for design history.
+  - Auto-save on successful workflow runs.
+  - Subcommands: `list`, `show`, `export`, `stats`, `delete`.
+  - Search by gene name, workflow type.
+  - Export history to CSV.
 
 ### Improved
 

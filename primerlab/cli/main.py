@@ -172,6 +172,35 @@ def main():
     plot_parser.add_argument("--window", "-w", type=int, default=20,
                              help="Sliding window size for GC analysis (default: 20)")
 
+    # --- HISTORY Command (v0.1.5) ---
+    history_parser = subparsers.add_parser("history", help="View and manage primer design history")
+    history_subparsers = history_parser.add_subparsers(dest="history_command", help="History subcommands")
+    
+    # history list
+    history_list = history_subparsers.add_parser("list", help="List recent designs")
+    history_list.add_argument("--limit", "-n", type=int, default=10,
+                              help="Number of designs to show (default: 10)")
+    history_list.add_argument("--gene", "-g", type=str, default=None,
+                              help="Filter by gene name")
+    history_list.add_argument("--workflow", "-w", type=str, choices=["pcr", "qpcr"],
+                              help="Filter by workflow type")
+    
+    # history show
+    history_show = history_subparsers.add_parser("show", help="Show details of a design")
+    history_show.add_argument("id", type=int, help="Design ID to show")
+    
+    # history export
+    history_export = history_subparsers.add_parser("export", help="Export history to CSV")
+    history_export.add_argument("--output", "-o", type=str, default="primer_history.csv",
+                                help="Output CSV path")
+    
+    # history stats
+    history_subparsers.add_parser("stats", help="Show database statistics")
+    
+    # history delete
+    history_delete = history_subparsers.add_parser("delete", help="Delete a design")
+    history_delete.add_argument("id", type=int, help="Design ID to delete")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -396,6 +425,16 @@ def main():
                     if result.amplicons:
                         logger.info(f"Amplicon size: {result.amplicons[0].length} bp")
                     logger.info("Workflow finished successfully.")
+                
+                # 8. Auto-save to database (v0.1.5)
+                try:
+                    from primerlab.core.database import PrimerDatabase
+                    db = PrimerDatabase()
+                    db.save_design(result.to_dict(), config)
+                    db.close()
+                    logger.debug("Design saved to primer history database")
+                except Exception as db_err:
+                    logger.debug(f"Could not save to history database: {db_err}")
             else:
                 logger.warning("Workflow returned no results.")
 
@@ -684,6 +723,81 @@ def main():
             
         except Exception as e:
             logger.error(f"Plot generation failed: {e}")
+            sys.exit(1)
+
+    # --- HISTORY Command Handler (v0.1.5) ---
+    if args.command == "history":
+        logger = setup_logger(level=logging.INFO)
+        
+        try:
+            from primerlab.core.database import PrimerDatabase, format_history_table
+            import json
+            
+            db = PrimerDatabase()
+            
+            if args.history_command == "list":
+                designs = db.search(
+                    gene=args.gene,
+                    workflow=args.workflow,
+                    limit=args.limit
+                )
+                print(format_history_table(designs))
+            
+            elif args.history_command == "show":
+                design = db.get_by_id(args.id)
+                if design:
+                    print(f"\n{'='*60}")
+                    print(f"Design #{design['id']} - {design['gene_name']}")
+                    print(f"{'='*60}")
+                    print(f"  Created: {design['created_at']}")
+                    print(f"  Workflow: {design['workflow'].upper()}")
+                    print(f"\n  Forward Primer:")
+                    print(f"    Sequence: {design['fwd_sequence']}")
+                    print(f"    Tm: {design['fwd_tm']:.1f}°C | GC: {design['fwd_gc']:.1f}%")
+                    print(f"\n  Reverse Primer:")
+                    print(f"    Sequence: {design['rev_sequence']}")
+                    print(f"    Tm: {design['rev_tm']:.1f}°C | GC: {design['rev_gc']:.1f}%")
+                    if design['probe_sequence']:
+                        print(f"\n  Probe:")
+                        print(f"    Sequence: {design['probe_sequence']}")
+                    print(f"\n  Amplicon: {design['amplicon_length']} bp | GC: {design['amplicon_gc']:.1f}%")
+                    print(f"  Quality: {design['quality_score']:.1f} ({design['quality_category']})")
+                    print(f"{'='*60}\n")
+                else:
+                    logger.error(f"Design #{args.id} not found")
+            
+            elif args.history_command == "export":
+                path = db.export_csv(args.output)
+                logger.info(f"✅ History exported to: {path}")
+            
+            elif args.history_command == "stats":
+                stats = db.get_stats()
+                print(f"\n{'='*40}")
+                print("📊 Primer Database Statistics")
+                print(f"{'='*40}")
+                print(f"  Total Designs: {stats['total_designs']}")
+                print(f"  Avg Quality Score: {stats['avg_quality_score']}")
+                print(f"\n  By Workflow:")
+                for wf, count in stats['by_workflow'].items():
+                    print(f"    {wf.upper()}: {count}")
+                print(f"{'='*40}\n")
+            
+            elif args.history_command == "delete":
+                if db.delete(args.id):
+                    logger.info(f"✅ Deleted design #{args.id}")
+                else:
+                    logger.error(f"Design #{args.id} not found")
+            
+            else:
+                # No subcommand - show recent
+                designs = db.get_recent(10)
+                print(format_history_table(designs))
+            
+            db.close()
+            sys.exit(0)
+            
+        except Exception as e:
+            logger.error(f"History command failed: {e}")
             sys.exit(1)
 
     if args.command == "batch-generate":
