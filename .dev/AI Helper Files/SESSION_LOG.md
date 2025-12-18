@@ -95,6 +95,24 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 [2025-12-18 02:10] CHANGE  Created comprehensive docs (20 files in Docs/)
 [2025-12-18 02:20] CHANGE  Reorganized docs - moved internal to .dev/
 [2025-12-18 02:25] INFO    Total: 196 tests passing, 0 warnings
+
+# ===== v0.2.0 Release (2025-12-18) =====
+[2025-12-18 03:00] INFO    Started v0.2.0 - In-silico PCR Simulation
+[2025-12-18 04:30] CHANGE  Created core/insilico/engine.py (Virtual PCR Engine)
+[2025-12-18 05:00] CHANGE  Created core/insilico/binding.py (Binding Site Analysis)
+[2025-12-18 05:30] CHANGE  Created tests/test_insilico.py (24 unit tests)
+[2025-12-18 06:00] CHANGE  Added primerlab insilico CLI command
+[2025-12-18 06:30] CHANGE  Implemented multi-product prediction with likelihood scoring
+[2025-12-18 06:45] CHANGE  Enhanced YAML error handling (line numbers, hints)
+[2025-12-18 07:00] CHANGE  Added database resilience (integrity check, auto-backup)
+[2025-12-18 11:30] CHANGE  Added predicted_amplicons.fasta output
+[2025-12-18 11:45] CHANGE  Added alignment visualization in CLI
+[2025-12-18 12:00] CHANGE  Created examples/insilico/ (primers.json, template.fasta)
+[2025-12-18 12:30] CHANGE  Created tests/test_cli_insilico.py (CLI integration tests)
+[2025-12-18 13:00] FIX     Fixed --json flag to suppress logger for clean output
+[2025-12-18 13:15] CHANGE  Updated .gitignore and cleaned output files
+[2025-12-18 13:20] CHANGE  Created docs/cli/insilico.md
+[2025-12-18 13:25] INFO    Bumped version to 0.2.0, 228 tests passing
 ```
 
 ---
@@ -107,32 +125,34 @@ Last updated: 2025-12-18
 
 | Version | Status | Highlights |
 |---------|--------|------------|
-| v0.1.0 - v0.1.4 | ✅ COMPLETE | Core functionality |
-| v0.1.5 | ✅ RELEASED | Smart features, batch, database |
-| v0.1.6 | 🔄 IN PROGRESS | Stabilization, testing, docs |
+| v0.1.0 - v0.1.5 | ✅ COMPLETE | Core functionality, smart features |
+| v0.1.6 | ✅ RELEASED | Stabilization, testing, docs |
+| v0.2.0 | ✅ COMPLETE | In-silico PCR Simulation |
 
-### v0.1.6 Checklist
+### v0.2.0 Checklist
 
-- [x] Test Fixtures & Examples
-- [x] Unit Tests (70+ new tests)
-- [x] Integration Tests (10 E2E)
-- [x] IUPAC & RNA Handling
-- [x] `primerlab stats` command
-- [x] Version check in health
-- [x] `--quiet` flag
-- [x] Comprehensive documentation (20 files)
-- [x] Docs reorganization (.dev/ for internal)
-- [ ] Git tag v0.1.6
+- [x] Virtual PCR Engine (engine.py, binding.py)
+- [x] Binding Site Analysis (3' match, 5' tolerance, Tm)
+- [x] Multi-Product Prediction
+- [x] `primerlab insilico` CLI command
+- [x] JSON + FASTA output
+- [x] Alignment visualization
+- [x] YAML error handling (line numbers)
+- [x] Database resilience (auto-backup, integrity check)
+- [x] Example files (examples/insilico/)
+- [x] CLI documentation (docs/cli/insilico.md)
+- [x] Tests (228 passed)
+- [ ] Git tag v0.2.0
 - [ ] Push to GitHub
 
 ### Test Coverage
 
-- **Total Tests**: 196
+- **Total Tests**: 228
 - **Warnings**: 0
-- **Files**: test_cli, test_pcr, test_qpcr, test_visualization, test_database, test_masking, test_suggestion, test_sequence, test_integration, test_stats
+- **New in v0.2.0**: test_insilico.py, test_cli_insilico.py
 
 ### Next Steps
 
-1. Create git tag v0.1.6
+1. Create git tag v0.2.0
 2. Push to GitHub (manual)
-3. Start v0.2.0 planning (In-silico PCR Validation)
+3. Start v0.2.1 planning (BLAST Integration)

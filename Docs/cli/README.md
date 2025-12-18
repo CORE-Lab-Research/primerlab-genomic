@@ -7,6 +7,7 @@ PrimerLab provides a comprehensive command-line interface for primer design work
 | Command | Description |
 |---------|-------------|
 | [`run`](run.md) | Run PCR/qPCR primer design workflow |
+| [`insilico`](insilico.md) | In-silico PCR simulation **(v0.2.0)** |
 | [`stats`](stats.md) | Analyze sequence before design |
 | [`batch-run`](batch-run.md) | Run multiple designs in batch |
 | [`compare`](compare.md) | Compare two primer designs |
