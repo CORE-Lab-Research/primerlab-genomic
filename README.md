@@ -165,13 +165,13 @@ print(f"Efficiency: {result.efficiency}%")
 
 ## 📖 Documentation
 
-Full documentation is available in the [`Docs/`](Docs/) directory:
+Full documentation is available in the [`docs/`](docs/) directory:
 
-* **[Project Overview](Docs/High-Level%20Documentation/project-overview.md)** — Vision, scope, and future development
-* **[Development Rules](Docs/Development%20Rules/rules-development.md)** — Architecture constraints and coding standards
-* **[System Architecture](Docs/Manual%20Plan/)** — Workflow structure, data flow, and roadmap
-* **[WSL Quickstart](Docs/Guide/wsl_quickstart.md)** — Setup guide for Windows environments
+* **[CLI Reference](docs/cli/README.md)** — All available commands
+* **[In-silico PCR](docs/cli/insilico.md)** — Primer validation (v0.2.0)
+* **[WSL Quickstart](docs/Guide/wsl_quickstart.md)** — Setup guide for Windows
 * **[CHANGELOG](CHANGELOG.md)** — Version history and release notes
+* **[STRUCTURE](STRUCTURE.md)** — Project architecture
 
 ---
 
@@ -253,47 +253,51 @@ Run a workflow to generate your own report!
 primerlab-genomic/
 ├── primerlab/
 │   ├── cli/              # Command-line interface
-│   ├── core/             # Reusable utilities (sequence, QC, tools)
-│   │   ├── tools/        # Primer3, ViennaRNA wrappers
-│   │   └── models/       # Data models and schema
+│   ├── core/             # Reusable utilities
+│   │   ├── insilico/     # In-silico PCR simulation (v0.2.0)
+│   │   └── tools/        # Primer3, ViennaRNA wrappers
 │   ├── workflows/        # Workflow modules
-│   │   ├── pcr/          # PCR workflow implementation
-│   │   └── qpcr/         # qPCR workflow implementation
+│   │   ├── pcr/          # PCR workflow
+│   │   └── qpcr/         # qPCR workflow
 │   ├── api/              # Public API
 │   └── config/           # Default configurations
-├── tests/                # Automated test suite
-├── Docs/                 # High-level documentation
-└── examples/             # Example configurations
+├── tests/                # 228+ automated tests
+├── docs/                 # User documentation
+├── examples/             # Example files
+│   └── insilico/         # In-silico PCR examples
+└── .dev/                 # Internal dev docs
 ```
 
 ---
 
 ## 📌 Development Status
 
-### ✅ **v0.1.6** (Current)
+### ✅ **v0.2.0** (Current)
 
-The current release includes all v0.1.5 features plus:
+* **In-silico PCR Simulation** (`primerlab insilico`):
+  * Virtual PCR engine with binding site analysis
+  * Multi-product prediction with likelihood scoring
+  * Primer alignment visualization
+  * Amplicon FASTA export
+* **Enhanced Error Handling**:
+  * YAML errors show line numbers and hints
+  * Database auto-backup and integrity checking
+* **228 Tests** - Comprehensive test coverage
 
-* **Sequence Analysis** (`primerlab stats`):
-  * Quick sequence stats before design
-  * IUPAC code and RNA detection
-  * JSON output for pipelines
-* **IUPAC & RNA Support**:
-  * Auto-convert ambiguous codes to N
-  * Auto-convert RNA (U) to DNA (T)
-* **Quiet Mode** (`--quiet`):
-  * Suppress warnings for scripted pipelines
-* **Version Check** in `primerlab health`
-* **196 Tests** - Comprehensive test coverage
+### v0.1.6 Features
+
+* Sequence Analysis (`primerlab stats`)
+* IUPAC & RNA auto-conversion
+* Quiet mode (`--quiet`)
+* Version check in `primerlab health`
 
 ### v0.1.5 Features
 
-* **Batch Run Command** (`primerlab batch-run`)
-* **GC Profile Visualization** (`primerlab plot`)
-* **Primer Database** (`primerlab history`)
-* **Region Masking** (`--mask` flag)
-* **Primer Comparison** (`primerlab compare`)
-* **Auto Parameter Suggestion**
+* Batch Run Command (`primerlab batch-run`)
+* GC Profile Visualization (`primerlab plot`)
+* Primer Database (`primerlab history`)
+* Region Masking (`--mask` flag)
+* Auto Parameter Suggestion
 
 ---
 
