@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.1.6-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.6)
+[![Status](https://img.shields.io/badge/status-v0.2.0-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.2.0)
 
-> 🔰 **Latest Release**: [**v0.1.6 - Stabilization & Testing**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.6) 🎉
+> 🔰 **Latest Release**: [**v0.2.0 - In-silico PCR Simulation**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.2.0) 🎉
 
 ---
 
@@ -31,13 +31,14 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 * **Safe Execution**: Timeout protection for complex sequences
 * **Structured Output**: JSON + Markdown reports with interpretable metrics
 
-#### v0.1.6 New Features
+#### v0.2.0 New Features
 
-* **Sequence Analysis** (`primerlab stats`): Quick sequence stats before design
-* **IUPAC Support**: Ambiguous codes (R,Y,W,S,K,M,B,D,H,V) auto-converted to N
-* **RNA Detection**: Uracil (U) auto-converted to Thymine (T)
-* **Quiet Mode** (`--quiet`): Suppress warnings for scripted pipelines
-* **Version Check**: `primerlab health` notifies if newer release available
+* **In-silico PCR** (`primerlab insilico`): Validate primers against template
+* **Virtual PCR Engine**: Binding site analysis, multi-product prediction
+* **Amplicon FASTA Export**: Predicted sequences saved to FASTA
+* **Primer Alignment Visualization**: See exactly where primers bind
+* **Enhanced Error Handling**: YAML errors show line numbers and hints
+* **Database Resilience**: Auto-backup and integrity checking
 
 ---
 
@@ -66,7 +67,7 @@ pip install -e .
 
 ```bash
 # Install directly from GitHub (latest release)
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.1.6
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.2.0
 ```
 
 Once installed, verify the installation:

@@ -1,14 +1,38 @@
 # PrimerLab Project Structure
 
+```
+primerlab-genomic/
+├── primerlab/                      # Main package
+│   ├── __init__.py                 # Package version (0.2.0)
+│   │
+│   ├── cli/                        # Command-line interface
+│   │   ├── __init__.py
+│   │   └── main.py                 # CLI entry point
+│   │
+│   ├── api/                        # Public API
+│   │   ├── __init__.py
+│   │   └── public.py               # design_pcr_primers(), design_qpcr_assays()
+│   │
+│   ├── core/                       # Core utilities
+│   │   ├── __init__.py
+│   │   ├── config_loader.py        # YAML config loading & validation
+│   │   ├── database.py             # Primer design history (SQLite)
 │   │   ├── exceptions.py           # Custom exceptions & error codes
 │   │   ├── logger.py               # Logging system
+│   │   ├── masking.py              # Region masking (BED)
 │   │   ├── models.py               # Data models (Primer, Amplicon, etc.)
 │   │   ├── output.py               # Output manager (JSON, reports)
 │   │   ├── sequence.py             # Sequence loading & validation
+│   │   ├── visualization.py        # GC profile plots
+│   │   │
+│   │   ├── insilico/               # v0.2.0: In-silico PCR module
+│   │   │   ├── __init__.py         # run_insilico_pcr()
+│   │   │   ├── engine.py           # Virtual PCR engine
+│   │   │   └── binding.py          # Binding site analysis
 │   │   │
 │   │   └── tools/                  # External tool wrappers
 │   │       ├── __init__.py
-│   │       ├── primer3_wrapper.py  # Primer3 interface (with timeout)
+│   │       ├── primer3_wrapper.py  # Primer3 interface
 │   │       └── vienna_wrapper.py   # ViennaRNA interface
 │   │
 │   ├── workflows/                  # Workflow modules
@@ -24,124 +48,90 @@
 │   │       ├── __init__.py
 │   │       ├── workflow.py         # Main qPCR workflow
 │   │       ├── design.py           # Primer/probe parsing
-│   │       ├── qc.py               # qPCR QC + efficiency estimator
+│   │       ├── qc.py               # qPCR QC + efficiency
 │   │       ├── report.py           # qPCR report generator
-│   │       └── progress.py         # Progress tracking steps
+│   │       └── progress.py         # Progress tracking
 │   │
-│   └── config/                     # Default configuration files
+│   └── config/                     # Default configurations
+│       ├── presets/                # Built-in presets
 │       ├── pcr_default.yaml
 │       └── qpcr_default.yaml
 │
-├── Docs/                           # Comprehensive documentation
-│   ├── AI Helper Files/            # AI development guides
-│   │   ├── ai-helper-overview.md
-│   │   └── ...
-│   │
-│   ├── Blueprint Files/            # System blueprints
-│   │   ├── workflow-blueprint.md
-│   │   └── ...
-│   │
-│   ├── Development Rules/          # Coding standards & guidelines
-│   │   ├── rules-development.md    # Main development rules
-│   │   ├── api-design.md
-│   │   ├── coding-style.md
-│   │   ├── config-design.md
-│   │   ├── data-model.md
-│   │   ├── error-codes.md
-│   │   ├── exception-handling.md
-│   │   ├── logging-progress.md
-│   │   ├── naming-convention.md
-│   │   └── test-guidelines.md
-│   │
-│   ├── Guide/                      # User guides
-│   │   └── wsl_quickstart.md       # WSL setup guide
-│   │
-│   ├── High-Level Documentation/   # Architecture & planning
-│   │   ├── project-overview.md
-│   │   ├── architecture.md
-│   │   └── ...
-│   │
-│   ├── Manual Plan/                # Development roadmap
-│   │   ├── short-term.md           # Short-term milestones (v0.1-v0.4)
-│   │   ├── mid-term.md
-│   │   └── ...
-│   │
-│   ├── Misc/                       # Miscellaneous docs
-│   │   └── ...
-│   │
-│   └── Project Meta/
-│       └── CODE_OF_CONDUCT.md
+├── tests/                          # Test suite (228+ tests)
+│   ├── test_insilico.py            # v0.2.0: In-silico tests
+│   ├── test_cli_insilico.py        # CLI integration tests
+│   ├── test_cli.py
+│   ├── test_pcr.py
+│   ├── test_qpcr.py
+│   └── ...
 │
-├── tests/                          # (Future) Test suite
-│   ├── unit/
-│   ├── module/
-│   ├── workflow/
-│   └── integration/
+├── examples/                       # Example files
+│   ├── insilico/                   # v0.2.0: In-silico examples
+│   │   ├── primers.json
+│   │   └── template.fasta
+│   ├── multi_sequences.fasta
+│   └── ...
 │
-├── test_output/                    # Test output directory (gitignored)
+├── docs/                           # User documentation
+│   ├── cli/                        # CLI reference
+│   │   ├── README.md
+│   │   ├── insilico.md             # v0.2.0
+│   │   ├── run.md
+│   │   └── ...
+│   └── ...
 │
-├── test_pcr.yaml                   # PCR test configuration
-├── test_qpcr.yaml                  # qPCR test configuration
+├── .dev/                           # Internal dev docs
+│   └── AI Helper Files/
+│       └── SESSION_LOG.md
 │
-├── .gitignore                      # Git ignore rules
-├── LICENSE                         # BSD 3-Clause License
-├── README.md                       # Project README
-├── requirements.txt                # Python dependencies
-└── setup.py                        # Package installation script
+├── .github/                        # CI/CD
+│   └── workflows/
+│       └── test.yml
+│
+├── CHANGELOG.md
+├── README.md
+├── RELEASE_NOTES.md                # v0.2.0
+├── STRUCTURE.md                    # This file
+├── pyproject.toml
+└── LICENSE
 ```
-
-## Key Directories
-
-### `primerlab/` - Main Package
-- **cli/** - Command-line interface and argument parsing
-- **core/** - Reusable, workflow-agnostic utilities
-  - **tools/** - External tool wrappers (Primer3, ViennaRNA)
-- **workflows/** - Workflow-specific modules
-  - **pcr/** - Standard PCR workflow
-  - **qpcr/** - qPCR workflow with probe design
-- **config/** - Default YAML configurations
-
-### `Docs/` - Documentation
-- **Development Rules/** - Coding standards and guidelines
-- **Manual Plan/** - Development roadmap and milestones
-- **Guide/** - User setup and usage guides
-
-### Output Directories (gitignored)
-- `primerlab_out/` - Default output (production)
-- `test_output/` - Test output (development)
 
 ## Architecture
 
 ```
-┌─────────┐
-│   CLI   │  Command-line interface
-└────┬────┘
-     │
-     ▼
-┌──────────┐
-│ Workflows│  PCR, qPCR (modular, isolated)
-└────┬─────┘
-     │
-     ▼
-┌──────────┐
-│   Core   │  Tools, Models, Utilities (reusable)
-└──────────┘
+┌─────────────┐
+│     CLI     │  primerlab run/insilico/stats/...
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│  Workflows  │  PCR, qPCR (modular, isolated)
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│    Core     │  Tools, Models, Utilities, In-silico
+└─────────────┘
 ```
 
-**Layer Rules:**
-- CLI → Workflows ✅
-- CLI → Core ✅
-- Workflows → Core ✅
-- Core → Workflows ❌
-- Workflows → Workflows ❌
+## Module Summary
+
+| Module | Purpose |
+|--------|---------|
+| `cli/` | Command-line interface |
+| `api/` | Public Python API |
+| `core/` | Shared utilities |
+| `core/insilico/` | In-silico PCR simulation (v0.2.0) |
+| `core/tools/` | Primer3, ViennaRNA wrappers |
+| `workflows/pcr/` | PCR primer design |
+| `workflows/qpcr/` | qPCR assay design |
 
 ## File Counts
 
-- **Total Python files**: ~20
-- **Workflow modules**: 2 (PCR, qPCR)
-- **Configuration files**: 2 defaults + 2 test configs
-- **Documentation files**: 30+
+- **Python files**: ~30
+- **Tests**: 228+
+- **Documentation**: 25+ files
 
 ---
 
-*Last updated: 2025-11-27*
+*Last updated: 2025-12-18 (v0.2.0)*
