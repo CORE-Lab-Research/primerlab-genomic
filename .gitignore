@@ -119,3 +119,11 @@ pytest_error.log
 # Output directories (test runs, workflow results)
 output/
 output_*/
+insilico_output/
+primerlab_api_out/
+*_output/
+*_out/
+
+# Test output files
+test_output.txt
+*.output.txt
