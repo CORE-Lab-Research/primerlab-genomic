@@ -1,0 +1,6 @@
+{
+  "forward": "ATGGTGAGCAAGGGCGAGGAG",
+  "reverse": "TTACTTGTACAGCTCGTCCATGCC",
+  "name": "GFP_amplicon",
+  "notes": "Standard GFP primers for in-silico PCR testing"
+}

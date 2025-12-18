@@ -20,7 +20,7 @@ class TestCLIVersion:
             capture_output=True,
             text=True
         )
-        assert "0.1.6" in get_output(result)
+        assert "0.2.0" in get_output(result)
     
     def test_version_command(self):
         """version command should return version string."""
@@ -29,7 +29,7 @@ class TestCLIVersion:
             capture_output=True,
             text=True
         )
-        assert "0.1.6" in get_output(result)
+        assert "0.2.0" in get_output(result)
 
 
 class TestCLIHealth:

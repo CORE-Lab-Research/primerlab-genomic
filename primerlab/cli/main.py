@@ -7,7 +7,7 @@ from primerlab.core.config_loader import load_and_merge_config
 from primerlab.core.exceptions import PrimerLabException
 
 # Version definition
-__version__ = "0.1.6"
+__version__ = "0.2.0"
 
 
 def _run_health_check():
@@ -495,33 +495,81 @@ def main():
             with open(json_path, 'w') as f:
                 json.dump(result_dict, f, indent=2)
             
+            # Save Amplicon FASTA (v0.2.0)
+            if result.products:
+                fasta_path = output_dir / "predicted_amplicons.fasta"
+                with open(fasta_path, 'w') as f:
+                    for i, p in enumerate(result.products):
+                        primary_tag = "_PRIMARY" if p.is_primary else ""
+                        f.write(f">{result.template_name}_amplicon{i+1}{primary_tag} size={p.product_size}bp pos={p.start_position}-{p.end_position}\n")
+                        # Write sequence in 60-char lines
+                        seq = p.product_sequence
+                        for j in range(0, len(seq), 60):
+                            f.write(seq[j:j+60] + "\n")
+            
             if args.json:
                 print(json.dumps(result_dict, indent=2))
             else:
-                # Pretty print
-                print("\n" + "=" * 50)
+                # Pretty print with alignment visualization
+                print("\n" + "=" * 60)
                 print("🧬 In-silico PCR Results")
-                print("=" * 50)
+                print("=" * 60)
                 print(f"Template: {result.template_name} ({result.template_length} bp)")
-                print(f"Forward:  {fwd_primer}")
-                print(f"Reverse:  {rev_primer}")
-                print("-" * 50)
+                print(f"Forward:  5'-{fwd_primer}-3' ({len(fwd_primer)} bp)")
+                print(f"Reverse:  5'-{rev_primer}-3' ({len(rev_primer)} bp)")
+                print("-" * 60)
                 
                 if result.success:
-                    print(f"✅ {len(result.products)} product(s) predicted")
+                    print(f"\n✅ {len(result.products)} product(s) predicted\n")
+                    
                     for i, p in enumerate(result.products):
-                        marker = "🎯" if p.is_primary else "  "
-                        print(f"{marker} Product {i+1}: {p.product_size} bp (pos {p.start_position}-{p.end_position})")
+                        marker = "🎯 PRIMARY" if p.is_primary else f"   Product {i+1}"
+                        print(f"{marker}: {p.product_size} bp")
+                        print(f"   Position: {p.start_position} → {p.end_position}")
+                        print(f"   Likelihood: {p.likelihood_score:.1f}%")
+                        
+                        # Show alignment visualization
+                        if p.forward_binding:
+                            print(f"\n   Forward binding at {p.forward_binding.position}:")
+                            print(f"   Primer:  5'-{p.forward_binding.primer_seq}-3'")
+                            print(f"   Match:      {p.forward_binding.alignment}")
+                            print(f"   Target:  3'-{p.forward_binding.target_seq}-5'" if hasattr(p.forward_binding, 'target_seq') else "")
+                            print(f"   Match: {p.forward_binding.match_percent:.1f}% | 3' match: {p.forward_binding.three_prime_match}bp")
+                        
+                        if p.reverse_binding:
+                            print(f"\n   Reverse binding at {p.reverse_binding.position}:")
+                            print(f"   Primer:  5'-{p.reverse_binding.primer_seq}-3'")
+                            print(f"   Match:      {p.reverse_binding.alignment}")
+                            print(f"   Target:  3'-{p.reverse_binding.target_seq}-5'" if hasattr(p.reverse_binding, 'target_seq') else "")
+                            print(f"   Match: {p.reverse_binding.match_percent:.1f}% | 3' match: {p.reverse_binding.three_prime_match}bp")
+                        
+                        # Show amplicon preview
+                        if len(p.product_sequence) <= 60:
+                            print(f"\n   Amplicon: {p.product_sequence}")
+                        else:
+                            print(f"\n   Amplicon: {p.product_sequence[:30]}...{p.product_sequence[-30:]}")
+                        print()
                 else:
                     print("❌ No products predicted")
+                    if result.all_forward_bindings:
+                        print(f"   Forward primer found {len(result.all_forward_bindings)} binding site(s)")
+                    else:
+                        print("   ⚠️  Forward primer: no binding sites found")
+                    if result.all_reverse_bindings:
+                        print(f"   Reverse primer found {len(result.all_reverse_bindings)} binding site(s)")
+                    else:
+                        print("   ⚠️  Reverse primer: no binding sites found")
                 
                 if result.warnings:
                     print("\n⚠️  Warnings:")
                     for w in result.warnings:
                         print(f"   - {w}")
                 
-                print("-" * 50)
-                print(f"📁 Results saved to: {output_dir}")
+                print("-" * 60)
+                print(f"📁 Output directory: {output_dir}")
+                print(f"   • insilico_result.json")
+                if result.products:
+                    print(f"   • predicted_amplicons.fasta ({len(result.products)} sequences)")
                 print()
             
             sys.exit(0 if result.success else 1)

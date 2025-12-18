@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-12-18
+
+### Added
+
+- **In-silico PCR Simulation** (NEW):
+  - `primerlab insilico` CLI command for primer validation.
+  - Virtual PCR engine with primer binding detection.
+  - Multi-product prediction with likelihood scoring.
+  - Binding site analysis (3' match, 5' mismatch tolerance, Tm).
+  - Outputs: `insilico_result.json`, `predicted_amplicons.fasta`.
+  - Primer alignment visualization in terminal.
+  - Example files: `examples/insilico/primers.json`, `template.fasta`.
+
+### Improved
+
+- **YAML Error Handling**:
+  - Shows line number, column, and problematic content.
+  - Lists common YAML syntax errors with fixes.
+- **Database Resilience**:
+  - SQLite integrity check on startup.
+  - Auto-backup before repair operations.
+  - Auto-recovery from corruption.
+
+### Added Tests
+
+- 24 new unit tests for in-silico PCR engine.
+- CLI integration tests for `primerlab insilico`.
+- Total: 220+ tests passing.
+
 ## [0.1.6] - 2025-12-18
 
 ### Added

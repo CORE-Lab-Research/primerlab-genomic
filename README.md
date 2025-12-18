@@ -110,6 +110,28 @@ primerlab stats input.fasta --json
 primerlab run pcr --config test_pcr.yaml --quiet
 ```
 
+**In-silico PCR Simulation (v0.2.0):**
+
+```bash
+# Validate primers against template
+primerlab insilico -p primers.json -t template.fasta
+
+# With custom output directory
+primerlab insilico -p primers.json -t template.fasta -o results/
+
+# JSON output for pipelines
+primerlab insilico -p primers.json -t template.fasta --json
+```
+
+Example `primers.json`:
+
+```json
+{
+  "forward": "ATGGTGAGCAAGGGCGAGGAG",
+  "reverse": "TTACTTGTACAGCTCGTCCATGCC"
+}
+```
+
 ### Programmatic API (Python)
 
 For integration into your own Python scripts:
