@@ -169,7 +169,7 @@ Full documentation is available in the [`docs/`](docs/) directory:
 
 * **[CLI Reference](docs/cli/README.md)** — All available commands
 * **[In-silico PCR](docs/cli/insilico.md)** — Primer validation (v0.2.0)
-* **[WSL Quickstart](docs/Guide/wsl_quickstart.md)** — Setup guide for Windows
+* **[WSL Quickstart](.dev/Guide/wsl_quickstart.md)** — Setup guide for Windows
 * **[CHANGELOG](CHANGELOG.md)** — Version history and release notes
 * **[STRUCTURE](STRUCTURE.md)** — Project architecture
 
