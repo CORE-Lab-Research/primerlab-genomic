@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.2.0-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.2.0)
+[![Status](https://img.shields.io/badge/status-v0.2.5-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.2.5)
 
-> 🔰 **Latest Release**: [**v0.2.0 - In-silico PCR Simulation**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.2.0) 🎉
+> 🔰 **Latest Release**: [**v0.2.5 - In-silico PCR Simulation**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.2.5) 🎉
 
 ---
 
@@ -31,14 +31,15 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 * **Safe Execution**: Timeout protection for complex sequences
 * **Structured Output**: JSON + Markdown reports with interpretable metrics
 
-#### v0.2.0 New Features
+#### v0.2.5 New Features
 
 * **In-silico PCR** (`primerlab insilico`): Validate primers against template
-* **Virtual PCR Engine**: Binding site analysis, multi-product prediction
-* **Amplicon FASTA Export**: Predicted sequences saved to FASTA
-* **Primer Alignment Visualization**: See exactly where primers bind
-* **Enhanced Error Handling**: YAML errors show line numbers and hints
-* **Database Resilience**: Auto-backup and integrity checking
+* **IUPAC Support**: Degenerate bases (R, Y, S, W, K, M, B, D, H, V, N)
+* **Circular Template**: `--circular` flag for plasmid/bacterial DNA
+* **Integrated Validation**: `--validate` flag for auto in-silico after design
+* **Primer-Dimer Check**: Fwd↔Rev complementarity detection
+* **Extension Time**: Estimated PCR extension time (1 min/kb)
+* **Markdown Reports**: Human-readable in-silico reports
 
 ---
 
@@ -67,7 +68,7 @@ pip install -e .
 
 ```bash
 # Install directly from GitHub (latest release)
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.2.0
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.2.5
 ```
 
 Once installed, verify the installation:
@@ -272,16 +273,16 @@ primerlab-genomic/
 
 ## 📌 Development Status
 
-### ✅ **v0.2.0** (Current)
+### ✅ **v0.2.5** (Current)
 
 * **In-silico PCR Simulation** (`primerlab insilico`):
   * Virtual PCR engine with binding site analysis
-  * Multi-product prediction with likelihood scoring
-  * Primer alignment visualization
-  * Amplicon FASTA export
-* **Enhanced Error Handling**:
-  * YAML errors show line numbers and hints
-  * Database auto-backup and integrity checking
+  * IUPAC degenerate base support
+  * Circular template support (`--circular`)
+  * Primer-dimer detection
+  * Extension time estimation
+* **Integrated Validation** (`--validate`):
+  * Auto in-silico after primer design
 * **228 Tests** - Comprehensive test coverage
 
 ### v0.1.6 Features

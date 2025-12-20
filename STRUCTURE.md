@@ -134,4 +134,4 @@ primerlab-genomic/
 
 ---
 
-*Last updated: 2025-12-18 (v0.2.0)*
+*Last updated: 2025-12-20 (v0.2.5)*
