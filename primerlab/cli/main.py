@@ -251,6 +251,21 @@ def main():
     insilico_parser.add_argument("--circular", action="store_true",
                                  help="Treat template as circular (v0.2.4)")
 
+    # --- BLAST Command (v0.3.0) ---
+    blast_parser = subparsers.add_parser("blast", help="Off-target check for primers (v0.3.0)")
+    blast_parser.add_argument("--primers", "-p", required=True,
+                             help="Primer sequences (JSON file, FASTA, or comma-separated)")
+    blast_parser.add_argument("--database", "-d", required=True,
+                             help="Path to FASTA database or BLAST DB")
+    blast_parser.add_argument("--target", "-t", type=str,
+                             help="Expected target sequence ID")
+    blast_parser.add_argument("--output", "-o", type=str, default="blast_output",
+                             help="Output directory (default: blast_output)")
+    blast_parser.add_argument("--json", action="store_true",
+                             help="Output results as JSON only")
+    blast_parser.add_argument("--mode", choices=["auto", "blast", "biopython"],
+                             default="auto", help="Alignment mode (default: auto)")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -536,6 +551,145 @@ def main():
                 print()
             
             sys.exit(0 if result.success else 1)
+            
+        except Exception as e:
+            print(f"\n❌ Error: {e}")
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
+
+    # --- BLAST Command Handler (v0.3.0) ---
+    if args.command == "blast":
+        try:
+            from primerlab.core.offtarget.finder import OfftargetFinder
+            from primerlab.core.offtarget.scorer import SpecificityScorer
+            from primerlab.core.offtarget.report import generate_specificity_report
+            
+            # Parse primers
+            primers_input = args.primers
+            forward_primer = None
+            reverse_primer = None
+            
+            if os.path.exists(primers_input):
+                if primers_input.endswith('.json'):
+                    with open(primers_input) as f:
+                        primer_data = json.load(f)
+                    forward_primer = primer_data.get("forward") or primer_data.get("fwd")
+                    reverse_primer = primer_data.get("reverse") or primer_data.get("rev")
+                else:  # FASTA
+                    seqs = []
+                    with open(primers_input) as f:
+                        current_seq = ""
+                        for line in f:
+                            line = line.strip()
+                            if line.startswith(">"):
+                                if current_seq:
+                                    seqs.append(current_seq)
+                                current_seq = ""
+                            else:
+                                current_seq += line
+                        if current_seq:
+                            seqs.append(current_seq)
+                    if len(seqs) >= 2:
+                        forward_primer, reverse_primer = seqs[0], seqs[1]
+                    elif len(seqs) == 1:
+                        forward_primer = seqs[0]
+            else:
+                # Comma-separated
+                parts = primers_input.split(",")
+                forward_primer = parts[0].strip()
+                if len(parts) > 1:
+                    reverse_primer = parts[1].strip()
+            
+            if not forward_primer:
+                print("❌ No primers found in input")
+                sys.exit(1)
+            
+            print(f"🔬 Off-target Check (v0.3.0)")
+            print(f"   Database: {args.database}")
+            print(f"   Forward:  {forward_primer[:30]}..." if len(forward_primer) > 30 else f"   Forward:  {forward_primer}")
+            if reverse_primer:
+                print(f"   Reverse:  {reverse_primer[:30]}..." if len(reverse_primer) > 30 else f"   Reverse:  {reverse_primer}")
+            print()
+            
+            # Run off-target check
+            finder = OfftargetFinder(
+                database=args.database,
+                target_id=args.target,
+                mode=args.mode
+            )
+            
+            if reverse_primer:
+                result = finder.find_primer_pair_offtargets(
+                    forward_primer=forward_primer,
+                    reverse_primer=reverse_primer,
+                    target_id=args.target
+                )
+                scorer = SpecificityScorer()
+                fwd_score, rev_score, combined = scorer.score_primer_pair(result)
+            else:
+                result = finder.find_offtargets(
+                    primer_seq=forward_primer,
+                    primer_id="primer",
+                    target_id=args.target
+                )
+                scorer = SpecificityScorer()
+                combined = scorer.score_primer(result)
+            
+            # Output
+            output_dir = Path(args.output)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Generate report
+            generate_specificity_report(result, combined, output_dir)
+            
+            # Result dict
+            if hasattr(result, 'forward_result'):
+                result_dict = {
+                    "forward": {
+                        "offtargets": result.forward_result.offtarget_count,
+                        "score": result.forward_result.specificity_score
+                    },
+                    "reverse": {
+                        "offtargets": result.reverse_result.offtarget_count,
+                        "score": result.reverse_result.specificity_score
+                    },
+                    "combined_score": combined.overall_score,
+                    "grade": combined.grade,
+                    "is_specific": combined.is_acceptable
+                }
+            else:
+                result_dict = {
+                    "offtargets": result.offtarget_count,
+                    "score": combined.overall_score,
+                    "grade": combined.grade,
+                    "is_specific": combined.is_acceptable
+                }
+            
+            # Save JSON
+            with open(output_dir / "blast_result.json", "w") as f:
+                json.dump(result_dict, f, indent=2)
+            
+            if args.json:
+                print(json.dumps(result_dict, indent=2))
+            else:
+                print(f"✅ Specificity Score: {combined.overall_score:.1f} (Grade: {combined.grade})")
+                if hasattr(result, 'forward_result'):
+                    print(f"   Forward: {result.forward_result.offtarget_count} off-targets")
+                    print(f"   Reverse: {result.reverse_result.offtarget_count} off-targets")
+                else:
+                    print(f"   Off-targets: {result.offtarget_count}")
+                
+                if combined.is_acceptable:
+                    print("\n✅ Primers are specific!")
+                else:
+                    print("\n⚠️  Low specificity - check off-targets")
+                
+                print(f"\n📁 Output: {output_dir}")
+                print(f"   • blast_result.json")
+                print(f"   • specificity_report.md")
+            
+            sys.exit(0 if combined.is_acceptable else 1)
             
         except Exception as e:
             print(f"\n❌ Error: {e}")
