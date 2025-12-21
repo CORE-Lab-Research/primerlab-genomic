@@ -1,0 +1,4 @@
+NC_000913.3_partial	100	200	region1	100	+
+NC_000913.3_partial	300	500	region2	200	-
+NC_000913.3_partial	700	900	region3	150	+
+NC_000913.3_partial	1100	1300	region4	180	-

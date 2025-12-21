@@ -269,6 +269,14 @@ def main():
                              help="Output results as JSON only")
     blast_parser.add_argument("--mode", choices=["auto", "blast", "biopython"],
                              default="auto", help="Alignment mode (default: auto)")
+    blast_parser.add_argument("--batch", action="store_true",
+                             help="Batch mode: process multiple primers from file (v0.3.1)")
+    blast_parser.add_argument("--db-info", action="store_true",
+                             help="Show database info instead of running check (v0.3.1)")
+    blast_parser.add_argument("--variants", type=str, default=None,
+                             help="Path to VCF file for variant check (v0.3.1)")
+    blast_parser.add_argument("--maf-threshold", type=float, default=None,
+                             help="Minimum MAF for variant filtering (v0.3.1)")
 
     args = parser.parse_args()
 
@@ -568,6 +576,29 @@ def main():
             from primerlab.core.offtarget.finder import OfftargetFinder
             from primerlab.core.offtarget.scorer import SpecificityScorer
             from primerlab.core.offtarget.report import generate_specificity_report
+            
+            # v0.3.1: Database info mode
+            if getattr(args, 'db_info', False):
+                db_path = Path(args.database)
+                if not db_path.exists():
+                    print(f"❌ Database not found: {db_path}")
+                    sys.exit(1)
+                
+                # Count sequences in FASTA
+                seq_count = 0
+                total_bp = 0
+                with open(db_path) as f:
+                    for line in f:
+                        if line.startswith('>'):
+                            seq_count += 1
+                        else:
+                            total_bp += len(line.strip())
+                
+                print(f"📊 Database Info: {db_path.name}")
+                print(f"   Sequences: {seq_count:,}")
+                print(f"   Total size: {total_bp:,} bp")
+                print(f"   File size: {db_path.stat().st_size:,} bytes")
+                sys.exit(0)
             
             # Parse primers
             primers_input = args.primers
