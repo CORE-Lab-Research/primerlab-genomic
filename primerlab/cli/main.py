@@ -277,6 +277,13 @@ def main():
                              help="Path to VCF file for variant check (v0.3.1)")
     blast_parser.add_argument("--maf-threshold", type=float, default=None,
                              help="Minimum MAF for variant filtering (v0.3.1)")
+    # v0.3.2 Phase 1 flags
+    blast_parser.add_argument("--online", action="store_true",
+                             help="Force NCBI web BLAST (v0.3.2)")
+    blast_parser.add_argument("--verbose", "-v", action="store_true",
+                             help="Verbose output with details (v0.3.2)")
+    blast_parser.add_argument("--quiet", "-q", action="store_true",
+                             help="Quiet mode - minimal output (v0.3.2)")
 
     args = parser.parse_args()
 
