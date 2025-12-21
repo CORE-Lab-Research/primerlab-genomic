@@ -1,0 +1,11 @@
+##fileformat=VCFv4.2
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
+##contig=<ID=NC_000913.3_partial,length=2000>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+NC_000913.3_partial	150	rs001	A	G	100	PASS	AF=0.15;DP=100
+NC_000913.3_partial	350	rs002	C	T	100	PASS	AF=0.25;DP=150
+NC_000913.3_partial	500	rs003	G	A	100	PASS	AF=0.05;DP=80
+NC_000913.3_partial	750	rs004	T	C	100	PASS	AF=0.35;DP=200
+NC_000913.3_partial	1000	rs005	AT	A	100	PASS	AF=0.10;DP=120
+NC_000913.3_partial	1250	rs006	G	GT	100	PASS	AF=0.08;DP=90
