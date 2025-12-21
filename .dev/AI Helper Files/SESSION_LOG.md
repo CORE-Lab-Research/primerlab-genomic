@@ -7,9 +7,9 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 
 ## Quick Reference
 
-- **Current Version**: v0.1.6 (in progress)
+- **Current Version**: v0.3.1 (released)
 - **Dev Environment**: Requires WSL (primer3-py doesn't work on Windows native)
-- **Test Status**: 196 passed, 0 warnings
+- **Test Status**: 302 passed, 0 warnings
 
 ---
 
@@ -113,13 +113,46 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 [2025-12-18 13:15] CHANGE  Updated .gitignore and cleaned output files
 [2025-12-18 13:20] CHANGE  Created docs/cli/insilico.md
 [2025-12-18 13:25] INFO    Bumped version to 0.2.0, 228 tests passing
+
+# ===== v0.2.1 - v0.2.5 Releases (2025-12-18 - 2025-12-20) =====
+[2025-12-18] CHANGE  v0.2.1: Degenerate primer support, semantic matching
+[2025-12-19] CHANGE  v0.2.2: Improved binding scoring algorithms
+[2025-12-19] CHANGE  v0.2.3: Auto-validate after design (--validate flag)
+[2025-12-20] CHANGE  v0.2.4: Circular template support (--circular flag)
+[2025-12-20] CHANGE  v0.2.5: Primer-dimer check, extension time estimation
+
+# ===== v0.3.0 Release (2025-12-21) =====
+[2025-12-21 00:00] INFO    Started v0.3.0 - BLAST Integration
+[2025-12-21 10:00] CHANGE  Created core/tools/blast_wrapper.py (BLAST+ wrapper)
+[2025-12-21 10:30] CHANGE  Created core/tools/align_fallback.py (Biopython aligner)
+[2025-12-21 11:00] CHANGE  Created core/tools/primer_aligner.py (unified interface)
+[2025-12-21 11:30] CHANGE  Created core/offtarget/finder.py (off-target detection)
+[2025-12-21 12:00] CHANGE  Created core/offtarget/scorer.py (specificity scoring A-F)
+[2025-12-21 12:30] CHANGE  Created core/offtarget/report.py (specificity reports)
+[2025-12-21 13:00] CHANGE  Added primerlab blast CLI command
+[2025-12-21 13:30] CHANGE  Created tests/test_blast_wrapper.py, test_offtarget.py
+[2025-12-21 14:00] INFO    Tagged v0.3.0, 285 tests passing
+
+# ===== v0.3.1 Release (2025-12-21) =====
+[2025-12-21 12:30] CHANGE  Added --blast, --blast-db flags to run command
+[2025-12-21 12:45] CHANGE  Added offtarget: config section (pcr_default.yaml)
+[2025-12-21 13:00] CHANGE  Created core/models/variant.py (Variant dataclasses)
+[2025-12-21 13:15] CHANGE  Created core/tools/vcf_parser.py (VCF parser)
+[2025-12-21 13:30] CHANGE  Created core/tools/bed_parser.py (BED parser)
+[2025-12-21 13:45] CHANGE  Created core/offtarget/variant_check.py (SNP detection)
+[2025-12-21 14:00] CHANGE  Added check_offtargets() to public API
+[2025-12-21 14:10] CHANGE  Added --batch, --db-info, --variants, --maf-threshold flags
+[2025-12-21 14:15] CHANGE  Created docs/cli/blast.md
+[2025-12-21 14:20] CHANGE  Created examples/workflow_blast_variant.md
+[2025-12-21 14:25] CHANGE  Created tests/test_vcf_parser.py, test_api_offtarget.py
+[2025-12-21 14:30] INFO    Tagged v0.3.1, 302 tests passing
 ```
 
 ---
 
 ## Context Notes (Update when major state changes)
 
-Last updated: 2025-12-18
+Last updated: 2025-12-21
 
 ### Release Status
 
@@ -127,32 +160,30 @@ Last updated: 2025-12-18
 |---------|--------|------------|
 | v0.1.0 - v0.1.5 | ✅ COMPLETE | Core functionality, smart features |
 | v0.1.6 | ✅ RELEASED | Stabilization, testing, docs |
-| v0.2.0 | ✅ COMPLETE | In-silico PCR Simulation |
+| v0.2.0 - v0.2.5 | ✅ RELEASED | In-silico PCR, degenerate, circular |
+| v0.3.0 | ✅ RELEASED | BLAST Integration, off-target detection |
+| v0.3.1 | ✅ RELEASED | VCF/BED parsers, variant check, API |
 
-### v0.2.0 Checklist
+### v0.3.1 Checklist
 
-- [x] Virtual PCR Engine (engine.py, binding.py)
-- [x] Binding Site Analysis (3' match, 5' tolerance, Tm)
-- [x] Multi-Product Prediction
-- [x] `primerlab insilico` CLI command
-- [x] JSON + FASTA output
-- [x] Alignment visualization
-- [x] YAML error handling (line numbers)
-- [x] Database resilience (auto-backup, integrity check)
-- [x] Example files (examples/insilico/)
-- [x] CLI documentation (docs/cli/insilico.md)
-- [x] Tests (228 passed)
-- [ ] Git tag v0.2.0
-- [ ] Push to GitHub
+- [x] --blast and --blast-db flags for run command
+- [x] offtarget: config section
+- [x] check_offtargets() public API
+- [x] VCF parser with gzip/MAF support
+- [x] BED parser for region filtering
+- [x] Primer-SNP overlap detection
+- [x] --batch, --db-info, --variants, --maf-threshold CLI flags
+- [x] CLI docs and example workflow
+- [x] Tests (302 passed)
+- [x] Git tag v0.3.1
 
 ### Test Coverage
 
-- **Total Tests**: 228
+- **Total Tests**: 302
 - **Warnings**: 0
-- **New in v0.2.0**: test_insilico.py, test_cli_insilico.py
+- **New in v0.3.x**: test_blast_wrapper.py, test_offtarget.py, test_vcf_parser.py, test_api_offtarget.py
 
 ### Next Steps
 
-1. Create git tag v0.2.0
-2. Push to GitHub (manual)
-3. Start v0.2.1 planning (BLAST Integration)
+1. Push v0.3.1 to GitHub (manual)
+2. Start v0.3.2 planning (Polish & UX Improvements)
