@@ -9,11 +9,21 @@ from primerlab.core.report.models import (
     OfftargetSummary
 )
 from primerlab.core.report.generator import ReportGenerator
+from primerlab.core.report.alignment_view import (
+    AlignmentView,
+    AlignmentMatch,
+    OfftargetTable,
+    format_primer_alignment
+)
 
 __all__ = [
     "PrimerReport",
     "DesignSummary",
     "ValidationSummary",
     "OfftargetSummary",
-    "ReportGenerator"
+    "ReportGenerator",
+    "AlignmentView",
+    "AlignmentMatch",
+    "OfftargetTable",
+    "format_primer_alignment"
 ]
