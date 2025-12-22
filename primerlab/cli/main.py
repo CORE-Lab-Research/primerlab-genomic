@@ -134,6 +134,13 @@ def main():
                            help="Run off-target check after primer design (v0.3.1)")
     run_parser.add_argument("--blast-db", type=str, default=None,
                            help="Path to BLAST database (FASTA or BLAST DB)")
+    # v0.3.3 Report flags
+    run_parser.add_argument("--report", "-R", action="store_true",
+                           help="Generate combined report after design (v0.3.3)")
+    run_parser.add_argument("--report-format", type=str, choices=["markdown", "html", "json"],
+                           default="markdown", help="Report format (v0.3.3)")
+    run_parser.add_argument("--report-output", type=str, default=None,
+                           help="Report output path (v0.3.3)")
 
     # --- BATCH-GENERATE Command ---
     batch_parser = subparsers.add_parser("batch-generate", help="Generate multiple configs from CSV")
