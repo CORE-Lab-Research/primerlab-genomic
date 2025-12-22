@@ -15,6 +15,8 @@ from primerlab.core.report.alignment_view import (
     OfftargetTable,
     format_primer_alignment
 )
+from primerlab.core.report.html_export import HTMLExporter, export_html
+from primerlab.core.report.json_export import JSONExporter, export_json, ReportExporter
 
 __all__ = [
     "PrimerReport",
@@ -25,5 +27,10 @@ __all__ = [
     "AlignmentView",
     "AlignmentMatch",
     "OfftargetTable",
-    "format_primer_alignment"
+    "format_primer_alignment",
+    "HTMLExporter",
+    "export_html",
+    "JSONExporter", 
+    "export_json",
+    "ReportExporter"
 ]
