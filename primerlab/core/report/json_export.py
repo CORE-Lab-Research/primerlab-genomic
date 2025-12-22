@@ -197,6 +197,7 @@ class ReportExporter:
             Path to exported file
         """
         from primerlab.core.report.generator import ReportGenerator
+        from primerlab.core.report.html_export import HTMLExporter
         
         if format == "html":
             exporter = HTMLExporter(self.report)

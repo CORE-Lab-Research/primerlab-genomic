@@ -33,6 +33,12 @@ dependencies = [
     "matplotlib>=3.5.0"
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "freezegun>=1.0.0"
+]
+
 [project.urls]
 Homepage = "https://github.com/engkinandatama/primerlab-genomic"
 Repository = "https://github.com/engkinandatama/primerlab-genomic.git"

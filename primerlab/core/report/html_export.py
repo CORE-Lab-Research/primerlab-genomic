@@ -38,6 +38,15 @@ class HTMLExporter:
             --info: #17a2b8;
         }
         
+        /* Light mode */
+        [data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #e0e0e0;
+            --bg-card: #ffffff;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555555;
+        }
+        
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body {
@@ -46,9 +55,26 @@ class HTMLExporter:
             color: var(--text-primary);
             line-height: 1.6;
             padding: 2rem;
+            transition: all 0.3s ease;
         }
         
         .container { max-width: 1000px; margin: 0 auto; }
+        
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            z-index: 1000;
+        }
+        
+        .theme-toggle:hover { background: var(--bg-secondary); }
         
         header {
             text-align: center;
@@ -84,6 +110,7 @@ class HTMLExporter:
             border-radius: 12px;
             margin: 1rem 0;
             overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
         .card-header {
@@ -95,7 +122,7 @@ class HTMLExporter:
             align-items: center;
         }
         
-        .card-header:hover { background: #1f2b47; }
+        .card-header:hover { opacity: 0.9; }
         
         .card-header::after {
             content: '▼';
@@ -156,6 +183,7 @@ class HTMLExporter:
             body { padding: 1rem; }
             h1 { font-size: 1.5rem; }
             .grade { font-size: 2rem; }
+            .theme-toggle { top: 0.5rem; right: 0.5rem; }
         }
     </style>
     """
@@ -163,11 +191,34 @@ class HTMLExporter:
     # JavaScript for interactivity
     SCRIPTS = """
     <script>
+        // Collapsible cards
         document.querySelectorAll('.card-header').forEach(header => {
             header.addEventListener('click', () => {
                 header.parentElement.classList.toggle('collapsed');
             });
         });
+        
+        // Theme toggle
+        const themeToggle = document.querySelector('.theme-toggle');
+        const html = document.documentElement;
+        
+        // Check saved preference
+        const savedTheme = localStorage.getItem('primerlab-theme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        updateToggleText();
+        
+        themeToggle.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('primerlab-theme', next);
+            updateToggleText();
+        });
+        
+        function updateToggleText() {
+            const current = html.getAttribute('data-theme');
+            themeToggle.textContent = current === 'dark' ? '☀️ Light' : '🌙 Dark';
+        }
     </script>
     """
     
@@ -210,6 +261,7 @@ class HTMLExporter:
     {self.STYLES}
 </head>
 <body>
+    <button class="theme-toggle">🌙 Dark</button>
     <div class="container">
         {self._header_section()}
         {self._design_section()}
