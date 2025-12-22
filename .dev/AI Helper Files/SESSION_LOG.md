@@ -7,9 +7,9 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 
 ## Quick Reference
 
-- **Current Version**: v0.3.1 (released)
+- **Current Version**: v0.3.2 (released)
 - **Dev Environment**: Requires WSL (primer3-py doesn't work on Windows native)
-- **Test Status**: 302 passed, 0 warnings
+- **Test Status**: 315 passed, 5 skipped, 0 failed
 
 ---
 

@@ -5,6 +5,35 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2025-12-22
+
+### Added
+
+- **NCBI Web BLAST Fallback** (`tools/ncbi_blast.py`)
+  - `--online` flag to force NCBI web BLAST
+  - Rate limiting for web requests
+- **Colored CLI Output** (`cli/formatter.py`)
+  - Grade colors (A=green, F=red)
+  - Output verbosity levels
+- **BLAST Cache** (`tools/blast_cache.py`)
+  - SQLite-based result caching with TTL
+  - `--no-cache` flag to skip cache
+- **Progress Indicators** (`cli/progress.py`)
+  - Spinner and progress bar with ETA
+- **Parallel BLAST** (`tools/parallel_blast.py`)
+  - Multi-threaded batch processing
+  - `--threads` option
+- **Config Validation** (`config_validator.py`)
+  - Helpful error messages for offtarget config
+
+### New CLI Flags
+
+```bash
+primerlab blast --online --verbose --no-cache --threads 4 --timeout 300
+```
+
+---
+
 ## [0.3.1] - 2025-12-21
 
 ### Added
