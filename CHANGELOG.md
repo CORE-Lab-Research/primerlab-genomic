@@ -5,6 +5,24 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2025-12-24
+
+### Added
+
+- **Tm Correction for Mismatches** (`binding.py:calculate_corrected_tm`)
+  - Configurable correction per mismatch (default: 2.5°C)
+  - Weighted: 3' mismatches count 2x more
+- **3' Stability Warning** (`binding.py:check_three_prime_stability`)
+  - Warning jika ΔG < -9 (too stable) atau > -3 (too weak)
+  - Configurable thresholds
+
+### Changed
+
+- Integrated new functions into `analyze_binding()`
+- Exported new functions from `insilico/__init__.py`
+
+---
+
 ## [0.3.3] - 2025-12-24
 
 ### Added
