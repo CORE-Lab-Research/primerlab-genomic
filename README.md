@@ -323,14 +323,15 @@ primerlab-genomic/
 
 ## 🤝 Contributing
 
-PrimerLab follows strict architecture guidelines:
+We welcome contributions! Please read our guidelines first:
+
+📄 **[CONTRIBUTING.md](CONTRIBUTING.md)** — How to contribute, coding standards, PR checklist
+
+Key principles:
 
 * No cross-layer imports
-* Consistent naming conventions
-* Explicit error handling
 * Deterministic, reproducible outputs
-
-See: 📄 [`STRUCTURE.md`](STRUCTURE.md) for project architecture.
+* All features need tests
 
 ---
 
