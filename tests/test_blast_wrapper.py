@@ -206,3 +206,57 @@ class TestPrimerAligner:
         
         assert isinstance(result, SpecificityResult)
         assert 0 <= result.combined_score <= 100
+
+
+class TestFallbackMechanism:
+    """Tests for fallback from BLAST+ to Biopython."""
+    
+    def test_fallback_triggered_when_blast_unavailable(self):
+        """When BLAST+ is unavailable, should fallback to Biopython."""
+        from unittest.mock import patch, PropertyMock
+        
+        # Mock BLAST+ as unavailable
+        with patch.object(BlastWrapper, 'is_available', new_callable=PropertyMock) as mock_blast:
+            mock_blast.return_value = False
+            
+            # Should fallback to Biopython if available
+            biopython_aligner = BiopythonAligner()
+            if biopython_aligner.is_available:
+                aligner = PrimerAligner(mode=AlignmentMode.AUTO)
+                assert aligner.active_method == AlignmentMethod.BIOPYTHON
+            else:
+                # If no Biopython, should raise RuntimeError
+                with pytest.raises(RuntimeError, match="No alignment method available"):
+                    PrimerAligner(mode=AlignmentMode.AUTO)
+    
+    def test_biopython_mode_works_independently(self):
+        """Biopython mode should work without BLAST+."""
+        biopython_aligner = BiopythonAligner()
+        if not biopython_aligner.is_available:
+            pytest.skip("Biopython not available")
+        
+        # Force Biopython mode (bypass BLAST+ entirely)
+        aligner = PrimerAligner(mode=AlignmentMode.BIOPYTHON)
+        assert aligner.active_method == AlignmentMethod.BIOPYTHON
+    
+    def test_fallback_produces_valid_results(self):
+        """Fallback aligner should produce valid results."""
+        if not TEST_DB_PATH.exists():
+            pytest.skip("Test database not found")
+        
+        biopython_aligner = BiopythonAligner()
+        if not biopython_aligner.is_available:
+            pytest.skip("Biopython not available")
+        
+        # Use Biopython explicitly
+        aligner = PrimerAligner(mode=AlignmentMode.BIOPYTHON)
+        result = aligner.search_primer(
+            primer_seq="ATGACCATGATTACGGATTC",
+            database=str(TEST_DB_PATH),
+            primer_id="test"
+        )
+        
+        # Should return valid SearchResult
+        assert hasattr(result, 'success')
+        assert hasattr(result, 'method')
+        assert result.method == AlignmentMethod.BIOPYTHON
