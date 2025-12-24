@@ -46,7 +46,7 @@ If unsure → do not modify.
 
 At the **start** of every session:
 
-* Read `Docs/AI Helper Files/SESSION_LOG.md`
+* Read `.dev/AI Helper Files/SESSION_LOG.md`
 * Understand context from previous sessions
 
 At the **end** of every session (or before major changes):

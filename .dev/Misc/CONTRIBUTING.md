@@ -19,14 +19,14 @@ Before contributing, please read these core documents:
 
 ### **Required Reading**
 
-* `Docs/architecture.md`
-* `Docs/module-plan.md`
-* All Blueprint documents in `Docs/Blueprint System/`
-* `Docs/AI Helper/ai-helper-rules.md`
-* `Docs/AI Helper/ai-prompts.md`
-* `Docs/Project Meta/design-decisions.md`
-* `Docs/Project Meta/security-guidelines.md`
-* `Docs/Project Meta/test-guidelines.md`
+* `.dev/High-Level Documentation/architecture.md`
+* `.dev/High-Level Documentation/module-plan.md`
+* All Blueprint documents in `.dev/Blueprint Files/`
+* `.dev/AI Helper Files/ai-helper-rules.md`
+* `.dev/AI Helper Files/ai-prompts.md`
+* `.dev/Misc/design-decisions.md`
+* `.dev/Misc/security-guidelines.md`
+* `.dev/Misc/test-guidelines.md`
 
 These define **all rules, constraints, and architectural boundaries**.
 
@@ -36,7 +36,7 @@ These define **all rules, constraints, and architectural boundaries**.
 
 Contributions fall into several categories:
 
-### ✔ Allowed:
+### ✔ Allowed
 
 * fixing bugs
 * improving internal modules
@@ -50,7 +50,7 @@ Contributions fall into several categories:
 * improving error messages
 * performance optimizations (non-breaking)
 
-### ✖ Forbidden:
+### ✖ Forbidden
 
 * modifying public API
 * altering folder structure
@@ -93,14 +93,14 @@ Contributors must NOT:
 
 # **4. Setting Up Development Environment**
 
-### Requirements:
+### Requirements
 
 * Python 3.11
 * Virtual environment (.venv)
 * Linux or WSL2 recommended
 * No global installation of dependencies
 
-### Setup:
+### Setup
 
 ```
 python3.11 -m venv .venv
@@ -109,7 +109,7 @@ pip install -r primerlab/requirements.txt
 pip install -r primerlab/requirements-dev.txt
 ```
 
-### Run tests:
+### Run tests
 
 ```
 pytest
@@ -121,8 +121,8 @@ pytest
 
 All code must follow:
 
-* `Docs/Development Rules/coding-style.md`
-* `Docs/Development Rules/naming-convention.md`
+* `.dev/Development Rules/coding-style.md`
+* `.dev/High-Level Documentation/naming-convention.md`
 
 Key principles:
 
@@ -202,7 +202,7 @@ Follow all workflow-related blueprints.
 
 # **9. Submitting Pull Requests**
 
-### Steps:
+### Steps
 
 1. Fork repository
 2. Create a new branch
@@ -213,14 +213,14 @@ Follow all workflow-related blueprints.
 7. Update docs if required
 8. Submit a pull request
 
-### PR Must Include:
+### PR Must Include
 
 * summary of changes
 * files modified
 * justification based on blueprint/rules
 * notes on backward compatibility
 
-### PR Will Be Rejected If:
+### PR Will Be Rejected If
 
 * changes public API
 * breaks tests
@@ -297,4 +297,3 @@ PrimerLab is a long-term project — stability and clarity are essential.
 
 We welcome your contributions!
 Please follow the rules and enjoy building the future of computational molecular design.
-

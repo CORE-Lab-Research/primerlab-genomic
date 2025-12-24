@@ -19,4 +19,4 @@ This folder contains internal development documentation, rules, and blueprints.
 
 ## For User-Facing Documentation
 
-See `/Docs/` folder for public documentation.
+See `/docs/` folder for public documentation.

@@ -64,7 +64,7 @@ AI helpers reduce these risks by being explicit and strict.
 AI Helpers live under:
 
 ```
-Docs/AI Helper/
+.dev/AI Helper Files/
 ```
 
 Files include:

@@ -272,7 +272,7 @@ primerlab-genomic/
 │   │   └── qpcr/         # qPCR workflow
 │   ├── api/              # Public API
 │   └── config/           # Default configurations
-├── tests/                # 228+ automated tests
+├── tests/                # 337 automated tests
 ├── docs/                 # User documentation
 ├── examples/             # Example files
 │   └── insilico/         # In-silico PCR examples
@@ -283,7 +283,7 @@ primerlab-genomic/
 
 ## 📌 Development Status
 
-### ✅ **v0.2.5** (Current)
+### ✅ **v0.3.5** (Current)
 
 * **In-silico PCR Simulation** (`primerlab insilico`):
   * Virtual PCR engine with binding site analysis
@@ -293,7 +293,7 @@ primerlab-genomic/
   * Extension time estimation
 * **Integrated Validation** (`--validate`):
   * Auto in-silico after primer design
-* **228 Tests** - Comprehensive test coverage
+* **337 Tests** - Comprehensive test coverage
 
 ### v0.1.6 Features
 
@@ -330,7 +330,7 @@ PrimerLab follows strict architecture guidelines:
 * Explicit error handling
 * Deterministic, reproducible outputs
 
-See: 📄 [`rules-development.md`](docs/Development%20Rules/rules-development.md)
+See: 📄 [`STRUCTURE.md`](STRUCTURE.md) for project architecture.
 
 ---
 

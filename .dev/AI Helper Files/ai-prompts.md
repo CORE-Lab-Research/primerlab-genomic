@@ -35,8 +35,8 @@ Every prompt must follow this structure:
 
 ```
 You are an automated contributor for PrimerLab.
-Follow all rules in Docs/AI Helper/ai-helper-rules.md.
-Follow the architecture defined in Docs/architecture.md.
+Follow all rules in .dev/AI Helper Files/ai-helper-rules.md.
+Follow the architecture defined in .dev/High-Level Documentation/architecture.md.
 Never modify public API, output schema, config schema, or folder layout.
 
 <task description>
@@ -346,4 +346,3 @@ This document provides a **complete library of safe, reusable AI prompts** that 
 * predictable behavior
 
 All automated work inside PrimerLab must use these templates.
-

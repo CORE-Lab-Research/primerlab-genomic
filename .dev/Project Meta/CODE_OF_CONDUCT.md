@@ -101,7 +101,7 @@ PrimerLab must remain secure and safe for scientific use.
 
 Automated tools (AI assistants, agents, code generators) are welcome but must obey:
 
-* `Docs/AI Helper/ai-helper-rules.md`
+* `.dev/AI Helper Files/ai-helper-rules.md`
 * `task-templates.md`
 * deterministic behavior
 * architectural boundaries
