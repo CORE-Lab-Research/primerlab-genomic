@@ -950,6 +950,79 @@ def main():
                 with open(report_path, "w") as f:
                     f.write(report_content)
                 logger.info(f"Report saved to: {report_path}")
+                
+                # v0.3.3: Enhanced report generation with --report flag
+                if hasattr(args, 'report') and args.report:
+                    try:
+                        from primerlab.core.report import ReportGenerator as EnhancedReportGenerator
+                        from primerlab.core.report import ReportExporter
+                        
+                        # Build enhanced report from result
+                        enhanced_gen = EnhancedReportGenerator()
+                        
+                        # Extract primer info from result
+                        if hasattr(result, 'primers') and result.primers:
+                            fwd = result.primers.get('forward')
+                            rev = result.primers.get('reverse')
+                            
+                            fwd_seq = fwd.sequence if hasattr(fwd, 'sequence') else str(fwd) if fwd else ""
+                            rev_seq = rev.sequence if hasattr(rev, 'sequence') else str(rev) if rev else ""
+                            fwd_tm = fwd.tm if hasattr(fwd, 'tm') else 0.0
+                            rev_tm = rev.tm if hasattr(rev, 'tm') else 0.0
+                            fwd_gc = fwd.gc_percent if hasattr(fwd, 'gc_percent') else 0.0
+                            rev_gc = rev.gc_percent if hasattr(rev, 'gc_percent') else 0.0
+                            product_size = result.amplicons[0].length if result.amplicons else None
+                            
+                            enhanced_gen.add_design(
+                                forward_seq=fwd_seq,
+                                reverse_seq=rev_seq,
+                                forward_tm=fwd_tm,
+                                reverse_tm=rev_tm,
+                                forward_gc=fwd_gc,
+                                reverse_gc=rev_gc,
+                                product_size=product_size
+                            )
+                        
+                        # Add validation info if available
+                        if hasattr(result, 'insilico_result') and result.insilico_result:
+                            enhanced_gen.add_validation(
+                                amplicons=len(result.insilico_result.amplicons) if hasattr(result.insilico_result, 'amplicons') else 1,
+                                product_size=product_size
+                            )
+                        
+                        # Add off-target info if available
+                        if hasattr(result, 'offtarget_check') and result.offtarget_check:
+                            ot = result.offtarget_check
+                            enhanced_gen.add_offtarget(
+                                forward_hits=ot.get('forward_offtargets', 0) if isinstance(ot, dict) else 0,
+                                reverse_hits=ot.get('reverse_offtargets', 0) if isinstance(ot, dict) else 0,
+                                grade=ot.get('grade', '?') if isinstance(ot, dict) else '?',
+                                score=ot.get('specificity_score', 0.0) if isinstance(ot, dict) else 0.0
+                            )
+                        
+                        # Generate report
+                        enhanced_report = enhanced_gen.generate()
+                        
+                        # Determine output path
+                        report_format = getattr(args, 'report_format', 'markdown')
+                        if hasattr(args, 'report_output') and args.report_output:
+                            enhanced_report_path = Path(args.report_output)
+                        else:
+                            ext_map = {'markdown': 'md', 'html': 'html', 'json': 'json'}
+                            ext = ext_map.get(report_format, 'md')
+                            enhanced_report_path = output_mgr.run_dir / f"enhanced_report.{ext}"
+                        
+                        # Export report
+                        exporter = ReportExporter(enhanced_report)
+                        exporter.export(str(enhanced_report_path), format=report_format)
+                        
+                        logger.info(f"Enhanced report ({report_format}) saved to: {enhanced_report_path}")
+                        
+                    except Exception as report_err:
+                        logger.warning(f"Could not generate enhanced report: {report_err}")
+                        if args.debug:
+                            import traceback
+                            traceback.print_exc()
 
                 if config.get("advanced", {}).get("debug"):
                     output_mgr.save_debug_data(result.raw, "primer3_raw.json")
