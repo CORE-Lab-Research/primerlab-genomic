@@ -1,102 +1,90 @@
-# v0.2.0 - In-silico PCR Simulation
+# v0.3.5 - Documentation & Polish
 
-**Release Date:** 2025-12-18
+**Release Date:** 2025-12-24
 
 ## ✨ Highlights
 
-This release introduces **In-silico PCR Simulation** - validate your primers against a template sequence before ordering!
+This release focuses on **comprehensive documentation** and final polish for paper publication readiness.
 
-- 🧬 Virtual PCR engine with binding site analysis
-- 🎯 Multi-product prediction with likelihood scoring
-- 📊 Primer alignment visualization in terminal
-- 📁 FASTA export of predicted amplicons
-
----
-
-## 🆕 New Features
-
-### `primerlab insilico` Command
-
-Simulate PCR amplification to validate primers:
-
-```bash
-primerlab insilico -p primers.json -t template.fasta
-```
-
-**Features:**
-
-- Primer binding detection with mismatch tolerance
-- 3' end stability analysis (minimum 3bp perfect match)
-- 5' mismatch tolerance (up to 2bp)
-- Product size validation
-- Orientation check (primers facing each other)
-- Multiple product prediction
-
-**Output Files:**
-
-- `insilico_result.json` - Complete results with binding data
-- `predicted_amplicons.fasta` - Predicted amplicon sequences
+- 📚 Complete API documentation with examples
+- 🔧 Troubleshooting guide for end-users
+- 📋 Preset documentation (long_range, dna_barcoding, rt_pcr)
+- ✅ 334 tests passing
 
 ---
 
-## 🔧 Improvements
+## 🆕 New in v0.3.x
 
-### Enhanced YAML Error Handling
+### v0.3.5 - Documentation & Polish
 
-- Shows line number and column of syntax errors
-- Displays problematic line content
-- Lists common YAML error tips
+- Comprehensive API Reference (5 files)
+- Troubleshooting guide with FAQ
+- Preset documentation
+- Architecture overview
 
-### Database Resilience
+### v0.3.4 - In-silico Enhancements
 
-- SQLite integrity check on startup
-- Auto-backup before repair operations
-- Auto-recovery from corruption
+- Tm correction based on mismatches
+- 3' stability warning system
+- Enhanced binding analysis
+
+### v0.3.3 - Enhanced Reporting
+
+- Markdown, HTML, JSON report formats
+- Scoring system with grades
+- CLI flags: `--report`, `--report-format`
+
+### v0.3.2 - Parallel BLAST
+
+- Multi-threaded off-target checking
+- Performance improvements
+
+### v0.3.1 - BLAST Improvements
+
+- Better error handling
+- Database validation
+
+### v0.3.0 - BLAST Integration
+
+- Off-target detection with A-F grades
+- CLI flag: `--blast`
 
 ---
 
 ## 📦 Installation
 
 ```bash
-pip install primerlab-genomic==0.2.0
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.3.5
 ```
 
 Or upgrade:
 
 ```bash
-pip install --upgrade primerlab-genomic
+pip install --upgrade git+https://github.com/engkinandatama/primerlab-genomic.git@v0.3.5
 ```
 
 ---
 
 ## 📊 Test Coverage
 
-- **228 tests passing**
-- New: `test_insilico.py` (24 unit tests)
-- New: `test_cli_insilico.py` (CLI integration)
+- **334 tests passing**
+- Python 3.10, 3.11, 3.12 supported
+- CI/CD via GitHub Actions
 
 ---
 
 ## 📚 Documentation
 
-- [CLI Reference: insilico](docs/cli/insilico.md)
-- [Examples](examples/insilico/)
+- [Getting Started](docs/getting-started.md)
+- [CLI Reference](docs/cli/README.md)
+- [API Reference](docs/api/README.md)
+- [Configuration](docs/configuration/README.md)
+- [Troubleshooting](docs/troubleshooting.md)
 
 ---
 
-## 🗺️ Roadmap
+## 🔗 Links
 
-Next releases before v1.0.0 stable:
-
-| Version | Feature |
-|---------|---------|
-| v0.3.0 | BLAST Integration |
-| v0.3.1 | SNP/Variant Check |
-| v0.4.0 | Multiplex Analysis |
-| v0.5.0 | qPCR Customization |
-| v0.6.0 | Polish & Performance |
-| **v1.0.0** | 🎉 Stable Release |
-
----
-
-**Full Changelog:** [v0.1.6...v0.2.0](https://github.com/engkinandatama/primerlab-genomic/compare/v0.1.6...v0.2.0)
+- **Full Changelog:** [v0.3.4...v0.3.5](https://github.com/engkinandatama/primerlab-genomic/compare/v0.3.4...v0.3.5)
+- **Documentation:** [docs/](docs/)
+- **Issues:** [GitHub Issues](https://github.com/engkinandatama/primerlab-genomic/issues)

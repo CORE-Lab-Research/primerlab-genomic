@@ -168,11 +168,21 @@ print(f"Efficiency: {result.efficiency}%")
 
 Full documentation is available in the [`docs/`](docs/) directory:
 
-* **[CLI Reference](docs/cli/README.md)** — All available commands
-* **[In-silico PCR](docs/cli/insilico.md)** — Primer validation (v0.2.0)
-* **[WSL Quickstart](.dev/Guide/wsl_quickstart.md)** — Setup guide for Windows
-* **[CHANGELOG](CHANGELOG.md)** — Version history and release notes
-* **[STRUCTURE](STRUCTURE.md)** — Project architecture
+| Section | Description |
+|---------|-------------|
+| [Getting Started](docs/getting-started.md) | Installation and first steps |
+| [CLI Reference](docs/cli/README.md) | All 13 commands |
+| [Configuration](docs/configuration/README.md) | YAML config reference |
+| [Presets](docs/configuration/presets.md) | Pre-configured parameter sets |
+| [API Reference](docs/api/README.md) | Programmatic interface |
+| [Features](docs/features/README.md) | Advanced features |
+| [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
+
+**Additional Resources:**
+
+* [CHANGELOG](CHANGELOG.md) — Version history
+* [STRUCTURE](STRUCTURE.md) — Project architecture
+* [RELEASE_NOTES](RELEASE_NOTES.md) — Latest release highlights
 
 ---
 
