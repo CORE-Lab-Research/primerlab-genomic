@@ -250,19 +250,24 @@ def analyze_binding(
     # Real implementation would use ViennaRNA
     gc_count = sum(1 for b in primer if b in 'GC')
     gc_percent = (gc_count / len(primer)) * 100
-    binding_tm = 64.9 + 41 * (gc_count - 16.4) / len(primer)  # Simplified
+    base_tm = 64.9 + 41 * (gc_count - 16.4) / len(primer)  # Simplified
     
-    # Adjust for mismatches (roughly -5°C per mismatch)
-    # v0.2.1: Weighted penalty for 3' mismatches
-    # Mismatches in the last 5bp (3' end) are much more destabilizing
+    # v0.3.4: Use calculate_corrected_tm for mismatch correction
+    # Calculate weighted mismatches (3' mismatches count more)
+    weighted_mismatches = 0
     for i in range(len(primer)):
         if not bases_match(primer[i], target[i]):
             dist_from_3prime = len(primer) - 1 - i
             if dist_from_3prime < 5:
-                binding_tm -= 10.0  # Severe penalty for 3' mismatch
+                weighted_mismatches += 2.0  # 3' mismatches count double
             else:
-                binding_tm -= 5.0   # Standard penalty for 5' mismatch
-                
+                weighted_mismatches += 1.0
+    
+    binding_tm = calculate_corrected_tm(
+        primer, target, base_tm, 
+        int(weighted_mismatches),
+        correction_per_mismatch=params.get("tm_correction_per_mismatch", 2.5)
+    )
     binding_tm = max(30, min(90, binding_tm))  # Clamp
     
     # Overall binding ΔG (simplified)
@@ -292,6 +297,15 @@ def analyze_binding(
     if three_prime_dg > max_3p_dg:
         is_valid = False
         validation_notes.append(f"3' ΔG ({three_prime_dg}) > max ({max_3p_dg})")
+    
+    # v0.3.4: Check 3' stability using new function
+    stability_status, stability_warning = check_three_prime_stability(
+        three_prime_dg,
+        threshold_strong=params.get("three_prime_dg_strong", -9.0),
+        threshold_weak=params.get("three_prime_dg_weak", -3.0)
+    )
+    if stability_warning:
+        validation_notes.append(stability_warning)
     
     if is_valid:
         validation_notes.append("All requirements met")
