@@ -14,13 +14,23 @@ from primerlab.core.multiplex.models import (
     grade_to_emoji,
 )
 from primerlab.core.multiplex.dimer import DimerEngine
+from primerlab.core.multiplex.scoring import MultiplexScorer, MULTIPLEX_CONFIG
+from primerlab.core.multiplex.validator import MultiplexValidator
 
 __all__ = [
+    # Models
     "MultiplexPair",
     "DimerResult",
     "CompatibilityMatrix",
     "MultiplexResult",
+    # Engine
     "DimerEngine",
+    # Scoring
+    "MultiplexScorer",
+    "MULTIPLEX_CONFIG",
+    # Validation
+    "MultiplexValidator",
+    # Utilities
     "score_to_grade",
     "grade_to_emoji",
 ]
