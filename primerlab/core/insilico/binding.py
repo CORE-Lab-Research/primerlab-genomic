@@ -115,6 +115,77 @@ def calculate_three_prime_dg(
     return round(total_dg, 2)
 
 
+# v0.3.4: Tm Correction for Mismatches
+def calculate_corrected_tm(
+    primer_seq: str,
+    target_seq: str,
+    base_tm: float,
+    mismatches: int,
+    correction_per_mismatch: float = 1.0
+) -> float:
+    """
+    Correct Tm based on number of mismatches.
+    
+    Rule: ~1°C reduction per mismatch (adjustable).
+    
+    Args:
+        primer_seq: Original primer sequence
+        target_seq: Target sequence on template
+        base_tm: Original Tm (calculated for perfect match)
+        mismatches: Number of mismatches detected
+        correction_per_mismatch: Degrees to subtract per mismatch (default 1.0)
+        
+    Returns:
+        Corrected Tm in °C (floor at 30°C)
+    """
+    correction = mismatches * correction_per_mismatch
+    corrected_tm = base_tm - correction
+    
+    # Ensure Tm doesn't go below 30°C (unrealistic)
+    return max(round(corrected_tm, 1), 30.0)
+
+
+# v0.3.4: 3' Stability Warning
+def check_three_prime_stability(
+    three_prime_dg: float,
+    threshold_strong: float = -9.0,
+    threshold_weak: float = -3.0
+) -> tuple:
+    """
+    Check if 3' end is too stable or too weak.
+    
+    A very stable 3' end (very negative ΔG) may reduce specificity.
+    A weak 3' end may lead to poor amplification.
+    
+    Args:
+        three_prime_dg: ΔG of 3' pentamer in kcal/mol
+        threshold_strong: ΔG below this = too stable (default -9.0)
+        threshold_weak: ΔG above this = too weak (default -3.0)
+        
+    Returns:
+        Tuple of (status, warning_message)
+        status: "ok", "strong", "weak"
+    """
+    if three_prime_dg < threshold_strong:
+        return (
+            "strong",
+            f"3' end may be too stable (ΔG={three_prime_dg:.1f} kcal/mol). "
+            "Consider redesign for better specificity."
+        )
+    elif three_prime_dg > threshold_weak:
+        return (
+            "weak", 
+            f"3' end may be too weak (ΔG={three_prime_dg:.1f} kcal/mol). "
+            "May result in poor amplification."
+        )
+    else:
+        return ("ok", None)
+
+
+# Note: check_gc_clamp already exists in primerlab.core.sequence_qc
+# Use that for GC clamp checking to avoid duplication
+
+
 def analyze_binding(
     primer_seq: str,
     target_seq: str,
