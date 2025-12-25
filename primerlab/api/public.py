@@ -302,3 +302,44 @@ def check_primer_compatibility(
         "errors": validation_summary["errors"],
         "recommendations": score_result.recommendations
     }
+
+
+def analyze_amplicon(
+    sequence: str,
+    config: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    Analyze an amplicon sequence for quality metrics (v0.4.1).
+    
+    Args:
+        sequence: Amplicon DNA sequence
+        config: Optional configuration dictionary override.
+        
+    Returns:
+        Dictionary containing:
+        - quality_score: overall score (0-100)
+        - grade: letter grade (A-F)
+        - secondary_structure: structure prediction results
+        - gc_profile: GC content analysis
+        - gc_clamp: end analysis
+        - amplicon_tm: predicted melting temperature
+        - warnings: list of quality issues
+    """
+    from primerlab.core.amplicon import analyze_amplicon as _analyze
+    
+    # Load config if provided
+    full_config = config or {}
+    
+    # Run analysis
+    result = _analyze(sequence, full_config)
+    
+    return {
+        "length": result.length,
+        "quality_score": result.quality.score if result.quality else None,
+        "grade": result.quality.grade if result.quality else None,
+        "secondary_structure": result.secondary_structure.to_dict() if result.secondary_structure else None,
+        "gc_profile": result.gc_profile.to_dict() if result.gc_profile else None,
+        "gc_clamp": result.gc_clamp.to_dict() if result.gc_clamp else None,
+        "amplicon_tm": result.amplicon_tm.to_dict() if result.amplicon_tm else None,
+        "warnings": result.quality.warnings if result.quality else []
+    }

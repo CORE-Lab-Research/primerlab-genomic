@@ -144,6 +144,9 @@ def main():
     # v0.4.0 Multiplex Integration
     run_parser.add_argument("--check-compat", action="store_true",
                            help="Run multiplex compatibility check on designed primers (v0.4.0)")
+    # v0.4.1 Amplicon Analysis
+    run_parser.add_argument("--amplicon-analysis", action="store_true",
+                           help="Run amplicon quality analysis after primer design (v0.4.1)")
 
     # --- BATCH-GENERATE Command ---
     batch_parser = subparsers.add_parser("batch-generate", help="Generate multiple configs from CSV")

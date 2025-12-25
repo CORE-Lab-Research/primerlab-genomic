@@ -1,0 +1,63 @@
+workflow: amplicon_analysis
+
+input:
+  sequence: null      # Amplicon sequence (required)
+  sequence_path: null # Or path to FASTA file
+
+output:
+  directory: ./amplicon_output
+  format: markdown # markdown, json, html
+
+# Amplicon Analysis Parameters
+amplicon_analysis:
+  # Secondary Structure Prediction
+  secondary_structure:
+    enabled: true
+    dg_warning_threshold: -3.0  # kcal/mol - moderate structure
+    dg_error_threshold: -8.0    # kcal/mol - strong structure
+  
+  # GC Profile Analysis
+  gc_profile:
+    enabled: true
+    window_size: 50   # bp sliding window
+    step_size: 10     # bp step between windows
+    ideal_min: 40.0   # % minimum ideal GC
+    ideal_max: 60.0   # % maximum ideal GC
+  
+  # GC Clamp Analysis
+  gc_clamp:
+    enabled: true
+    region_size: 5    # nucleotides to check at ends
+    min_gc: 1         # minimum G/C for optimal
+    max_gc: 3         # maximum G/C for optimal
+  
+  # Melting Temperature Prediction
+  tm_prediction:
+    enabled: true
+    na_concentration: 50.0   # mM Na+
+    mg_concentration: 0.0    # mM Mg2+
+    dntp_concentration: 0.0  # mM dNTPs
+  
+  # Restriction Site Mapping
+  restriction_sites:
+    enabled: false  # Off by default (optional feature)
+    enzymes:        # Common 6-cutters
+      - EcoRI
+      - BamHI
+      - HindIII
+      - XhoI
+      - NotI
+      - SalI
+  
+  # Quality Score Calculation
+  quality_score:
+    enabled: true
+    weights:
+      structure: 0.30
+      gc_uniformity: 0.25
+      gc_clamp: 0.20
+      length: 0.15
+      tm_sharpness: 0.10
+    optimal_length:
+      min: 100
+      max: 500
