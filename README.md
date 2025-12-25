@@ -41,6 +41,12 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 * **In-silico PCR** (v0.2.4): Validate primers against template
 * **Parallel BLAST** (v0.3.2): Multi-threaded off-target checking
 
+#### 🆕 v0.4.x Features
+
+* **Primer Compatibility Check** (v0.4.0): Analyze primer sets for cross-dimer formation, Tm uniformity, and GC consistency
+* **Excel/IDT Export** (v0.4.0): Export compatibility matrix to Excel, IDT plate format for ordering
+* **Amplicon Analysis** (v0.4.1): Secondary structure, GC profile, quality scoring
+
 ---
 
 ## 🚀 Quick Start
@@ -132,6 +138,28 @@ Example `primers.json`:
   "forward": "ATGGTGAGCAAGGGCGAGGAG",
   "reverse": "TTACTTGTACAGCTCGTCCATGCC"
 }
+```
+
+**Primer Compatibility Check (v0.4.0):**
+
+```bash
+# Check if multiple primer pairs can work together
+primerlab check-compat --primers primer_set.json
+
+# With custom output directory
+primerlab check-compat --primers primer_set.json --output results/
+
+# Integrated with PCR design (auto-check after design)
+primerlab run pcr --config design.yaml --check-compat
+```
+
+Example `primer_set.json`:
+
+```json
+[
+  {"name": "GAPDH", "fwd": "ATGGGGAAGGTGAAGGTCGG", "rev": "GGATCTCGCTCCTGGAAGATG", "tm": 60.0},
+  {"name": "ACTB", "fwd": "CATGTACGTTGCTATCCAGGC", "rev": "CTCCTTAATGTCACGCACGAT", "tm": 59.0}
+]
 ```
 
 ### Programmatic API (Python)

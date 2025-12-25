@@ -1430,6 +1430,64 @@ def main():
             with open(output_dir / "batch_summary.json", "w") as f:
                 json.dump(summary, f, indent=2)
             
+            # 7. Auto compat-check if ≥2 successful primer pairs
+            successful_results = [r for r in results if "error" not in r and r.get("primers")]
+            if len(successful_results) >= 2:
+                try:
+                    from primerlab.core.compat_check.models import MultiplexPair
+                    from primerlab.core.compat_check.dimer import DimerEngine
+                    from primerlab.core.compat_check.scoring import MultiplexScorer
+                    from primerlab.core.compat_check.validator import MultiplexValidator
+                    from primerlab.core.compat_check.report import generate_markdown_report, generate_json_report
+                    
+                    logger.info(f"🔬 Running compatibility check on {len(successful_results)} primer pairs...")
+                    
+                    # Extract primer pairs
+                    pairs = []
+                    for r in successful_results:
+                        primers = r.get("primers", {})
+                        name = r.get("metadata", {}).get("sequence_name", f"Pair_{len(pairs)+1}")
+                        
+                        fwd = primers.get("forward", {})
+                        rev = primers.get("reverse", {})
+                        
+                        if fwd and rev:
+                            pairs.append(MultiplexPair(
+                                name=name,
+                                forward=fwd.get("sequence", ""),
+                                reverse=rev.get("sequence", ""),
+                                tm_forward=fwd.get("tm", 0.0),
+                                tm_reverse=rev.get("tm", 0.0),
+                                gc_forward=fwd.get("gc_content", 0.0),
+                                gc_reverse=rev.get("gc_content", 0.0)
+                            ))
+                    
+                    if len(pairs) >= 2:
+                        # Run compat check
+                        engine = DimerEngine()
+                        matrix = engine.build_matrix(pairs)
+                        
+                        scorer = MultiplexScorer()
+                        result = scorer.calculate_score(matrix, pairs)
+                        
+                        validator = MultiplexValidator()
+                        is_valid, errors, warnings = validator.validate(result, matrix, pairs)
+                        result.is_valid = is_valid
+                        result.errors = errors
+                        result.warnings = warnings
+                        
+                        # Save compat reports
+                        compat_dir = output_dir / "compat_check"
+                        compat_dir.mkdir(exist_ok=True)
+                        generate_json_report(result, compat_dir)
+                        generate_markdown_report(result, compat_dir)
+                        
+                        status = "✅ COMPATIBLE" if result.is_valid else "⚠️ ISSUES FOUND"
+                        logger.info(f"  {status} - Score: {result.score:.1f}/100 (Grade: {result.grade})")
+                    
+                except Exception as e:
+                    logger.warning(f"Compat check skipped: {e}")
+            
             logger.info(f"✅ Batch run complete. Results in: {output_dir}")
             sys.exit(0)
             
