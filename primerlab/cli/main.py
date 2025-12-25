@@ -141,6 +141,9 @@ def main():
                            default="markdown", help="Report format (v0.3.3)")
     run_parser.add_argument("--report-output", type=str, default=None,
                            help="Report output path (v0.3.3)")
+    # v0.4.0 Multiplex Integration
+    run_parser.add_argument("--check-multiplex", action="store_true",
+                           help="Run multiplex compatibility check on designed primers (v0.4.0)")
 
     # --- BATCH-GENERATE Command ---
     batch_parser = subparsers.add_parser("batch-generate", help="Generate multiple configs from CSV")
@@ -1121,6 +1124,77 @@ def main():
                         
                     except Exception as report_err:
                         logger.warning(f"Could not generate enhanced report: {report_err}")
+                        if args.debug:
+                            import traceback
+                            traceback.print_exc()
+
+                # v0.4.0: Multiplex compatibility check
+                if hasattr(args, 'check_multiplex') and args.check_multiplex:
+                    try:
+                        from primerlab.core.multiplex.models import MultiplexPair
+                        from primerlab.core.multiplex.dimer import DimerEngine
+                        from primerlab.core.multiplex.scoring import MultiplexScorer
+                        from primerlab.core.multiplex.validator import MultiplexValidator
+                        from primerlab.core.multiplex.report import generate_markdown_report, generate_json_report
+                        
+                        logger.info("🔬 Running multiplex compatibility check...")
+                        
+                        # Convert result primers to MultiplexPair format
+                        pairs = []
+                        if hasattr(result, 'primers') and result.primers:
+                            fwd = result.primers.get('forward')
+                            rev = result.primers.get('reverse')
+                            
+                            if fwd and rev:
+                                fwd_seq = fwd.sequence if hasattr(fwd, 'sequence') else str(fwd)
+                                rev_seq = rev.sequence if hasattr(rev, 'sequence') else str(rev)
+                                fwd_tm = fwd.tm if hasattr(fwd, 'tm') else 60.0
+                                rev_tm = rev.tm if hasattr(rev, 'tm') else 60.0
+                                fwd_gc = fwd.gc_percent if hasattr(fwd, 'gc_percent') else 50.0
+                                rev_gc = rev.gc_percent if hasattr(rev, 'gc_percent') else 50.0
+                                
+                                pairs.append(MultiplexPair(
+                                    name=config.get('output', {}).get('target_name', 'Primer_1'),
+                                    forward=fwd_seq,
+                                    reverse=rev_seq,
+                                    tm_forward=fwd_tm,
+                                    tm_reverse=rev_tm,
+                                    gc_forward=fwd_gc,
+                                    gc_reverse=rev_gc
+                                ))
+                        
+                        if len(pairs) >= 1:
+                            # Run multiplex analysis
+                            engine = DimerEngine()
+                            matrix = engine.build_matrix(pairs)
+                            
+                            scorer = MultiplexScorer(config)
+                            score_res = scorer.calculate_score(matrix, pairs)
+                            
+                            validator = MultiplexValidator(config)
+                            validation = validator.get_validation_summary(matrix, pairs)
+                            
+                            # Update result with validation info
+                            score_res.is_valid = validation["is_valid"]
+                            score_res.errors = validation["errors"]
+                            score_res.warnings.extend(validation["warnings"])
+                            
+                            # Save multiplex report
+                            multiplex_dir = output_mgr.run_dir / "multiplex"
+                            multiplex_dir.mkdir(parents=True, exist_ok=True)
+                            
+                            generate_markdown_report(score_res, multiplex_dir)
+                            generate_json_report(score_res, multiplex_dir)
+                            
+                            # Print summary
+                            status = "✅ COMPATIBLE" if score_res.is_valid else "⚠️ ISSUES FOUND"
+                            logger.info(f"Multiplex Score: {score_res.score:.1f}/100 (Grade {score_res.grade}) - {status}")
+                            logger.info(f"Multiplex reports saved to: {multiplex_dir}")
+                        else:
+                            logger.warning("No primer pairs found for multiplex check")
+                            
+                    except Exception as mpx_err:
+                        logger.warning(f"Could not run multiplex check: {mpx_err}")
                         if args.debug:
                             import traceback
                             traceback.print_exc()

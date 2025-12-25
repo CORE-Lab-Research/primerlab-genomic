@@ -89,3 +89,183 @@ def generate_markdown_report(result: MultiplexResult, output_dir: Path) -> Path:
         
     logger.info(f"Markdown report saved to {output_path}")
     return output_path
+
+
+def generate_excel_report(result: MultiplexResult, output_dir: Path) -> Path:
+    """
+    Generates an Excel report with compatibility matrix and primer details.
+    
+    Sheets:
+    - Summary: Score, grade, validation status
+    - Primer Details: All primer pair information
+    - Compatibility Matrix: NxN dimer interaction matrix
+    """
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+    except ImportError:
+        logger.warning("openpyxl not installed. Run: pip install openpyxl")
+        return None
+    
+    output_path = output_dir / "multiplex_analysis.xlsx"
+    wb = openpyxl.Workbook()
+    
+    # --- Summary Sheet ---
+    ws_summary = wb.active
+    ws_summary.title = "Summary"
+    
+    # Header style
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    
+    # Add summary data
+    summary_data = [
+        ["Multiplex Compatibility Report", ""],
+        ["", ""],
+        ["Metric", "Value"],
+        ["Overall Score", f"{result.score:.1f}/100"],
+        ["Grade", result.grade],
+        ["Status", "COMPATIBLE" if result.is_valid else "INCOMPATIBLE"],
+        ["Primer Pairs", len(result.pairs)],
+        ["Average Tm", f"{result.avg_tm:.1f}°C"],
+        ["Average GC", f"{result.avg_gc:.1f}%"],
+    ]
+    
+    for row_idx, row_data in enumerate(summary_data, 1):
+        for col_idx, value in enumerate(row_data, 1):
+            cell = ws_summary.cell(row=row_idx, column=col_idx, value=value)
+            if row_idx == 1:
+                cell.font = Font(bold=True, size=14)
+            elif row_idx == 3:
+                cell.fill = header_fill
+                cell.font = header_font
+    
+    # Add warnings/errors
+    row = 11
+    if result.warnings or result.errors:
+        ws_summary.cell(row=row, column=1, value="Issues")
+        ws_summary.cell(row=row, column=1).font = Font(bold=True)
+        row += 1
+        for err in result.errors:
+            ws_summary.cell(row=row, column=1, value=f"❌ {err}")
+            row += 1
+        for warn in result.warnings:
+            ws_summary.cell(row=row, column=1, value=f"⚠️ {warn}")
+            row += 1
+    
+    # Column width
+    ws_summary.column_dimensions['A'].width = 25
+    ws_summary.column_dimensions['B'].width = 20
+    
+    # --- Primer Details Sheet ---
+    ws_primers = wb.create_sheet("Primer Details")
+    
+    primer_headers = ["Name", "Forward Seq", "Reverse Seq", "Fwd Tm", "Rev Tm", "Fwd GC%", "Rev GC%"]
+    for col_idx, header in enumerate(primer_headers, 1):
+        cell = ws_primers.cell(row=1, column=col_idx, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+    
+    for row_idx, pair in enumerate(result.pairs, 2):
+        ws_primers.cell(row=row_idx, column=1, value=pair.name)
+        ws_primers.cell(row=row_idx, column=2, value=pair.forward)
+        ws_primers.cell(row=row_idx, column=3, value=pair.reverse)
+        ws_primers.cell(row=row_idx, column=4, value=f"{pair.tm_forward:.1f}")
+        ws_primers.cell(row=row_idx, column=5, value=f"{pair.tm_reverse:.1f}")
+        ws_primers.cell(row=row_idx, column=6, value=f"{pair.gc_forward:.1f}")
+        ws_primers.cell(row=row_idx, column=7, value=f"{pair.gc_reverse:.1f}")
+    
+    # Auto-width for primer columns
+    for col_idx in range(1, 8):
+        ws_primers.column_dimensions[get_column_letter(col_idx)].width = 18
+    
+    # --- Compatibility Matrix Sheet ---
+    if result.matrix:
+        ws_matrix = wb.create_sheet("Compatibility Matrix")
+        
+        primer_names = result.matrix.primer_names
+        
+        # Header row
+        ws_matrix.cell(row=1, column=1, value="Primer")
+        for col_idx, name in enumerate(primer_names, 2):
+            cell = ws_matrix.cell(row=1, column=col_idx, value=name)
+            cell.fill = header_fill
+            cell.font = header_font
+        
+        # Row headers and matrix values
+        for row_idx, name1 in enumerate(primer_names, 2):
+            ws_matrix.cell(row=row_idx, column=1, value=name1)
+            ws_matrix.cell(row=row_idx, column=1).fill = header_fill
+            ws_matrix.cell(row=row_idx, column=1).font = header_font
+            
+            for col_idx, name2 in enumerate(primer_names, 2):
+                dimer = result.matrix.get_dimer(name1, name2)
+                if dimer:
+                    cell = ws_matrix.cell(row=row_idx, column=col_idx, value=f"{dimer.delta_g:.1f}")
+                    # Color code: red for problematic
+                    if dimer.is_problematic:
+                        cell.fill = PatternFill(start_color="FF6B6B", end_color="FF6B6B", fill_type="solid")
+                    else:
+                        cell.fill = PatternFill(start_color="51CF66", end_color="51CF66", fill_type="solid")
+                else:
+                    ws_matrix.cell(row=row_idx, column=col_idx, value="-")
+    
+    wb.save(output_path)
+    logger.info(f"Excel report saved to {output_path}")
+    return output_path
+
+
+def generate_idt_plate(result: MultiplexResult, output_dir: Path, plate_name: str = "Multiplex_Primers") -> Path:
+    """
+    Generates IDT plate format file for ordering primers.
+    
+    Format: Plate Name, Well Position, Primer Name, Sequence, Scale, Purification
+    """
+    output_path = output_dir / "idt_plate_order.csv"
+    
+    # IDT format columns
+    rows = []
+    well_positions = []
+    
+    # Generate well positions (A1-H12 for 96-well plate)
+    for row in "ABCDEFGH":
+        for col in range(1, 13):
+            well_positions.append(f"{row}{col}")
+    
+    well_idx = 0
+    for pair in result.pairs:
+        # Forward primer
+        if well_idx < 96:
+            rows.append({
+                "Plate Name": plate_name,
+                "Well Position": well_positions[well_idx],
+                "Name": f"{pair.name}_Fwd",
+                "Sequence": pair.forward,
+                "Scale": "25nm",
+                "Purification": "STD"
+            })
+            well_idx += 1
+        
+        # Reverse primer
+        if well_idx < 96:
+            rows.append({
+                "Plate Name": plate_name,
+                "Well Position": well_positions[well_idx],
+                "Name": f"{pair.name}_Rev",
+                "Sequence": pair.reverse,
+                "Scale": "25nm",
+                "Purification": "STD"
+            })
+            well_idx += 1
+    
+    # Write CSV
+    import csv
+    with open(output_path, "w", newline="") as f:
+        fieldnames = ["Plate Name", "Well Position", "Name", "Sequence", "Scale", "Purification"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+    
+    logger.info(f"IDT plate order saved to {output_path}")
+    return output_path
