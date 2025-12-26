@@ -343,3 +343,38 @@ def analyze_amplicon(
         "amplicon_tm": result.amplicon_tm.to_dict() if result.amplicon_tm else None,
         "warnings": result.quality.warnings if result.quality else []
     }
+
+
+def run_overlap_simulation(
+    template: str,
+    primer_pairs: list[Dict[str, str]],
+    template_name: str = "template",
+    min_overlap_warning: int = 50
+) -> Dict[str, Any]:
+    """
+    Run in-silico overlap simulation for multiple primer pairs (v0.4.1).
+    
+    Args:
+        template: Template DNA sequence
+        primer_pairs: List of primer pair dicts with 'name', 'forward', 'reverse' keys
+        template_name: Name for the template
+        min_overlap_warning: Minimum overlap (bp) to flag as problematic
+        
+    Returns:
+        Dictionary containing:
+        - template_length: length of template
+        - amplicons: list of predicted amplicons
+        - overlaps: list of detected overlaps
+        - has_problems: True if problematic overlaps detected
+        - warnings: list of warnings
+    """
+    from primerlab.core.compat_check.overlap_detection import run_insilico_compat_simulation
+    
+    result = run_insilico_compat_simulation(
+        template=template,
+        primer_pairs=primer_pairs,
+        template_name=template_name,
+        min_overlap_warning=min_overlap_warning
+    )
+    
+    return result.to_dict()

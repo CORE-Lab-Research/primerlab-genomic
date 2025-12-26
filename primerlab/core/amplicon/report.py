@@ -109,3 +109,79 @@ def generate_amplicon_markdown_report(result: AmpliconAnalysisResult, output_dir
         f.write("\n".join(lines))
     
     return str(output_path)
+
+
+def generate_amplicon_excel_report(result: AmpliconAnalysisResult, output_dir: str) -> str:
+    """
+    Generate Excel report for amplicon analysis.
+    
+    Sheets:
+    - Summary: Quality score, grade, warnings
+    - GC Profile: GC values across positions
+    - Analysis Details: All component scores
+    """
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill
+        from openpyxl.utils import get_column_letter
+    except ImportError:
+        return None
+    
+    output_path = Path(output_dir) / "amplicon_analysis.xlsx"
+    wb = openpyxl.Workbook()
+    
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    
+    # --- Summary Sheet ---
+    ws = wb.active
+    ws.title = "Summary"
+    
+    summary_data = [
+        ["Amplicon Quality Report", ""],
+        ["", ""],
+        ["Metric", "Value"],
+        ["Length", f"{result.length} bp"],
+    ]
+    
+    if result.quality:
+        summary_data.extend([
+            ["Quality Score", f"{result.quality.score:.1f}/100"],
+            ["Grade", result.quality.grade],
+            ["", ""],
+            ["Component Scores", ""],
+            ["Secondary Structure", f"{result.quality.structure_score:.1f}"],
+            ["GC Uniformity", f"{result.quality.gc_uniformity_score:.1f}"],
+            ["GC Clamp", f"{result.quality.gc_clamp_score:.1f}"],
+            ["Length Score", f"{result.quality.length_score:.1f}"],
+            ["Tm Sharpness", f"{result.quality.tm_sharpness_score:.1f}"],
+        ])
+    
+    for row_idx, row_data in enumerate(summary_data, 1):
+        for col_idx, value in enumerate(row_data, 1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=value)
+            if row_idx == 1:
+                cell.font = Font(bold=True, size=14)
+            elif row_idx == 3 or row_idx == 8:
+                cell.fill = header_fill
+                cell.font = header_font
+    
+    ws.column_dimensions['A'].width = 25
+    ws.column_dimensions['B'].width = 20
+    
+    # --- GC Profile Sheet ---
+    if result.gc_profile:
+        ws_gc = wb.create_sheet("GC Profile")
+        
+        headers = ["Position", "GC %"]
+        for col_idx, h in enumerate(headers, 1):
+            cell = ws_gc.cell(row=1, column=col_idx, value=h)
+            cell.fill = header_fill
+            cell.font = header_font
+        
+        for row_idx, (pos, gc) in enumerate(zip(result.gc_profile.positions, result.gc_profile.gc_values), 2):
+            ws_gc.cell(row=row_idx, column=1, value=pos)
+            ws_gc.cell(row=row_idx, column=2, value=round(gc, 1))
+    
+    wb.save(output_path)
+    return str(output_path)
