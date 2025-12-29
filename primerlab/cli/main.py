@@ -318,6 +318,21 @@ def main():
     compat_parser.add_argument("--template", "-t", type=str, default=None,
                                  help="Template sequence for overlap analysis (v0.4.1)")
 
+    # --- SPECIES-CHECK Command (v0.4.2) ---
+    species_parser = subparsers.add_parser("species-check", help="Check primer species specificity (v0.4.2)")
+    species_parser.add_argument("--primers", "-p", required=True,
+                                help="Path to primers JSON file")
+    species_parser.add_argument("--target", "-t", required=True,
+                                help="Path to target species FASTA template")
+    species_parser.add_argument("--offtargets", type=str, default=None,
+                                help="Comma-separated paths to off-target species FASTAs")
+    species_parser.add_argument("--config", "-c", type=str, default=None,
+                                help="Path to config YAML")
+    species_parser.add_argument("--output", "-o", type=str, default="species_output",
+                                help="Output directory (default: species_output)")
+    species_parser.add_argument("--format", type=str, choices=["markdown", "json", "excel"], 
+                                default="markdown", help="Report format")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -944,6 +959,109 @@ def main():
             print()
 
             sys.exit(0 if score_res.is_valid else 1)
+
+        except Exception as e:
+            print(f"\n❌ Error: {e}")
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
+
+    # --- SPECIES-CHECK Command Handler (v0.4.2) ---
+    if args.command == "species-check":
+        try:
+            import json as json_lib
+            from pathlib import Path as PathLib
+            from primerlab.core.species import (
+                load_species_template,
+                load_species_templates,
+                check_species_specificity,
+                generate_specificity_matrix_table,
+                detect_offtarget_species,
+            )
+            from primerlab.core.species.report import (
+                generate_species_json_report,
+                generate_species_markdown_report,
+                generate_species_excel_report,
+            )
+
+            logger = setup_logger(level=logging.INFO)
+            print(f"\n🧬 Species Specificity Check (v{__version__})")
+            print("=" * 50)
+
+            # 1. Load primers
+            primers_path = PathLib(args.primers)
+            if not primers_path.exists():
+                print(f"❌ Primers file not found: {primers_path}")
+                sys.exit(1)
+
+            print(f"📂 Loading primers: {primers_path.name}")
+            with open(primers_path, "r") as f:
+                primers = json_lib.load(f)
+
+            # Normalize primer format
+            primer_list = []
+            for p in primers:
+                primer_list.append({
+                    "name": p.get("name", f"Primer_{len(primer_list)+1}"),
+                    "forward": p.get("forward", p.get("fwd", "")),
+                    "reverse": p.get("reverse", p.get("rev", ""))
+                })
+
+            # 2. Load target template
+            target_path = args.target
+            print(f"🎯 Loading target: {PathLib(target_path).name}")
+            target_template = load_species_template(target_path, PathLib(target_path).stem)
+
+            # 3. Load off-target templates
+            offtarget_templates = {}
+            if args.offtargets:
+                paths = [p.strip() for p in args.offtargets.split(",")]
+                for path in paths:
+                    if PathLib(path).exists():
+                        template = load_species_template(path, PathLib(path).stem)
+                        offtarget_templates[template.species_name] = template
+                        print(f"🔬 Loaded off-target: {template.species_name}")
+
+            # 4. Run analysis
+            print("\n⏳ Analyzing species specificity...")
+            result = check_species_specificity(
+                primer_list,
+                target_template,
+                offtarget_templates
+            )
+
+            # 5. Generate reports
+            out_dir = PathLib(args.output)
+            out_dir.mkdir(parents=True, exist_ok=True)
+
+            json_path = generate_species_json_report(result, str(out_dir))
+            
+            if args.format == "markdown" or args.format == "json":
+                md_path = generate_species_markdown_report(result, str(out_dir))
+            
+            if args.format == "excel":
+                excel_path = generate_species_excel_report(result, str(out_dir))
+
+            # 6. Output summary
+            print("\n" + "=" * 50)
+            print(f"🏁 Specificity Score: {result.overall_score:.1f}/100 (Grade {result.grade})")
+            print(f"   Status: {'✅ SPECIFIC' if result.is_specific else '⚠️ CROSS-REACTIVE'}")
+            print(f"   Primers: {result.primers_checked} | Species: {result.species_checked}")
+            
+            if result.warnings:
+                print(f"\n⚠️ Warnings ({len(result.warnings)}):")
+                for w in result.warnings[:3]:
+                    print(f"   • {w}")
+
+            print(f"\n📁 Reports saved to: {out_dir}")
+            print(f"   • species_analysis.json")
+            if args.format == "markdown":
+                print(f"   • species_report.md")
+            if args.format == "excel":
+                print(f"   • species_analysis.xlsx")
+            print()
+
+            sys.exit(0 if result.is_specific else 1)
 
         except Exception as e:
             print(f"\n❌ Error: {e}")

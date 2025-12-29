@@ -378,3 +378,50 @@ def run_overlap_simulation(
     )
     
     return result.to_dict()
+
+
+def check_species_specificity_api(
+    primers: list[Dict[str, str]],
+    target_template: str,
+    target_name: str = "target",
+    offtarget_templates: Optional[Dict[str, str]] = None,
+    config: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    Check primer specificity across multiple species (v0.4.2).
+    
+    Args:
+        primers: List of primer dicts with 'name', 'forward', 'reverse' keys
+        target_template: Target species template sequence
+        target_name: Name for target species
+        offtarget_templates: Dict mapping species_name -> template sequence
+        config: Optional configuration dict
+        
+    Returns:
+        Dictionary containing:
+        - overall_score: specificity score (0-100)
+        - grade: letter grade (A-F)
+        - is_specific: True if all primers specific to target
+        - warnings: list of off-target binding warnings
+        - matrix: specificity matrix data
+    """
+    from primerlab.core.species import (
+        SpeciesTemplate,
+        check_species_specificity as _check
+    )
+    
+    # Create template objects
+    target = SpeciesTemplate(
+        species_name=target_name,
+        sequence=target_template
+    )
+    
+    offtargets = {}
+    if offtarget_templates:
+        for name, seq in offtarget_templates.items():
+            offtargets[name] = SpeciesTemplate(species_name=name, sequence=seq)
+    
+    # Run check
+    result = _check(primers, target, offtargets, config)
+    
+    return result.to_dict()
