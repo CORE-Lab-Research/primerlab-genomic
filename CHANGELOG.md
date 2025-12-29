@@ -5,6 +5,87 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2024-12-29
+
+### Added
+
+- **Species Specificity Module** (`core/species/`)
+  - Multi-species FASTA loader
+  - Primer binding site detection across species
+  - Cross-reactivity scoring (0-100 scale)
+  - Specificity matrix visualization
+  - Off-target species detection
+
+- **CLI Command**
+  - `primerlab species-check` for cross-species primer validation
+  - `--target`, `--offtargets`, `--format` options
+
+- **Public API**
+  - `check_species_specificity_api()` function
+  
+- **Documentation**
+  - `docs/features/species-specificity.md`
+  - ViennaRNA installation instructions
+
+### Changed
+
+- Updated README badges and features for v0.4.2
+
+---
+
+## [0.4.1] - 2024-12-26
+
+### Added
+
+- **Amplicon Analysis Module** (`core/amplicon/`)
+  - Secondary structure prediction (ViennaRNA with fallback)
+  - GC profile visualization (50bp window)
+  - GC clamp analysis (5nt at ends)
+  - Amplicon Tm prediction (nearest-neighbor)
+  - Restriction site mapping (6 common enzymes)
+  - Amplicon quality scoring (0-100, A-F grade)
+
+- **CLI Flags**
+  - `--amplicon-analysis` for `primerlab run`
+  - `--template` for `primerlab check-compat` (overlap analysis)
+
+- **Public API**
+  - `analyze_amplicon()` function
+  - `run_overlap_simulation()` function
+
+- **Reports**
+  - Amplicon JSON, Markdown, Excel reports
+  - Overlap analysis JSON report
+
+---
+
+## [0.4.0] - 2024-12-25
+
+### Added
+
+- **Primer Compatibility Check Module** (`core/compat_check/`)
+  - Cross-dimer detection between primer pairs
+  - Tm uniformity scoring across sets
+  - GC content consistency check
+  - Multiplex compatibility scoring
+
+- **CLI Command**
+  - `primerlab check-compat` for primer set analysis
+  - Excel and IDT plate export
+
+- **In-silico Overlap Detection**
+  - Virtual PCR simulation with overlap warnings
+  - Multi-amplicon clash detection
+
+- **Documentation**
+  - `docs/features/compat_check.md`
+
+### Changed
+
+- Renamed internal module from `multiplex` to `compat_check`
+
+---
+
 ## [0.3.5] - 2025-12-24
 
 ### Added

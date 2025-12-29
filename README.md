@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.3.5-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.3.5)
+[![Status](https://img.shields.io/badge/status-v0.4.2-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.4.2)
 
-> 🔰 **Latest Release**: [**v0.3.5 - Documentation & Polish**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.3.5) 🎉
+> 🔰 **Latest Release**: [**v0.4.2 - Species Specificity**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.4.2) 🎉
 
 ---
 
@@ -46,6 +46,7 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 * **Primer Compatibility Check** (v0.4.0): Analyze primer sets for cross-dimer formation, Tm uniformity, and GC consistency
 * **Excel/IDT Export** (v0.4.0): Export compatibility matrix to Excel, IDT plate format for ordering
 * **Amplicon Analysis** (v0.4.1): Secondary structure, GC profile, quality scoring
+* **Species Specificity** (v0.4.2): Cross-reactivity check, multi-species template comparison, specificity scoring
 
 ---
 
