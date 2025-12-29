@@ -26,6 +26,11 @@ from .gc_clamp import analyze_gc_clamp
 from .tm_prediction import predict_amplicon_tm
 from .restriction_sites import find_restriction_sites, get_available_enzymes
 from .quality_score import calculate_quality_score, score_to_grade
+from .report import (
+    generate_amplicon_json_report,
+    generate_amplicon_markdown_report,
+    generate_amplicon_excel_report,
+)
 
 __all__ = [
     # Models
@@ -49,4 +54,8 @@ __all__ = [
     "get_available_enzymes",
     "calculate_quality_score",
     "score_to_grade",
+    # Reports (v0.4.1)
+    "generate_amplicon_json_report",
+    "generate_amplicon_markdown_report",
+    "generate_amplicon_excel_report",
 ]
