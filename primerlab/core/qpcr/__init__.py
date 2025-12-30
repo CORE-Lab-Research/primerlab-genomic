@@ -2,7 +2,7 @@
 qPCR Module.
 
 Provides qPCR-specific functionality including probe binding simulation,
-melt curve prediction, and efficiency estimation.
+amplicon validation, melt curve prediction, and efficiency estimation.
 """
 
 from .probe_binding import (
@@ -14,6 +14,11 @@ from .probe_position import (
     analyze_probe_position,
     optimize_probe_position,
 )
+from .amplicon_qc import (
+    validate_qpcr_amplicon,
+    score_qpcr_efficiency,
+    QpcrAmpliconQC,
+)
 
 __all__ = [
     # Probe binding
@@ -23,4 +28,8 @@ __all__ = [
     # Probe position
     "analyze_probe_position",
     "optimize_probe_position",
+    # Amplicon QC
+    "validate_qpcr_amplicon",
+    "score_qpcr_efficiency",
+    "QpcrAmpliconQC",
 ]
