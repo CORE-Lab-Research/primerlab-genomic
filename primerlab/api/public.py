@@ -699,3 +699,81 @@ def validate_qpcr_amplicon_api(
     )
     
     return result.to_dict()
+
+
+def score_genotyping_primer_api(
+    primer_sequence: str,
+    snp_position: int,
+    ref_allele: str,
+    alt_allele: str,
+    na_concentration: float = 50.0,
+) -> Dict:
+    """
+    Score primer for SNP genotyping (allele-specific PCR) (v0.6.0).
+    
+    Args:
+        primer_sequence: Primer sequence (5'→3')
+        snp_position: Position of SNP from 3' end (0 = terminal)
+        ref_allele: Reference allele
+        alt_allele: Alternative allele
+        na_concentration: Na+ concentration (mM)
+        
+    Returns:
+        Dict with:
+        - position_score: Score based on SNP position
+        - mismatch_score: Score based on mismatch type
+        - combined_score: Overall discrimination score
+        - grade: A-F grade
+        - is_discriminating: Boolean
+        - tm_matched: Tm with matched allele
+        - tm_mismatched: Tm with mismatched allele
+        - delta_tm: Tm difference
+        - specificity: Discrimination quality
+        - warnings: List of warnings
+        - recommendations: List of suggestions
+    """
+    from primerlab.core.genotyping.allele_scoring import score_allele_discrimination
+    from primerlab.core.genotyping.snp_position import analyze_snp_context
+    from primerlab.core.genotyping.discrimination_tm import (
+        calculate_discrimination_tm,
+        estimate_allele_specificity,
+    )
+    
+    # Score allele discrimination
+    scoring_result = score_allele_discrimination(
+        primer_sequence=primer_sequence,
+        snp_position=snp_position,
+        ref_allele=ref_allele,
+        alt_allele=alt_allele,
+    )
+    
+    # Analyze SNP position
+    primer_len = len(primer_sequence)
+    snp_index = primer_len - 1 - snp_position  # Convert from 3' to 5' index
+    position_result = analyze_snp_context(primer_sequence, snp_index)
+    
+    # Calculate Tm discrimination
+    tm_matched, tm_mismatched, delta_tm = calculate_discrimination_tm(
+        primer_sequence=primer_sequence,
+        snp_position=snp_index,
+        ref_allele=ref_allele,
+        alt_allele=alt_allele,
+        na_concentration=na_concentration,
+    )
+    
+    # Estimate specificity
+    specificity = estimate_allele_specificity(delta_tm)
+    
+    # Combine results
+    output = scoring_result.to_dict()
+    output["tm_matched"] = tm_matched
+    output["tm_mismatched"] = tm_mismatched
+    output["delta_tm"] = delta_tm
+    output["specificity"] = specificity["specificity"]
+    output["specificity_score"] = specificity["score"]
+    output["snp_context"] = position_result.to_dict()
+    
+    # Merge recommendations
+    output["recommendations"].extend(specificity["recommendations"])
+    
+    return output

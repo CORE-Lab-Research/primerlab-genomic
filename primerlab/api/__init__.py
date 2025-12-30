@@ -25,6 +25,9 @@ from .public import (
     simulate_probe_binding_api,
     predict_melt_curve_api,
     validate_qpcr_amplicon_api,
+    
+    # v0.6.0 functions
+    score_genotyping_primer_api,
 )
 
 __all__ = [
@@ -41,4 +44,5 @@ __all__ = [
     "simulate_probe_binding_api",
     "predict_melt_curve_api",
     "validate_qpcr_amplicon_api",
+    "score_genotyping_primer_api",
 ]
