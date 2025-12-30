@@ -322,6 +322,99 @@ print(f"Processed: {result['processed']}/{result['total_files']}")
 
 ---
 
+## simulate_probe_binding_api() (v0.5.0)
+
+Simulate TaqMan probe binding for qPCR.
+
+### Signature
+
+```python
+def simulate_probe_binding_api(
+    probe_sequence: str,
+    amplicon_sequence: Optional[str] = None,
+    min_temp: float = 55.0,
+    max_temp: float = 72.0,
+    step_size: float = 0.5,
+    na_concentration: float = 50.0,
+    probe_concentration: float = 0.25,
+) -> Dict
+```
+
+### Example
+
+```python
+from primerlab.api import simulate_probe_binding_api
+
+result = simulate_probe_binding_api(
+    probe_sequence="ATGCGATCGATCGATCGATCG",
+)
+
+print(f"Probe Tm: {result['probe_tm']}°C")
+print(f"Optimal: {result['optimal_temp']}°C")
+print(f"Grade: {result['grade']}")
+```
+
+---
+
+## predict_melt_curve_api() (v0.5.0)
+
+Predict SYBR Green melt curve for amplicons.
+
+### Signature
+
+```python
+def predict_melt_curve_api(
+    amplicon_sequence: str,
+    na_concentration: float = 50.0,
+    min_temp: float = 65.0,
+    max_temp: float = 95.0,
+    step: float = 0.2,
+) -> Dict
+```
+
+### Example
+
+```python
+from primerlab.api import predict_melt_curve_api
+
+result = predict_melt_curve_api("ATGC" * 25)
+
+print(f"Predicted Tm: {result['predicted_tm']}°C")
+print(f"Single peak: {result['is_single_peak']}")
+```
+
+---
+
+## validate_qpcr_amplicon_api() (v0.5.0)
+
+Validate amplicon for qPCR suitability.
+
+### Signature
+
+```python
+def validate_qpcr_amplicon_api(
+    amplicon_sequence: str,
+    min_length: int = 70,
+    max_length: int = 150,
+    gc_min: float = 40.0,
+    gc_max: float = 60.0,
+) -> Dict
+```
+
+### Example
+
+```python
+from primerlab.api import validate_qpcr_amplicon_api
+
+result = validate_qpcr_amplicon_api("ATGC" * 25)
+
+print(f"Length OK: {result['length_ok']}")
+print(f"GC OK: {result['gc_ok']}")
+print(f"Grade: {result['grade']}")
+```
+
+---
+
 ## Error Handling
 
 ```python
