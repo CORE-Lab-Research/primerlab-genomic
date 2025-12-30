@@ -8,6 +8,10 @@ PrimerLab provides a comprehensive command-line interface for primer design work
 |---------|-------------|
 | [`run`](run.md) | Run PCR/qPCR primer design workflow |
 | [`insilico`](insilico.md) | In-silico PCR simulation **(v0.2.0)** |
+| [`blast`](blast.md) | Off-target detection **(v0.3.0)** |
+| [`check-compat`](compat_check.md) | Primer compatibility check **(v0.4.0)** |
+| [`species-check`](species-check.md) | Species specificity check **(v0.4.2)** |
+| [`tm-gradient`](tm-gradient.md) | Temperature gradient simulation **(v0.4.3)** |
 | [`stats`](stats.md) | Analyze sequence before design |
 | [`batch-run`](batch-run.md) | Run multiple designs in batch |
 | [`compare`](compare.md) | Compare two primer designs |

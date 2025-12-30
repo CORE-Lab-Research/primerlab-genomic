@@ -160,6 +160,168 @@ result = design_qpcr_assays(
 
 ---
 
+## check_primer_compatibility() (v0.4.0)
+
+Check compatibility of multiple primer pairs for multiplexing.
+
+### Signature
+
+```python
+def check_primer_compatibility(
+    primers: list[Dict[str, str]],
+    config: Optional[Dict[str, Any]] = None
+) -> Dict
+```
+
+### Example
+
+```python
+from primerlab.api import check_primer_compatibility
+
+primers = [
+    {"name": "GAPDH", "fwd": "ATGGGGAAGGTGAAGGTCGG", "rev": "GGATCTCGCTCCTGGAAGATG"},
+    {"name": "ACTB", "fwd": "CATGTACGTTGCTATCCAGGC", "rev": "CTCCTTAATGTCACGCACGAT"}
+]
+
+result = check_primer_compatibility(primers)
+print(f"Compatibility: {result['overall_compatibility']}%")
+```
+
+---
+
+## analyze_amplicon() (v0.4.1)
+
+Analyze an amplicon sequence for quality metrics.
+
+### Signature
+
+```python
+def analyze_amplicon(
+    sequence: str,
+    config: Optional[Dict[str, Any]] = None
+) -> Dict
+```
+
+### Example
+
+```python
+from primerlab.api import analyze_amplicon
+
+result = analyze_amplicon("ATGCGATCGATCGATCGATCG...")
+print(f"GC%: {result['gc_content']}")
+print(f"Tm: {result['amplicon_tm']}°C")
+print(f"Grade: {result['grade']}")
+```
+
+---
+
+## check_species_specificity_api() (v0.4.2)
+
+Check primer specificity across multiple species.
+
+### Signature
+
+```python
+def check_species_specificity_api(
+    primers: list[Dict[str, str]],
+    target_template: str,
+    target_name: str = "target",
+    offtarget_templates: Optional[Dict[str, str]] = None,
+    config: Optional[Dict[str, Any]] = None
+) -> Dict
+```
+
+### Example
+
+```python
+from primerlab.api import check_species_specificity_api
+
+primers = [{"name": "Gene1", "forward": "ATGC...", "reverse": "GCTA..."}]
+
+result = check_species_specificity_api(
+    primers=primers,
+    target_template=human_seq,
+    target_name="Human",
+    offtarget_templates={"Mouse": mouse_seq}
+)
+
+print(f"Specificity: {result['overall_score']} ({result['grade']})")
+```
+
+---
+
+## simulate_tm_gradient_api() (v0.4.3)
+
+Simulate temperature gradient for optimal annealing prediction.
+
+### Signature
+
+```python
+def simulate_tm_gradient_api(
+    primers: list,
+    min_temp: float = 50.0,
+    max_temp: float = 72.0,
+    step_size: float = 0.5,
+    na_concentration: float = 50.0,
+    primer_concentration: float = 0.25
+) -> Dict
+```
+
+### Example
+
+```python
+from primerlab.api import simulate_tm_gradient_api
+
+primers = [{"name": "Gene1", "forward": "ATGCGATCGATCGATCGATCG"}]
+
+result = simulate_tm_gradient_api(
+    primers=primers,
+    min_temp=50.0,
+    max_temp=70.0
+)
+
+print(f"Optimal: {result['optimal']}°C")
+print(f"Range: {result['range_min']} - {result['range_max']}°C")
+```
+
+---
+
+## batch_species_check_api() (v0.4.3)
+
+Run batch species-check on multiple primer files.
+
+### Signature
+
+```python
+def batch_species_check_api(
+    primer_files: list = None,
+    primer_dir: str = None,
+    target_name: str = "Target",
+    target_template: str = "",
+    offtarget_templates: Optional[Dict[str, str]] = None,
+    max_workers: int = 4,
+    config: Optional[Dict] = None
+) -> Dict
+```
+
+### Example
+
+```python
+from primerlab.api import batch_species_check_api
+
+result = batch_species_check_api(
+    primer_dir="primers/",
+    target_name="Human",
+    target_template=human_seq,
+    max_workers=4
+)
+
+print(f"Pass rate: {result['pass_rate']}%")
+print(f"Processed: {result['processed']}/{result['total_files']}")
+```
+
+---
+
 ## Error Handling
 
 ```python
@@ -183,3 +345,4 @@ except PrimerLabException as e:
 - [In-silico API](insilico.md)
 - [Report API](report.md)
 - [Models Reference](models.md)
+- [Batch Processing](../features/batch-processing.md)
