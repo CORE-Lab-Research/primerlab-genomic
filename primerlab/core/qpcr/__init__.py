@@ -19,6 +19,16 @@ from .amplicon_qc import (
     score_qpcr_efficiency,
     QpcrAmpliconQC,
 )
+from .melt_curve import (
+    predict_melt_curve,
+    MeltCurveResult,
+    MeltPeak,
+)
+from .melt_report import (
+    generate_melt_markdown,
+    generate_melt_csv,
+    generate_melt_json,
+)
 
 __all__ = [
     # Probe binding
@@ -32,4 +42,11 @@ __all__ = [
     "validate_qpcr_amplicon",
     "score_qpcr_efficiency",
     "QpcrAmpliconQC",
+    # Melt curve
+    "predict_melt_curve",
+    "MeltCurveResult",
+    "MeltPeak",
+    "generate_melt_markdown",
+    "generate_melt_csv",
+    "generate_melt_json",
 ]
