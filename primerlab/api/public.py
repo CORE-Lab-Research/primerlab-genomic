@@ -557,3 +557,61 @@ def batch_species_check_api(
     
     return result.to_dict()
 
+
+# ===== qPCR Probe Binding API (v0.5.0) =====
+
+def simulate_probe_binding_api(
+    probe_sequence: str,
+    amplicon_sequence: Optional[str] = None,
+    min_temp: float = 55.0,
+    max_temp: float = 72.0,
+    step_size: float = 0.5,
+    na_concentration: float = 50.0,
+    probe_concentration: float = 0.25,
+) -> Dict:
+    """
+    Simulate TaqMan probe binding for qPCR.
+    
+    Args:
+        probe_sequence: Probe sequence (5' to 3')
+        amplicon_sequence: Optional amplicon for position analysis
+        min_temp: Minimum temperature (°C)
+        max_temp: Maximum temperature (°C)
+        step_size: Temperature step (°C)
+        na_concentration: Na+ concentration (mM)
+        probe_concentration: Probe concentration (μM)
+        
+    Returns:
+        Dict with:
+        - probe_tm: Calculated Tm
+        - binding_efficiency: Peak efficiency
+        - optimal_temp: Optimal annealing temperature
+        - binding_curve: Efficiency at each temperature
+        - position: Position analysis (if amplicon provided)
+        - warnings: List of warnings
+        - grade: A-F grade
+    """
+    from primerlab.core.qpcr.probe_binding import simulate_probe_binding
+    from primerlab.core.qpcr.probe_position import analyze_probe_position
+    
+    # Run binding simulation
+    result = simulate_probe_binding(
+        probe_sequence=probe_sequence,
+        min_temp=min_temp,
+        max_temp=max_temp,
+        step_size=step_size,
+        na_concentration=na_concentration,
+        probe_concentration=probe_concentration,
+    )
+    
+    output = result.to_dict()
+    
+    # Add position analysis if amplicon provided
+    if amplicon_sequence:
+        position_result = analyze_probe_position(
+            probe_sequence=probe_sequence,
+            amplicon_sequence=amplicon_sequence,
+        )
+        output["position"] = position_result.to_dict()
+    
+    return output
