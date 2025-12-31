@@ -3,7 +3,7 @@ Public API for PrimerLab.
 This module provides a high-level programmatic interface for external applications.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Tuple
 from primerlab.core.models import WorkflowResult
 from primerlab.workflows.pcr.workflow import run_pcr_workflow
 from primerlab.workflows.qpcr.workflow import run_qpcr_workflow
@@ -777,3 +777,90 @@ def score_genotyping_primer_api(
     output["recommendations"].extend(specificity["recommendations"])
     
     return output
+
+
+def validate_rtpcr_primers_api(
+    fwd_sequence: str,
+    fwd_start: int,
+    rev_sequence: str,
+    rev_start: int,
+    exon_boundaries: List[Tuple[int, int]],
+    genomic_intron_sizes: Optional[List[int]] = None,
+) -> Dict:
+    """
+    Validate RT-qPCR primers for exon-spanning and gDNA risk (v0.6.0).
+    
+    Args:
+        fwd_sequence: Forward primer sequence
+        fwd_start: Forward primer start position (transcript coordinates)
+        rev_sequence: Reverse primer sequence
+        rev_start: Reverse primer start position
+        exon_boundaries: List of (start, end) for each exon
+        genomic_intron_sizes: Optional list of intron sizes
+        
+    Returns:
+        Dict with:
+        - fwd_junction: Forward primer junction analysis
+        - rev_junction: Reverse primer junction analysis
+        - gdna_risk: gDNA contamination risk assessment
+        - is_rt_specific: Boolean indicating RT-specificity
+        - grade: Overall grade (A-F)
+        - recommendations: List of suggestions
+    """
+    from primerlab.core.rtpcr.exon_junction import detect_exon_junction
+    from primerlab.core.rtpcr.gdna_check import check_gdna_risk
+    
+    fwd_len = len(fwd_sequence)
+    rev_len = len(rev_sequence)
+    
+    # Analyze forward primer junction
+    fwd_junction = detect_exon_junction(
+        primer_sequence=fwd_sequence,
+        primer_start=fwd_start,
+        exon_boundaries=exon_boundaries,
+    )
+    
+    # Analyze reverse primer junction
+    rev_junction = detect_exon_junction(
+        primer_sequence=rev_sequence,
+        primer_start=rev_start,
+        exon_boundaries=exon_boundaries,
+    )
+    
+    # Check gDNA risk
+    gdna_risk = check_gdna_risk(
+        fwd_start=fwd_start,
+        fwd_end=fwd_start + fwd_len,
+        rev_start=rev_start,
+        rev_end=rev_start + rev_len,
+        exon_boundaries=exon_boundaries,
+        genomic_intron_sizes=genomic_intron_sizes,
+    )
+    
+    # Calculate overall grade
+    is_rt_specific = gdna_risk.is_rt_specific
+    
+    if fwd_junction.spans_junction or rev_junction.spans_junction:
+        grade = "A"
+    elif gdna_risk.risk_level == "Low":
+        grade = "B"
+    elif gdna_risk.risk_level == "Medium":
+        grade = "C"
+    else:
+        grade = "F"
+    
+    # Combine recommendations
+    recommendations = []
+    recommendations.extend(fwd_junction.warnings)
+    recommendations.extend(rev_junction.warnings)
+    recommendations.extend(gdna_risk.recommendations)
+    
+    return {
+        "fwd_junction": fwd_junction.to_dict(),
+        "rev_junction": rev_junction.to_dict(),
+        "gdna_risk": gdna_risk.to_dict(),
+        "is_rt_specific": is_rt_specific,
+        "grade": grade,
+        "recommendations": recommendations,
+    }
+
