@@ -356,6 +356,47 @@ def main():
     tm_parser.add_argument("--format", type=str, choices=["markdown", "json", "csv"],
                            default="markdown", help="Report format")
 
+    # --- PROBE-CHECK Command (v0.6.0) ---
+    probe_parser = subparsers.add_parser("probe-check", help="Check TaqMan probe binding (v0.6.0)")
+    probe_parser.add_argument("--probe", "-p", required=True,
+                             help="Probe sequence")
+    probe_parser.add_argument("--amplicon", "-a", type=str, default=None,
+                             help="Amplicon sequence (optional)")
+    probe_parser.add_argument("--min-temp", type=float, default=55.0,
+                             help="Minimum temperature (°C, default: 55)")
+    probe_parser.add_argument("--max-temp", type=float, default=72.0,
+                             help="Maximum temperature (°C, default: 72)")
+    probe_parser.add_argument("--output", "-o", type=str, default=None,
+                             help="Output file (default: stdout)")
+    probe_parser.add_argument("--format", type=str, choices=["text", "json"],
+                             default="text", help="Output format")
+
+    # --- MELT-CURVE Command (v0.6.0) ---
+    melt_parser = subparsers.add_parser("melt-curve", help="Predict SYBR melt curve (v0.6.0)")
+    melt_parser.add_argument("--amplicon", "-a", required=True,
+                            help="Amplicon sequence or FASTA file")
+    melt_parser.add_argument("--output", "-o", type=str, default=None,
+                            help="Output file for plot (SVG/PNG)")
+    melt_parser.add_argument("--format", type=str, choices=["svg", "png", "json", "text"],
+                            default="text", help="Output format")
+    melt_parser.add_argument("--min-temp", type=float, default=65.0,
+                            help="Minimum temperature (°C, default: 65)")
+    melt_parser.add_argument("--max-temp", type=float, default=95.0,
+                            help="Maximum temperature (°C, default: 95)")
+
+    # --- AMPLICON-QC Command (v0.6.0) ---
+    ampqc_parser = subparsers.add_parser("amplicon-qc", help="Validate qPCR amplicon (v0.6.0)")
+    ampqc_parser.add_argument("--amplicon", "-a", required=True,
+                             help="Amplicon sequence or FASTA file")
+    ampqc_parser.add_argument("--min-length", type=int, default=70,
+                             help="Minimum length (bp, default: 70)")
+    ampqc_parser.add_argument("--max-length", type=int, default=150,
+                             help="Maximum length (bp, default: 150)")
+    ampqc_parser.add_argument("--output", "-o", type=str, default=None,
+                             help="Output file (default: stdout)")
+    ampqc_parser.add_argument("--format", type=str, choices=["text", "json"],
+                             default="text", help="Output format")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -2128,6 +2169,189 @@ qc:
         logger.info(f"✅ Created config file: {output_file}")
         logger.info(f"   Edit the file to add your sequence, then run:")
         logger.info(f"   primerlab run {args.workflow} --config {output_file}")
+
+    # --- PROBE-CHECK Command Handler (v0.6.0) ---
+    if args.command == "probe-check":
+        import json
+        from primerlab.api import simulate_probe_binding_api
+        
+        probe = args.probe.upper()
+        amplicon = args.amplicon.upper() if args.amplicon else None
+        
+        result = simulate_probe_binding_api(
+            probe_sequence=probe,
+            amplicon_sequence=amplicon,
+            min_temp=getattr(args, 'min_temp', 55.0),
+            max_temp=getattr(args, 'max_temp', 72.0),
+        )
+        
+        if args.format == "json":
+            output = json.dumps(result, indent=2)
+        else:
+            lines = [
+                "═══════════════════════════════════════════════════════",
+                "                   PROBE BINDING CHECK (v0.6.0)",
+                "═══════════════════════════════════════════════════════",
+                f"Probe:    {probe}",
+                f"Length:   {len(probe)} bp",
+                "",
+                "Results:",
+                f"  Binding Tm:     {result.get('tm', 'N/A')}°C",
+                f"  Grade:          {result.get('grade', 'N/A')}",
+                f"  Quality Score:  {result.get('quality_score', 'N/A')}/100",
+            ]
+            if result.get('position'):
+                pos = result['position']
+                lines.append(f"  Position:       {pos.get('amplicon_position', 'N/A')}")
+            if result.get('warnings'):
+                lines.append("\nWarnings:")
+                for w in result['warnings']:
+                    lines.append(f"  ⚠ {w}")
+            output = "\n".join(lines)
+        
+        if args.output:
+            with open(args.output, 'w') as f:
+                f.write(output)
+            print(f"✅ Output saved to {args.output}")
+        else:
+            print(output)
+        sys.exit(0)
+
+    # --- MELT-CURVE Command Handler (v0.6.0) ---
+    if args.command == "melt-curve":
+        import json
+        from pathlib import Path
+        from primerlab.core.qpcr.melt_curve import predict_melt_curve
+        from primerlab.core.qpcr.melt_plot import generate_melt_svg, generate_melt_png
+        
+        # Load amplicon from file or use as sequence
+        amp_input = args.amplicon
+        if Path(amp_input).exists():
+            with open(amp_input, 'r') as f:
+                content = f.read()
+            if content.startswith('>'):
+                amplicon = ''.join(content.strip().split('\n')[1:])
+            else:
+                amplicon = content.strip()
+        else:
+            amplicon = amp_input.upper()
+        
+        result = predict_melt_curve(
+            amplicon_sequence=amplicon,
+            min_temp=getattr(args, 'min_temp', 65.0),
+            max_temp=getattr(args, 'max_temp', 95.0),
+        )
+        
+        if args.format == "json":
+            output = json.dumps(result.to_dict(), indent=2)
+            if args.output:
+                with open(args.output, 'w') as f:
+                    f.write(output)
+            else:
+                print(output)
+        elif args.format == "svg":
+            svg = generate_melt_svg(
+                melt_curve=result.melt_curve,
+                peaks=[p.to_dict() for p in result.peaks],
+                predicted_tm=result.predicted_tm,
+                output_path=args.output,
+            )
+            if not args.output:
+                print(svg)
+            print(f"✅ SVG generated: Tm={result.predicted_tm:.1f}°C")
+        elif args.format == "png":
+            if not args.output:
+                args.output = "melt_curve.png"
+            success = generate_melt_png(
+                melt_curve=result.melt_curve,
+                peaks=[p.to_dict() for p in result.peaks],
+                predicted_tm=result.predicted_tm,
+                output_path=args.output,
+            )
+            if success:
+                print(f"✅ PNG saved to {args.output}")
+            else:
+                print("❌ PNG generation failed (matplotlib required)")
+                sys.exit(1)
+        else:  # text
+            lines = [
+                "═══════════════════════════════════════════════════════",
+                "                   MELT CURVE PREDICTION (v0.6.0)",
+                "═══════════════════════════════════════════════════════",
+                f"Amplicon Length:  {len(amplicon)} bp",
+                f"Predicted Tm:     {result.predicted_tm:.1f}°C",
+                f"Tm Range:         {result.tm_range[0]:.1f} - {result.tm_range[1]:.1f}°C",
+                f"Single Peak:      {'✅ Yes' if result.is_single_peak else '⚠ No'}",
+                f"Quality Score:    {result.quality_score:.0f}/100",
+                f"Grade:            {result.grade}",
+            ]
+            if result.warnings:
+                lines.append("\nWarnings:")
+                for w in result.warnings:
+                    lines.append(f"  ⚠ {w}")
+            print("\n".join(lines))
+        sys.exit(0)
+
+    # --- AMPLICON-QC Command Handler (v0.6.0) ---
+    if args.command == "amplicon-qc":
+        import json
+        from pathlib import Path
+        from primerlab.api import validate_qpcr_amplicon_api
+        
+        # Load amplicon from file or use as sequence
+        amp_input = args.amplicon
+        if Path(amp_input).exists():
+            with open(amp_input, 'r') as f:
+                content = f.read()
+            if content.startswith('>'):
+                amplicon = ''.join(content.strip().split('\n')[1:])
+            else:
+                amplicon = content.strip()
+        else:
+            amplicon = amp_input.upper()
+        
+        result = validate_qpcr_amplicon_api(
+            amplicon_sequence=amplicon,
+            min_length=args.min_length,
+            max_length=args.max_length,
+        )
+        
+        if args.format == "json":
+            output = json.dumps(result, indent=2)
+        else:
+            lines = [
+                "═══════════════════════════════════════════════════════",
+                "                   AMPLICON QC (v0.6.0)",
+                "═══════════════════════════════════════════════════════",
+                f"Length:           {result['amplicon_length']} bp",
+                f"GC Content:       {result['gc_content']:.1f}%",
+                f"Amplicon Tm:      {result.get('tm_amplicon', 'N/A')}°C",
+                "",
+                "Validation:",
+                f"  Length OK:      {'✅' if result['length_ok'] else '❌'}",
+                f"  GC OK:          {'✅' if result['gc_ok'] else '❌'}",
+                f"  Structure OK:   {'✅' if result.get('secondary_structure_ok', True) else '❌'}",
+                "",
+                f"Quality Score:    {result['quality_score']:.0f}/100",
+                f"Grade:            {result['grade']}",
+            ]
+            if result.get('warnings'):
+                lines.append("\nWarnings:")
+                for w in result['warnings']:
+                    lines.append(f"  ⚠ {w}")
+            if result.get('recommendations'):
+                lines.append("\nRecommendations:")
+                for r in result['recommendations']:
+                    lines.append(f"  → {r}")
+            output = "\n".join(lines)
+        
+        if args.output:
+            with open(args.output, 'w') as f:
+                f.write(output)
+            print(f"✅ Output saved to {args.output}")
+        else:
+            print(output)
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()
