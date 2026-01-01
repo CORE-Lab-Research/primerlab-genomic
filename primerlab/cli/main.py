@@ -7,7 +7,7 @@ from primerlab.core.config_loader import load_and_merge_config
 from primerlab.core.exceptions import PrimerLabException
 
 # Version definition
-__version__ = "0.6.0"
+__version__ = "0.6.2"
 
 
 def _run_health_check():

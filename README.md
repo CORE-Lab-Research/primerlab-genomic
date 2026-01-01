@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.5.0-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.5.0)
+[![Status](https://img.shields.io/badge/status-v0.6.2-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.6.2)
 
-> 🔰 **Latest Release**: [**v0.5.0 - qPCR Customization**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.5.0) 🎉
+> 🔰 **Latest Release**: [**v0.6.2 - Advanced Features**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.6.2) 🎉
 
 ---
 
@@ -55,6 +55,14 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 * **Probe Binding Simulation** (v0.5.0): TaqMan probe Tm calculation, binding efficiency, position optimization
 * **qPCR Amplicon Validation** (v0.5.0): Length/GC validation, secondary structure scoring, efficiency prediction
 * **SYBR Melt Curve Prediction** (v0.5.0): Tm prediction, multi-peak detection, quality grading
+
+#### 🆕 v0.6.x Features
+
+* **Allele Discrimination** (v0.6.0): SNP genotyping primer scoring, 3' end position analysis, mismatch Tm calculation
+* **RT-qPCR Validation** (v0.6.0): Exon junction detection, gDNA contamination risk assessment
+* **Melt Curve Visualization** (v0.6.0): SVG/PNG melt curve plots, multi-peak annotation
+* **New CLI Commands** (v0.6.0): `probe-check`, `melt-curve`, `amplicon-qc`
+* **`--plot-melt` Option** (v0.6.1): Generate melt curve plots during qPCR workflow
 
 ---
 

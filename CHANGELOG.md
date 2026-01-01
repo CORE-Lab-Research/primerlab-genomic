@@ -5,6 +5,43 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-01-01
+
+### Added
+
+- **CLI Tests** (`tests/test_cli_qpcr.py`)
+  - Unit tests for `probe-check` command
+  - Unit tests for `melt-curve` command
+  - Unit tests for `amplicon-qc` command
+  - Tests for `--plot-melt` option
+
+### Changed
+
+- **README.md**: Updated with v0.6.x feature highlights
+- Total tests: 613+
+
+---
+
+## [0.6.1] - 2026-01-01
+
+### Added
+
+- **CLI Documentation** (`docs/cli/`)
+  - `probe-check.md` - Probe binding check docs
+  - `melt-curve.md` - Melt curve prediction docs
+  - `amplicon-qc.md` - Amplicon QC docs
+  - Updated README index
+
+- **API Documentation** (`docs/api/public.md`)
+  - `score_genotyping_primer_api()` documentation
+  - `validate_rtpcr_primers_api()` documentation
+
+- **CLI Options**
+  - `--plot-melt` option for run command
+  - `--plot-format` option (svg/png)
+
+---
+
 ## [0.6.0] - 2026-01-01
 
 ### Added
