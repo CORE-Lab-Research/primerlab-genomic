@@ -26,6 +26,6 @@ PrimerLab is a Python-based toolkit for automated primer and probe design in mol
 
 ## Version
 
-Current version: **v0.6.2**
+Current version: **v0.7.4**
 
 See [CHANGELOG](../CHANGELOG.md) for version history.

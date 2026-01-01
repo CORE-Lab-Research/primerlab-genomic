@@ -5,6 +5,120 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.4] - 2026-01-02
+
+### Added
+
+- **qPCR Efficiency Tools** (`core/qpcr/efficiency.py`)
+  - Standard curve calculator from Ct values
+  - Primer efficiency prediction based on thermodynamics
+  - CLI: `primerlab qpcr-efficiency calculate/predict`
+
+- **Advanced qPCR Features** (`core/qpcr/advanced.py`)
+  - HRM (High Resolution Melt) design optimization
+  - Internal control primer recommendations (GAPDH, ACTB, 18S)
+  - Probe quencher recommendation (FAM/VIC + BHQ-1/MGB etc)
+  - dPCR compatibility check
+
+### Tests
+
+- Added 27 new tests (11 efficiency + 16 advanced qPCR)
+- Total tests: 711
+
+---
+
+## [0.7.3] - 2026-01-02
+
+### Added
+
+- **Config Templates** (3 new presets)
+  - `diagnostic_pcr` - High-specificity for clinical diagnostics (80-200bp)
+  - `sequencing_pcr` - Optimized for Sanger sequencing (400-1000bp)
+  - `cloning_pcr` - For molecular cloning with restriction sites (200-3000bp)
+  - All presets include metadata with recommended use cases
+
+- **CLI Improvements**
+  - `--dry-run` option for previewing configuration
+  - `--verbose` option for detailed output during workflow
+
+### Tests
+
+- Added 14 new tests (7 preset + 7 CLI)
+
+---
+
+## [0.7.2] - 2026-01-02
+
+### Added
+
+- **Amplicon Coverage Map** (`core/visualization/coverage_map.py`)
+  - Primer position overlay on sequence
+  - Multi-primer coverage visualization
+  - SVG export with interactive elements
+  - CLI: `primerlab coverage-map`
+
+- **Enhanced HTML Reports** (`core/report/html_enhanced.py`)
+  - Interactive sortable tables
+  - Modern responsive design with gradients
+  - Metric cards for summary statistics
+  - Report templating system
+
+### Tests
+
+- Added 19 new tests (10 coverage map + 9 HTML reports)
+
+---
+
+## [0.7.1] - 2026-01-02
+
+### Added
+
+- **Primer Dimer Matrix** (`core/analysis/dimer_matrix.py`)
+  - NxN pairwise dimer analysis
+  - SVG heatmap visualization with color-coded ΔG values
+  - Problematic pair detection
+  - CLI: `primerlab dimer-matrix`
+
+- **Batch Comparison** (`core/analysis/batch_compare.py`)
+  - Compare multiple design runs
+  - Quality score analysis and ranking
+  - Difference detection (Tm, size, quality variance)
+  - Diff report generation (text, JSON, markdown)
+  - CLI: `primerlab compare-batch`
+
+### Tests
+
+- Added 20 new tests (11 dimer matrix + 9 batch compare)
+
+---
+
+## [0.7.0] - 2026-01-02
+
+### Added
+
+- **Nested PCR Design** (`core/variants/nested.py`)
+  - Outer primer pair design (larger amplicon)
+  - Inner primer pair design (within outer amplicon)
+  - Tm optimization between outer/inner pairs
+  - Scoring system for nested set quality
+  - CLI: `primerlab nested-design`
+
+- **Semi-Nested PCR Design** (`core/variants/seminested.py`)
+  - Shared primer detection (forward or reverse)
+  - Unique inner primer design
+  - Compatible with standard PCR workflows
+  - CLI: `primerlab seminested-design`
+
+- **PCR Variants Data Models** (`core/variants/models.py`)
+  - `NestedPrimerSet` dataclass
+  - `NestedPCRResult` dataclass
+
+### Tests
+
+- Added 18 new tests (11 nested + 7 seminested)
+
+---
+
 ## [0.6.2] - 2026-01-01
 
 ### Added

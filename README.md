@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.6.2-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.6.2)
+[![Status](https://img.shields.io/badge/status-v0.7.4-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.7.4)
 
-> 🔰 **Latest Release**: [**v0.6.2 - Advanced Features**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.6.2) 🎉
+> 🔰 **Latest Release**: [**v0.7.4 - PCR Variants & qPCR Advanced**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.7.4) 🎉
 
 ---
 
@@ -63,6 +63,20 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 * **Melt Curve Visualization** (v0.6.0): SVG/PNG melt curve plots, multi-peak annotation
 * **New CLI Commands** (v0.6.0): `probe-check`, `melt-curve`, `amplicon-qc`
 * **`--plot-melt` Option** (v0.6.1): Generate melt curve plots during qPCR workflow
+
+#### 🆕 v0.7.x Features
+
+* **Nested PCR Design** (v0.7.0): Outer/inner primer design with Tm optimization
+* **Semi-Nested PCR** (v0.7.0): Shared primer detection and unique inner design
+* **Dimer Matrix Analysis** (v0.7.1): NxN pairwise analysis with SVG heatmap
+* **Batch Comparison** (v0.7.1): Compare multiple design runs with diff reports
+* **Coverage Map Visualization** (v0.7.2): Primer position overlay with SVG export
+* **Interactive HTML Reports** (v0.7.2): Sortable tables, modern design
+* **New Config Templates** (v0.7.3): `diagnostic_pcr`, `sequencing_pcr`, `cloning_pcr`
+* **qPCR Efficiency Tools** (v0.7.4): Standard curve calculator, efficiency prediction
+* **HRM Optimization** (v0.7.4): High Resolution Melt design optimization
+* **dPCR Compatibility** (v0.7.4): Digital PCR amplicon checks
+* **Quencher Recommendations** (v0.7.4): FAM/VIC + BHQ/MGB pairing
 
 ---
 
@@ -375,7 +389,28 @@ primerlab-genomic/
   * Multi-peak annotation
 * **New CLI Commands**: `probe-check`, `melt-curve`, `amplicon-qc`
 * **`--plot-melt` Option**: Generate melt curve plots during workflow
-* **613 Tests** - Comprehensive test coverage
+
+### v0.7.x Features (PCR Variants & qPCR Advanced)
+
+* **Nested PCR Design** (`core/variants/nested.py`):
+  * Outer/inner primer design with Tm optimization
+* **Semi-Nested PCR** (`core/variants/seminested.py`):
+  * Shared primer detection and unique inner design
+* **Dimer Matrix Analysis** (`core/analysis/dimer_matrix.py`):
+  * NxN pairwise analysis with SVG heatmap
+* **Batch Comparison** (`core/analysis/batch_compare.py`):
+  * Compare design runs with diff reports
+* **Coverage Map** (`core/visualization/coverage_map.py`):
+  * Primer position overlay with SVG export
+* **Enhanced Reports** (`core/report/html_enhanced.py`):
+  * Interactive sortable tables, modern design
+* **Config Templates**: `diagnostic_pcr`, `sequencing_pcr`, `cloning_pcr`
+* **qPCR Efficiency** (`core/qpcr/efficiency.py`):
+  * Standard curve calculator, efficiency prediction
+* **Advanced qPCR** (`core/qpcr/advanced.py`):
+  * HRM optimization, quencher recommendations, dPCR compatibility
+* **CLI Commands**: `nested-design`, `seminested-design`, `dimer-matrix`, `compare-batch`, `coverage-map`, `qpcr-efficiency`
+* **711 Tests** - Comprehensive test coverage
 
 ### v0.5.0 Features
 
@@ -392,6 +427,7 @@ primerlab-genomic/
 
 ### Earlier Versions
 
+* v0.6.x: Allele discrimination, RT-qPCR, melt curve visualization
 * v0.3.x: BLAST off-target, reporting, Tm correction
 * v0.2.x: In-silico PCR simulation
 * v0.1.x: Core design, stats, batch processing
