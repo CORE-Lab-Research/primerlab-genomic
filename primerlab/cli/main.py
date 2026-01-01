@@ -402,6 +402,27 @@ def main():
     ampqc_parser.add_argument("--format", type=str, choices=["text", "json"],
                              default="text", help="Output format")
 
+    # --- NESTED-DESIGN Command (v0.7.0) ---
+    nested_parser = subparsers.add_parser("nested-design", help="Design nested PCR primers (v0.7.0)")
+    nested_parser.add_argument("--sequence", "-s", type=str, required=True,
+                              help="Template sequence or FASTA file")
+    nested_parser.add_argument("--outer-min", type=int, default=400,
+                              help="Minimum outer amplicon size (bp, default: 400)")
+    nested_parser.add_argument("--outer-max", type=int, default=600,
+                              help="Maximum outer amplicon size (bp, default: 600)")
+    nested_parser.add_argument("--inner-min", type=int, default=100,
+                              help="Minimum inner amplicon size (bp, default: 100)")
+    nested_parser.add_argument("--inner-max", type=int, default=200,
+                              help="Maximum inner amplicon size (bp, default: 200)")
+    nested_parser.add_argument("--outer-tm", type=float, default=58.0,
+                              help="Optimal outer primer Tm (°C, default: 58)")
+    nested_parser.add_argument("--inner-tm", type=float, default=60.0,
+                              help="Optimal inner primer Tm (°C, default: 60)")
+    nested_parser.add_argument("--output", "-o", type=str, default=None,
+                              help="Output file (default: stdout)")
+    nested_parser.add_argument("--format", type=str, choices=["text", "json", "markdown"],
+                              default="text", help="Output format")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -2348,6 +2369,121 @@ qc:
                 lines.append("\nRecommendations:")
                 for r in result['recommendations']:
                     lines.append(f"  → {r}")
+            output = "\n".join(lines)
+        
+        if args.output:
+            with open(args.output, 'w') as f:
+                f.write(output)
+            print(f"✅ Output saved to {args.output}")
+        else:
+            print(output)
+        sys.exit(0)
+
+    # --- NESTED-DESIGN Command Handler (v0.7.0) ---
+    if args.command == "nested-design":
+        from primerlab.core.sequence import SequenceLoader
+        from primerlab.core.variants import design_nested_primers
+        import json
+        
+        # Load sequence
+        sequence = args.sequence
+        if Path(sequence).exists():
+            sequence = SequenceLoader.load(sequence)
+        
+        # Design nested primers
+        result = design_nested_primers(
+            sequence=sequence,
+            outer_size_range=(args.outer_min, args.outer_max),
+            inner_size_range=(args.inner_min, args.inner_max),
+            outer_tm=args.outer_tm,
+            inner_tm=args.inner_tm,
+        )
+        
+        if args.format == "json":
+            output = json.dumps(result.to_dict(), indent=2)
+        elif args.format == "markdown":
+            lines = [
+                "# Nested PCR Design Result (v0.7.0)",
+                "",
+                f"**Status:** {'✅ Success' if result.success else '❌ Failed'}",
+                f"**Sequence Length:** {result.sequence_length} bp",
+                "",
+            ]
+            if result.primer_set:
+                ps = result.primer_set
+                lines.extend([
+                    "## Outer Primers",
+                    f"- **Forward:** `{ps.outer_forward}`",
+                    f"  - Tm: {ps.outer_tm_forward:.1f}°C, GC: {ps.outer_gc_forward:.1f}%",
+                    f"- **Reverse:** `{ps.outer_reverse}`",
+                    f"  - Tm: {ps.outer_tm_reverse:.1f}°C, GC: {ps.outer_gc_reverse:.1f}%",
+                    f"- **Product Size:** {ps.outer_product_size} bp",
+                    "",
+                    "## Inner Primers",
+                    f"- **Forward:** `{ps.inner_forward}`",
+                    f"  - Tm: {ps.inner_tm_forward:.1f}°C, GC: {ps.inner_gc_forward:.1f}%",
+                    f"- **Reverse:** `{ps.inner_reverse}`",
+                    f"  - Tm: {ps.inner_tm_reverse:.1f}°C, GC: {ps.inner_gc_reverse:.1f}%",
+                    f"- **Product Size:** {ps.inner_product_size} bp",
+                    "",
+                    "## Quality",
+                    f"- **Grade:** {ps.grade}",
+                    f"- **Score:** {ps.combined_score:.1f}/100",
+                    f"- **Tm Difference (inner-outer):** {ps.get_tm_difference():.1f}°C",
+                ])
+            if result.warnings:
+                lines.append("\n## Warnings")
+                for w in result.warnings:
+                    lines.append(f"- ⚠ {w}")
+            if result.recommendations:
+                lines.append("\n## Recommendations")
+                for r in result.recommendations:
+                    lines.append(f"- → {r}")
+            output = "\n".join(lines)
+        else:
+            # Text format
+            lines = [
+                "═══════════════════════════════════════════════════════",
+                "              NESTED PCR DESIGN (v0.7.0)",
+                "═══════════════════════════════════════════════════════",
+                f"Status:          {'SUCCESS' if result.success else 'FAILED'}",
+                f"Sequence Length: {result.sequence_length} bp",
+                "",
+            ]
+            if result.primer_set:
+                ps = result.primer_set
+                lines.extend([
+                    "OUTER PRIMERS",
+                    "─────────────────────────────────────",
+                    f"  Forward:     {ps.outer_forward}",
+                    f"               Tm: {ps.outer_tm_forward:.1f}°C  GC: {ps.outer_gc_forward:.1f}%",
+                    f"  Reverse:     {ps.outer_reverse}",
+                    f"               Tm: {ps.outer_tm_reverse:.1f}°C  GC: {ps.outer_gc_reverse:.1f}%",
+                    f"  Product:     {ps.outer_product_size} bp",
+                    "",
+                    "INNER PRIMERS",
+                    "─────────────────────────────────────",
+                    f"  Forward:     {ps.inner_forward}",
+                    f"               Tm: {ps.inner_tm_forward:.1f}°C  GC: {ps.inner_gc_forward:.1f}%",
+                    f"  Reverse:     {ps.inner_reverse}",
+                    f"               Tm: {ps.inner_tm_reverse:.1f}°C  GC: {ps.inner_gc_reverse:.1f}%",
+                    f"  Product:     {ps.inner_product_size} bp",
+                    "",
+                    "QUALITY",
+                    "─────────────────────────────────────",
+                    f"  Grade:       {ps.grade}",
+                    f"  Score:       {ps.combined_score:.1f}/100",
+                    f"  Tm Diff:     {ps.get_tm_difference():.1f}°C (inner - outer)",
+                ])
+            if result.warnings:
+                lines.append("\nWARNINGS:")
+                for w in result.warnings:
+                    lines.append(f"  ⚠ {w}")
+            if result.recommendations:
+                lines.append("\nRECOMMENDATIONS:")
+                for r in result.recommendations:
+                    lines.append(f"  → {r}")
+            lines.append("═══════════════════════════════════════════════════════")
             output = "\n".join(lines)
         
         if args.output:
