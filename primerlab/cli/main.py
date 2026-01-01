@@ -444,6 +444,17 @@ def main():
     seminested_parser.add_argument("--format", type=str, choices=["text", "json", "markdown"],
                                   default="text", help="Output format")
 
+    # --- DIMER-MATRIX Command (v0.7.1) ---
+    dimer_parser = subparsers.add_parser("dimer-matrix", help="Analyze primer dimer matrix (v0.7.1)")
+    dimer_parser.add_argument("--primers", "-p", type=str, required=True,
+                             help="JSON file with primers [{name, sequence}, ...]")
+    dimer_parser.add_argument("--threshold", type=float, default=-6.0,
+                             help="ΔG threshold for problematic dimers (default: -6.0)")
+    dimer_parser.add_argument("--output", "-o", type=str, default=None,
+                             help="Output file (default: stdout)")
+    dimer_parser.add_argument("--format", type=str, choices=["text", "json", "svg"],
+                             default="text", help="Output format")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -2605,6 +2616,67 @@ qc:
                 lines.append("\nWARNINGS:")
                 for w in result.warnings:
                     lines.append(f"  ⚠ {w}")
+            lines.append("═══════════════════════════════════════════════════════")
+            output = "\n".join(lines)
+        
+        if args.output:
+            with open(args.output, 'w') as f:
+                f.write(output)
+            print(f"✅ Output saved to {args.output}")
+        else:
+            print(output)
+        sys.exit(0)
+
+    # --- DIMER-MATRIX Command Handler (v0.7.1) ---
+    if args.command == "dimer-matrix":
+        from primerlab.core.analysis.dimer_matrix import (
+            DimerMatrixAnalyzer,
+            analyze_dimer_matrix,
+        )
+        import json
+        
+        # Load primers from JSON
+        with open(args.primers, 'r') as f:
+            primers = json.load(f)
+        
+        # Analyze dimer matrix
+        analyzer = DimerMatrixAnalyzer({"dg_threshold": args.threshold})
+        result = analyzer.analyze(primers)
+        
+        if args.format == "json":
+            output = json.dumps(result.to_dict(), indent=2)
+        elif args.format == "svg":
+            output = analyzer.generate_heatmap_svg(result)
+        else:
+            # Text format
+            lines = [
+                "═══════════════════════════════════════════════════════",
+                "           PRIMER DIMER MATRIX (v0.7.1)",
+                "═══════════════════════════════════════════════════════",
+                f"Primers:         {len(result.primers)}",
+                f"Worst ΔG:        {result.worst_dg:.1f} kcal/mol",
+                f"Grade:           {result.grade}",
+                "",
+                "MATRIX (ΔG kcal/mol):",
+                "─────────────────────────────────────",
+            ]
+            
+            # Header row
+            header = "        " + "  ".join([p["name"][:6].ljust(6) for p in result.primers])
+            lines.append(header)
+            
+            # Matrix rows
+            for i, primer in enumerate(result.primers):
+                row_name = primer["name"][:6].ljust(6)
+                row_values = "  ".join([f"{v:6.1f}" for v in result.matrix[i]])
+                lines.append(f"{row_name}  {row_values}")
+            
+            if result.problematic_pairs:
+                lines.append("")
+                lines.append("PROBLEMATIC PAIRS:")
+                for p1, p2 in result.problematic_pairs:
+                    lines.append(f"  ⚠ {p1} ↔ {p2}")
+            
             lines.append("═══════════════════════════════════════════════════════")
             output = "\n".join(lines)
         
