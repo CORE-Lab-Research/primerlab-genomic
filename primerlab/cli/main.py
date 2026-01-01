@@ -455,6 +455,15 @@ def main():
     dimer_parser.add_argument("--format", type=str, choices=["text", "json", "svg"],
                              default="text", help="Output format")
 
+    # --- COMPARE-BATCH Command (v0.7.1) ---
+    compbatch_parser = subparsers.add_parser("compare-batch", help="Compare multiple design runs (v0.7.1)")
+    compbatch_parser.add_argument("results", nargs="+", type=str,
+                                 help="Paths to result.json files")
+    compbatch_parser.add_argument("--output", "-o", type=str, default=None,
+                                 help="Output file (default: stdout)")
+    compbatch_parser.add_argument("--format", type=str, choices=["text", "json", "markdown"],
+                                 default="text", help="Output format")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -2676,6 +2685,76 @@ qc:
                 lines.append("PROBLEMATIC PAIRS:")
                 for p1, p2 in result.problematic_pairs:
                     lines.append(f"  ⚠ {p1} ↔ {p2}")
+            
+            lines.append("═══════════════════════════════════════════════════════")
+            output = "\n".join(lines)
+        
+        if args.output:
+            with open(args.output, 'w') as f:
+                f.write(output)
+            print(f"✅ Output saved to {args.output}")
+        else:
+            print(output)
+        sys.exit(0)
+
+    # --- COMPARE-BATCH Command Handler (v0.7.1) ---
+    if args.command == "compare-batch":
+        from primerlab.core.analysis.batch_compare import compare_batch
+        import json
+        
+        # Compare results
+        result = compare_batch(args.results)
+        
+        if args.format == "json":
+            output = json.dumps(result.to_dict(), indent=2)
+        elif args.format == "markdown":
+            lines = [
+                "# Batch Comparison Report (v0.7.1)",
+                "",
+                f"**Runs Compared:** {len(result.runs)}",
+                f"**Success Rate:** {result.success_rate:.0f}%",
+                f"**Avg Quality:** {result.avg_quality:.1f}",
+                "",
+                "## Summary",
+                f"- **Best Run:** {result.best_run or 'N/A'}",
+                f"- **Worst Run:** {result.worst_run or 'N/A'}",
+                "",
+                "## Runs",
+            ]
+            for run in result.runs:
+                lines.append(f"- **{run.name}**: {run.quality_grade or 'N/A'} ({run.quality_score or 'N/A'})")
+            
+            if result.differences:
+                lines.append("\n## Differences")
+                for diff in result.differences:
+                    lines.append(f"- [{diff['severity'].upper()}] {diff['description']}")
+            output = "\n".join(lines)
+        else:
+            # Text format
+            lines = [
+                "═══════════════════════════════════════════════════════",
+                "           BATCH COMPARISON REPORT (v0.7.1)",
+                "═══════════════════════════════════════════════════════",
+                f"Runs Compared:   {len(result.runs)}",
+                f"Success Rate:    {result.success_rate:.0f}%",
+                f"Avg Quality:     {result.avg_quality:.1f}",
+                f"Best Run:        {result.best_run or 'N/A'}",
+                f"Worst Run:       {result.worst_run or 'N/A'}",
+                "",
+                "RUNS:",
+                "─────────────────────────────────────",
+            ]
+            for run in result.runs:
+                status = "✅" if run.success else "❌"
+                lines.append(f"  {status} {run.name}: {run.quality_grade or 'N/A'} ({run.quality_score or 'N/A'})")
+            
+            if result.differences:
+                lines.append("")
+                lines.append("DIFFERENCES:")
+                lines.append("─────────────────────────────────────")
+                for diff in result.differences:
+                    sev = {"high": "🔴", "medium": "🟡", "low": "🟢"}.get(diff["severity"], "⚪")
+                    lines.append(f"  {sev} {diff['description']}")
             
             lines.append("═══════════════════════════════════════════════════════")
             output = "\n".join(lines)
