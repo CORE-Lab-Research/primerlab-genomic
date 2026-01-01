@@ -1,0 +1,66 @@
+# PrimerLab Preset: Cloning PCR
+# Optimized for molecular cloning with restriction sites
+# v0.7.3
+
+workflow: pcr
+preset: cloning_pcr
+
+# Description: Cloning PCR produces amplicons suitable for ligation
+# into vectors. Primers often include restriction sites at 5' ends.
+
+parameters:
+  # Primer size - longer to accommodate restriction sites
+  primer_size:
+    min: 25
+    opt: 30
+    max: 40
+  
+  # Melting temperature - higher for added bases
+  tm:
+    min: 58.0
+    opt: 62.0
+    max: 68.0
+  
+  # GC content - strict for stability
+  gc:
+    min: 40.0
+    max: 60.0
+  
+  # Amplicon size - variable for cloning targets
+  product_size_range: [[200, 3000]]
+  
+  # Specificity settings - relaxed for added tails
+  max_self_complementarity: 10
+  max_poly_x: 4
+  max_3_prime_stability: 9.0
+
+# QC settings
+qc:
+  mode: standard
+  hairpin_dg_min: -3.0
+  dimer_dg_min: -5.0
+  
+# Cloning-specific settings
+cloning:
+  add_restriction_overhang: true
+  common_sites:
+    - EcoRI
+    - BamHI
+    - HindIII
+    - XhoI
+    - NcoI
+    - NdeI
+
+output:
+  directory: "./output_cloning"
+
+metadata:
+  preset_name: "Cloning PCR"
+  preset_description: "Primers designed for molecular cloning with restriction sites"
+  recommended_for:
+    - "Gene cloning"
+    - "Subcloning"
+    - "Expression vector construction"
+    - "Gateway cloning"
+    - "Gibson assembly"
+  version: "0.7.3"

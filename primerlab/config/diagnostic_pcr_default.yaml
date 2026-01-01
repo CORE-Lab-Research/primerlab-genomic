@@ -1,0 +1,54 @@
+# PrimerLab Preset: Diagnostic PCR
+# Optimized for clinical/diagnostic applications with high specificity
+# v0.7.3
+
+workflow: pcr
+preset: diagnostic_pcr
+
+# Description: Diagnostic PCR requires highly specific primers with
+# stringent conditions to avoid false positives in clinical settings.
+
+parameters:
+  # Primer size - slightly longer for higher specificity
+  primer_size:
+    min: 20
+    opt: 22
+    max: 28
+  
+  # Melting temperature - tighter range for consistency
+  tm:
+    min: 58.0
+    opt: 60.0
+    max: 62.0
+  
+  # GC content - well-balanced
+  gc:
+    min: 45.0
+    max: 55.0
+  
+  # Amplicon size - shorter for faster runs
+  product_size_range: [[80, 200]]
+  
+  # Specificity settings
+  max_self_complementarity: 6
+  max_poly_x: 3
+  max_3_prime_stability: 9.0
+
+# QC settings - stricter for diagnostics
+qc:
+  mode: strict
+  hairpin_dg_min: -2.0
+  dimer_dg_min: -5.0
+
+output:
+  directory: "./output_diagnostic"
+
+metadata:
+  preset_name: "Diagnostic PCR"
+  preset_description: "High-specificity primers for clinical/diagnostic applications"
+  recommended_for:
+    - "Clinical diagnostics"
+    - "Pathogen detection"
+    - "Genetic testing"
+    - "Point-of-care testing"
+  version: "0.7.3"

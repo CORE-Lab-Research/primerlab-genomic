@@ -119,3 +119,85 @@ class TestPresetValues:
             config = yaml.safe_load(f)
         
         assert config["parameters"]["product_size_range"] == "400-700"
+
+
+# ================================================
+# v0.7.3 New Presets Tests
+# ================================================
+
+class TestV073PresetFilesExist:
+    """Test that v0.7.3 preset files exist."""
+    
+    def test_diagnostic_pcr_preset_exists(self):
+        """Diagnostic PCR preset file should exist."""
+        preset_path = Path(__file__).parent.parent / "primerlab" / "config" / "diagnostic_pcr_default.yaml"
+        assert preset_path.exists(), "diagnostic_pcr_default.yaml not found"
+    
+    def test_sequencing_pcr_preset_exists(self):
+        """Sequencing PCR preset file should exist."""
+        preset_path = Path(__file__).parent.parent / "primerlab" / "config" / "sequencing_pcr_default.yaml"
+        assert preset_path.exists(), "sequencing_pcr_default.yaml not found"
+    
+    def test_cloning_pcr_preset_exists(self):
+        """Cloning PCR preset file should exist."""
+        preset_path = Path(__file__).parent.parent / "primerlab" / "config" / "cloning_pcr_default.yaml"
+        assert preset_path.exists(), "cloning_pcr_default.yaml not found"
+
+
+class TestV073PresetContent:
+    """Test v0.7.3 preset YAML content."""
+    
+    def test_diagnostic_pcr_content(self):
+        """Diagnostic PCR preset should have correct content."""
+        import yaml
+        preset_path = Path(__file__).parent.parent / "primerlab" / "config" / "diagnostic_pcr_default.yaml"
+        with open(preset_path) as f:
+            config = yaml.safe_load(f)
+        
+        assert config["preset"] == "diagnostic_pcr"
+        assert config["parameters"]["product_size_range"] == [[80, 200]]
+        assert config["qc"]["mode"] == "strict"
+        assert "metadata" in config
+    
+    def test_sequencing_pcr_content(self):
+        """Sequencing PCR preset should have correct content."""
+        import yaml
+        preset_path = Path(__file__).parent.parent / "primerlab" / "config" / "sequencing_pcr_default.yaml"
+        with open(preset_path) as f:
+            config = yaml.safe_load(f)
+        
+        assert config["preset"] == "sequencing_pcr"
+        assert config["parameters"]["product_size_range"] == [[400, 1000]]
+        assert "metadata" in config
+    
+    def test_cloning_pcr_content(self):
+        """Cloning PCR preset should have correct content."""
+        import yaml
+        preset_path = Path(__file__).parent.parent / "primerlab" / "config" / "cloning_pcr_default.yaml"
+        with open(preset_path) as f:
+            config = yaml.safe_load(f)
+        
+        assert config["preset"] == "cloning_pcr"
+        assert config["parameters"]["product_size_range"] == [[200, 3000]]
+        assert "cloning" in config
+        assert "common_sites" in config["cloning"]
+    
+    def test_all_v073_presets_have_metadata(self):
+        """All v0.7.3 presets should have metadata section."""
+        import yaml
+        presets = [
+            "diagnostic_pcr_default.yaml",
+            "sequencing_pcr_default.yaml",
+            "cloning_pcr_default.yaml",
+        ]
+        
+        for preset_name in presets:
+            preset_path = Path(__file__).parent.parent / "primerlab" / "config" / preset_name
+            with open(preset_path) as f:
+                config = yaml.safe_load(f)
+            
+            assert "metadata" in config, f"Missing metadata in {preset_name}"
+            assert "preset_name" in config["metadata"]
+            assert "preset_description" in config["metadata"]
+            assert "recommended_for" in config["metadata"]
+

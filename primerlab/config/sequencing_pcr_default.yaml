@@ -1,0 +1,54 @@
+# PrimerLab Preset: Sequencing PCR
+# Optimized for Sanger sequencing with high-fidelity amplification
+# v0.7.3
+
+workflow: pcr
+preset: sequencing_pcr
+
+# Description: Sequencing PCR requires primers that produce clean,
+# single-band products suitable for direct Sanger sequencing.
+
+parameters:
+  # Primer size - standard for sequencing
+  primer_size:
+    min: 18
+    opt: 20
+    max: 25
+  
+  # Melting temperature - moderate for clean amplification
+  tm:
+    min: 55.0
+    opt: 58.0
+    max: 62.0
+  
+  # GC content - balanced
+  gc:
+    min: 40.0
+    max: 60.0
+  
+  # Amplicon size - longer for sequencing reads
+  product_size_range: [[400, 1000]]
+  
+  # Specificity settings
+  max_self_complementarity: 8
+  max_poly_x: 4
+  max_3_prime_stability: 9.0
+
+# QC settings - standard
+qc:
+  mode: standard
+  hairpin_dg_min: -3.0
+  dimer_dg_min: -6.0
+
+output:
+  directory: "./output_sequencing"
+
+metadata:
+  preset_name: "Sequencing PCR"
+  preset_description: "Primers optimized for Sanger sequencing applications"
+  recommended_for:
+    - "Sanger sequencing"
+    - "Gene cloning verification"
+    - "Mutation screening"
+    - "Plasmid sequencing"
+  version: "0.7.3"
