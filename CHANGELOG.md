@@ -5,6 +5,39 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-01-01
+
+### Added
+
+- **Allele Discrimination / Genotyping** (`core/genotyping/`)
+  - Allele-specific primer scoring engine
+  - SNP position validation (3' end critical)
+  - Discrimination Tm calculator
+  - `score_genotyping_primer_api()` function
+
+- **RT-qPCR Enhancements** (`core/rtpcr/`)
+  - Exon junction detection for RT-specificity
+  - gDNA contamination risk assessment
+  - Transcript annotation loader (GTF/BED)
+  - `validate_rtpcr_primers_api()` function
+
+- **Melt Curve Visualization** (`core/qpcr/melt_plot.py`)
+  - SVG melt curve plot generation
+  - PNG export with matplotlib
+  - Multi-peak annotation
+
+- **CLI qPCR Commands**
+  - `primerlab probe-check` - TaqMan probe binding check
+  - `primerlab melt-curve` - SYBR melt curve prediction
+  - `primerlab amplicon-qc` - Amplicon quality validation
+
+### Tests
+
+- Added 38 new tests (15 genotyping + 14 rtpcr + 9 melt plot)
+- Total tests: 604
+
+---
+
 ## [0.5.0] - 2024-12-30
 
 ### Added
