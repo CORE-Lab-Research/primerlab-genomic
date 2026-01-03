@@ -34,6 +34,18 @@ def validate_primers(
         - primary_product: best product if any
         - warnings: list of warnings
         - errors: list of errors
+        
+    Example:
+        >>> from primerlab.api import validate_primers
+        >>> result = validate_primers(
+        ...     forward_primer="ATGCGATCGATCGATCG",
+        ...     reverse_primer="GCTAGCTAGCTAGCTAG",
+        ...     template="ATGCGATCGATCGATCG...GCTAGCTAGCTAGCTAG"
+        ... )
+        >>> print(result["success"])
+        True
+        >>> print(result["products_count"])
+        1
     """
     from primerlab.core.insilico import run_insilico_pcr
     
@@ -86,6 +98,17 @@ def design_pcr_primers(
     Returns:
         WorkflowResult object containing primers and QC status.
         If validate=True, includes 'insilico_validation' in metadata.
+        
+    Example:
+        >>> from primerlab.api import design_pcr_primers
+        >>> result = design_pcr_primers(
+        ...     sequence="ATGCGATCGATCGATCG...",
+        ...     validate=True
+        ... )
+        >>> print(result.success)
+        True
+        >>> print(result.primers["forward"].sequence)
+        'ATGCGATCGATCGATCG'
     """
     # Base config structure
     base_config = {
@@ -140,6 +163,14 @@ def design_qpcr_assays(
         
     Returns:
         WorkflowResult object containing primers, probe, and efficiency metrics.
+        
+    Example:
+        >>> from primerlab.api import design_qpcr_assays
+        >>> result = design_qpcr_assays(sequence="ATGCGATCGATCGATCG...")
+        >>> print(result.success)
+        True
+        >>> print(result.primers["probe"].sequence)
+        'CGATCGATCGATCG'
     """
     base_config = {
         "workflow": "qpcr",
@@ -200,6 +231,18 @@ def check_offtargets(
         - forward_offtargets: count
         - reverse_offtargets: count
         - details: additional info
+        
+    Example:
+        >>> from primerlab.api import check_offtargets
+        >>> result = check_offtargets(
+        ...     forward_primer="ATGCGATCGATCGATCG",
+        ...     reverse_primer="GCTAGCTAGCTAGCTAG",
+        ...     database="human_genome.fasta"
+        ... )
+        >>> print(result["grade"])
+        'A'
+        >>> print(result["is_specific"])
+        True
     """
     from primerlab.core.offtarget.finder import OfftargetFinder
     from primerlab.core.offtarget.scorer import SpecificityScorer
@@ -256,6 +299,18 @@ def check_primer_compatibility(
         - matrix: interaction details
         - warnings: list of specific issues
         - recommendations: list of suggestions
+        
+    Example:
+        >>> from primerlab.api import check_primer_compatibility
+        >>> primers = [
+        ...     {"name": "Gene1", "fwd": "ATGCGATCGATCG", "rev": "GCTAGCTAGCTAG"},
+        ...     {"name": "Gene2", "fwd": "CGATCGATCGATC", "rev": "TAGCTAGCTAGCT"}
+        ... ]
+        >>> result = check_primer_compatibility(primers)
+        >>> print(result["is_valid"])
+        True
+        >>> print(result["grade"])
+        'A'
     """
     from primerlab.core.compat_check.models import MultiplexPair
     from primerlab.core.compat_check.dimer import DimerEngine
@@ -324,6 +379,14 @@ def analyze_amplicon(
         - gc_clamp: end analysis
         - amplicon_tm: predicted melting temperature
         - warnings: list of quality issues
+        
+    Example:
+        >>> from primerlab.api import analyze_amplicon
+        >>> result = analyze_amplicon(sequence="ATGCGATCGATCGATCG...")
+        >>> print(result["grade"])
+        'A'
+        >>> print(result["quality_score"])
+        92.5
     """
     from primerlab.core.amplicon import analyze_amplicon as _analyze
     
