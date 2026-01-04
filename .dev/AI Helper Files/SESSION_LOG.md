@@ -7,9 +7,9 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 
 ## Quick Reference
 
-- **Current Version**: v0.3.6 (dev)
+- **Current Version**: v0.8.0 (dev)
 - **Dev Environment**: Requires WSL (primer3-py doesn't work on Windows native)
-- **Test Status**: 337 passed, 0 skipped, 0 failed
+- **Test Status**: 731 passed, 0 skipped, 0 failed
 
 ---
 
@@ -270,13 +270,39 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 [2025-12-30 13:02] CHANGE  Phase 5: Updated batch __init__.py exports
 [2025-12-30 13:03] CHANGE  Phase 5: Added 2 API tests for simulate_tm_gradient_api
 [2025-12-30 13:05] INFO    Phase 5 Complete, re-tagged v0.4.3, 506 tests passing
+# ===== v0.5.x - v0.7.x Summary (2025-12-31 - 2026-01-03) =====
+[2025-12-31] CHANGE  v0.5.0: qPCR Customization (fluorophore, quencher, linker)
+[2025-12-31] CHANGE  v0.5.1: Probe Design Fine-tuning
+[2026-01-01] CHANGE  v0.6.0: Genotyping Primer Design workflows
+[2026-01-01] CHANGE  v0.6.1: RT-PCR Optimization  
+[2026-01-02] CHANGE  v0.6.2: Coverage Map Visualization
+[2026-01-03] CHANGE  v0.7.0: Multiplex qPCR (MGB probe support)
+[2026-01-03] CHANGE  v0.7.1: Probe TM Prediction
+[2026-01-03] CHANGE  v0.7.2: qPCR Quantification (Cq, efficiency)
+[2026-01-03] CHANGE  v0.7.3: Standard Curve Analysis
+[2026-01-03] CHANGE  v0.7.4: qPCR Efficiency Tools, Advanced qPCR Features
+[2026-01-03] INFO    v0.7.4 complete - 711 tests passing
+
+# ===== v0.8.0 - Code Quality Foundation (2026-01-04) =====
+[2026-01-04 11:08] INFO    Started v0.8.0 - Code Quality Foundation
+[2026-01-04 11:10] CHANGE  Phase 1: Refactored visualization.py → gc_profile.py
+[2026-01-04 11:15] CHANGE  Phase 1: Replaced bare except handlers with specific exceptions
+[2026-01-04 11:20] CHANGE  Phase 1: Fixed flake8 critical errors (missing imports)
+[2026-01-04 11:25] CHANGE  Phase 1: Added exception unit tests (+20 tests)
+[2026-01-04 11:30] CHANGE  Phase 2: Created mypy.ini + py.typed marker
+[2026-01-04 11:35] CHANGE  Phase 2: Added Example sections to 6 API docstrings
+[2026-01-04 11:40] CHANGE  Phase 3: Fixed flake8 W391 (trailing blank lines, 5162→0)
+[2026-01-04 11:45] CHANGE  Phase 3: Fixed flake8 W293 (blank whitespace, 3526→0)
+[2026-01-04 12:00] CHANGE  Phase 3: Fixed 7 mypy type errors (exceptions, public, database, sequence)
+[2026-01-04 13:53] INFO    v0.8.0 Phase 1-2 Complete, Phase 3 partial (206 mypy errors deferred)
+[2026-01-04 13:53] INFO    v0.8.0 done - 731 tests passing, flake8 critical errors=0
 ```
 
 ---
 
 ## Context Notes (Update when major state changes)
 
-Last updated: 2025-12-30
+Last updated: 2026-01-04
 
 ### Release Status
 
@@ -285,26 +311,45 @@ Last updated: 2025-12-30
 | v0.1.0 - v0.1.6 | ✅ COMPLETE | Core, smart features, stabilization |
 | v0.2.0 - v0.2.5 | ✅ RELEASED | In-silico PCR, degenerate, circular |
 | v0.3.0 - v0.3.5 | ✅ RELEASED | BLAST, off-target, reporting, docs |
-| v0.4.0 | ✅ RELEASED | Primer Compatibility Check |
-| v0.4.1 | ✅ RELEASED | Amplicon Analysis |
-| v0.4.2 | ✅ TAGGED | Species Specificity |
-| v0.4.3 | ✅ TAGGED | Tm Gradient & Batch Enhancements |
+| v0.4.0 - v0.4.3 | ✅ RELEASED | Compat check, Amplicon, Species, Tm Gradient |
+| v0.5.0 - v0.5.1 | ✅ RELEASED | qPCR Customization |
+| v0.6.0 - v0.6.2 | ✅ RELEASED | Genotyping, RT-PCR, Coverage Map |
+| v0.7.0 - v0.7.4 | ✅ RELEASED | Multiplex qPCR, Efficiency Tools |
+| v0.8.0 | ✅ COMPLETE | Code Quality Foundation |
 
-### v0.4.3 Final Summary
+### v0.8.0 Summary
 
-- **Phase 1**: Tm Gradient Core (5 items) ✅
-- **Phase 2**: Batch Species-Check (4 items) ✅
-- **Phase 3**: CLI & API Integration (4 items) ✅
-- **Phase 4**: Documentation & Polish (4 items) ✅
+- **Phase 1: Technical Debt** ✅ (5/5 items)
+- **Phase 2: Documentation** ✅ (5/5 items)
+- **Phase 3: Quality Compliance** ⏸️ Partial
+  - Flake8 critical: 0 errors ✅
+  - Mypy: 7 fixed, 206 deferred to pre-release
 
 ### Test Coverage
 
-- **Total Tests**: 499
+- **Total Tests**: 731
 - **Skipped**: 0
 - **CI Status**: ✅ Passing
 
+### Commits v0.8.0
+
+```
+4dd5d4f refactor: visualization.py → gc_profile.py
+68e76a1 refactor: replace bare except handlers
+ac9cea1 fix: flake8 critical errors
+f500025 test: exception tests (+20)
+8bd94dd chore: mypy.ini + py.typed
+e75202c chore: mypy baseline config
+0d460d2 docs: add Example sections to API
+17f9a98 style: fix flake8 W391, W293 whitespace
+3e2cdd3 fix: type hints to exceptions.py and public.py
+e589685 fix: type hints in database.py
+4c629d3 fix: partial mypy type fixes (7 fixed, 206 deferred)
+```
+
 ### Next Steps
 
-1. Push v0.4.3 to GitHub
-2. Begin v0.5.0 (qPCR Customization)
-3. Plan v1.0.0 stable release
+1. Update version to 0.8.0 in pyproject.toml, **init**.py
+2. Create v0.8.0 release notes
+3. Remaining 206 mypy errors - fix before stable release
+4. Begin v0.8.1 (Testing Excellence) or v0.9.0
