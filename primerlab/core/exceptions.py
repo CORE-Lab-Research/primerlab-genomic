@@ -14,12 +14,18 @@ Categories:
     INTERNAL → Unexpected internal errors
     VALIDATION → Constraint violation or value mismatch
 """
+from typing import Optional, Dict, Any
 
 
 class PrimerLabException(Exception):
     """Base exception for all PrimerLab errors."""
 
-    def __init__(self, message: str, error_code: str = None, details: dict = None):
+    def __init__(
+        self,
+        message: str,
+        error_code: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None
+    ):
         super().__init__(f"{error_code}: {message}" if error_code else message)
         self.error_code = error_code
         self.message = message

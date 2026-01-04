@@ -122,7 +122,9 @@ def design_pcr_primers(
     final_config = base_config
     if config:
         final_config.update(config)
-        final_config["input"]["sequence"] = sequence
+        input_dict = final_config["input"]
+        if isinstance(input_dict, dict):
+            input_dict["sequence"] = sequence
 
     result = run_pcr_workflow(final_config)
 
@@ -182,7 +184,9 @@ def design_qpcr_assays(
     final_config = base_config
     if config:
         final_config.update(config)
-        final_config["input"]["sequence"] = sequence
+        input_dict = final_config["input"]
+        if isinstance(input_dict, dict):
+            input_dict["sequence"] = sequence
 
     result = run_qpcr_workflow(final_config)
 
@@ -322,7 +326,7 @@ def check_primer_compatibility(
     full_config = load_and_merge_config("compat_check", cli_overrides=config)
 
     # Map input to MultiplexPair models
-    mapped_primers = []
+    mapped_primers: List[MultiplexPair] = []
     for p in primers:
         mp = MultiplexPair(
             name=p.get('name', f"Pair_{len(mapped_primers)+1}"),
