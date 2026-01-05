@@ -7,6 +7,7 @@ import pytest
 import tempfile
 import os
 import csv
+import io
 
 
 # ============================================================================
@@ -333,3 +334,153 @@ class TestProgressHelpers:
         
         result = show_spinner("Computing", dummy_func, 5)
         assert result == 10
+
+
+# ============================================================================
+# CONSOLE OUTPUT TESTS  
+# ============================================================================
+
+class TestConsole:
+    """Tests for primerlab/cli/console.py."""
+    
+    def test_print_header(self):
+        """Should print styled header."""
+        from primerlab.cli.console import print_header
+        print_header("Test Header")
+    
+    def test_print_success(self):
+        """Should print success message."""
+        from primerlab.cli.console import print_success
+        print_success("Operation successful")
+    
+    def test_print_warning(self):
+        """Should print warning message."""
+        from primerlab.cli.console import print_warning
+        print_warning("This is a warning")
+    
+    def test_print_error(self):
+        """Should print error message."""
+        from primerlab.cli.console import print_error
+        print_error("This is an error")
+    
+    def test_print_info(self):
+        """Should print info message."""
+        from primerlab.cli.console import print_info
+        print_info("This is info")
+    
+    def test_create_progress_bar(self):
+        """Should create Rich progress bar."""
+        from primerlab.cli.console import create_progress_bar
+        bar = create_progress_bar()
+        assert bar is not None
+    
+    def test_console_theme(self):
+        """Should have custom theme defined."""
+        from primerlab.cli.console import PRIMERLAB_THEME, console
+        assert PRIMERLAB_THEME is not None
+        assert console is not None
+
+
+# ============================================================================
+# ALIGNMENT VIEW TESTS
+# ============================================================================
+
+class TestAlignmentView:
+    """Tests for primerlab/core/report/alignment_view.py."""
+    
+    def test_alignment_match_create(self):
+        """Should create AlignmentMatch dataclass."""
+        from primerlab.core.report.alignment_view import AlignmentMatch
+        
+        match = AlignmentMatch(
+            query_seq="ATCGATCGATCGATCGATCG",
+            target_seq="ATCGATCGATCGATCGATCG",
+            query_start=0,
+            query_end=20,
+            target_start=100,
+            target_end=120,
+            identity=100.0
+        )
+        assert match.identity == 100.0
+        assert match.query_seq == "ATCGATCGATCGATCGATCG"
+    
+    def test_alignment_view_init(self):
+        """Should initialize AlignmentView."""
+        from primerlab.core.report.alignment_view import AlignmentView
+        
+        view = AlignmentView()
+        assert view.use_colors == True
+        assert view.line_width == 60
+    
+    def test_alignment_view_init_custom(self):
+        """Should initialize with custom settings."""
+        from primerlab.core.report.alignment_view import AlignmentView
+        
+        view = AlignmentView(use_colors=False, line_width=80)
+        assert view.use_colors == False
+        assert view.line_width == 80
+    
+    def test_format_alignment(self):
+        """Should format alignment as ASCII."""
+        from primerlab.core.report.alignment_view import AlignmentView, AlignmentMatch
+        
+        view = AlignmentView(use_colors=False)
+        match = AlignmentMatch(
+            query_seq="ATCGATCGATCGATCGATCG",
+            target_seq="ATCGATCGATCGATCGATCG",
+            query_start=0,
+            query_end=20,
+            target_start=100,
+            target_end=120,
+            identity=100.0
+        )
+        result = view.format_alignment(match)
+        assert isinstance(result, str)
+        assert len(result) > 0
+    
+    def test_format_binding_diagram(self):
+        """Should format binding site diagram."""
+        from primerlab.core.report.alignment_view import AlignmentView
+        
+        view = AlignmentView(use_colors=False)
+        result = view.format_binding_diagram(
+            target_length=1000,
+            forward_pos=(100, 120),
+            reverse_pos=(300, 320)
+        )
+        assert isinstance(result, str)
+    
+    def test_offtarget_table_init(self):
+        """Should initialize OfftargetTable."""
+        from primerlab.core.report.alignment_view import OfftargetTable
+        
+        table = OfftargetTable(use_colors=False)
+        assert table.use_colors == False
+    
+    def test_offtarget_table_format_summary(self):
+        """Should format off-target summary."""
+        from primerlab.core.report.alignment_view import OfftargetTable
+        
+        table = OfftargetTable(use_colors=False)
+        result = table.format_summary(
+            forward_hits=2,
+            reverse_hits=1,
+            forward_grade="A",
+            reverse_grade="A",
+            combined_grade="A",
+            specificity_score=95.0
+        )
+        assert isinstance(result, str)
+    
+    def test_format_primer_alignment_function(self):
+        """Should format primer alignment using convenience function."""
+        from primerlab.core.report.alignment_view import format_primer_alignment
+        
+        result = format_primer_alignment(
+            primer_seq="ATCGATCGATCGATCGATCG",
+            target_seq="ATCGATCGATCGATCGATCG",
+            start=100,
+            end=120,
+            identity=100.0
+        )
+        assert isinstance(result, str)
