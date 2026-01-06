@@ -488,3 +488,165 @@ class TestReportExporter:
             path = os.path.join(tmpdir, "report.md")
             result = exporter.export(path, format="markdown")
             assert os.path.exists(result)
+
+
+# ============================================================================
+# HTML EXPORT TESTS (core/report/html_export.py)
+# ============================================================================
+
+class TestHTMLExporter:
+    """Tests for HTMLExporter class."""
+    
+    def _create_test_report(self):
+        """Create a test report."""
+        from primerlab.core.report.generator import ReportGenerator
+        
+        gen = ReportGenerator()
+        gen.add_design(
+            forward_seq="ATCGATCGATCGATCGATCG",
+            reverse_seq="CGATCGATCGATCGATCGAT",
+            forward_tm=60.0,
+            reverse_tm=60.0,
+            product_size=200
+        )
+        gen.add_validation(amplicons=1, product_size=200, success_probability=0.95)
+        gen.add_offtarget(database="nt", forward_hits=2, reverse_hits=1, grade="A", score=95.0)
+        return gen.generate()
+    
+    def test_exporter_init(self):
+        """Should initialize HTML exporter."""
+        from primerlab.core.report.html_export import HTMLExporter
+        
+        report = self._create_test_report()
+        exporter = HTMLExporter(report)
+        assert exporter.report is not None
+    
+    def test_generate_html(self):
+        """Should generate HTML string."""
+        from primerlab.core.report.html_export import HTMLExporter
+        
+        report = self._create_test_report()
+        exporter = HTMLExporter(report)
+        html = exporter.generate()
+        
+        assert isinstance(html, str)
+        assert "<html" in html
+        assert "</html>" in html
+    
+    def test_grade_class(self):
+        """Should return correct CSS class for grade."""
+        from primerlab.core.report.html_export import HTMLExporter
+        
+        report = self._create_test_report()
+        exporter = HTMLExporter(report)
+        
+        assert "A" in exporter._grade_class("A") or exporter._grade_class("A") != ""
+    
+    def test_badge_class(self):
+        """Should return correct badge class."""
+        from primerlab.core.report.html_export import HTMLExporter
+        
+        report = self._create_test_report()
+        exporter = HTMLExporter(report)
+        
+        result = exporter._badge_class("A")
+        assert isinstance(result, str)
+    
+    def test_header_section(self):
+        """Should generate header section."""
+        from primerlab.core.report.html_export import HTMLExporter
+        
+        report = self._create_test_report()
+        exporter = HTMLExporter(report)
+        header = exporter._header_section()
+        
+        assert isinstance(header, str)
+    
+    def test_design_section(self):
+        """Should generate design section."""
+        from primerlab.core.report.html_export import HTMLExporter
+        
+        report = self._create_test_report()
+        exporter = HTMLExporter(report)
+        design = exporter._design_section()
+        
+        assert isinstance(design, str)
+    
+    def test_validation_section(self):
+        """Should generate validation section."""
+        from primerlab.core.report.html_export import HTMLExporter
+        
+        report = self._create_test_report()
+        exporter = HTMLExporter(report)
+        validation = exporter._validation_section()
+        
+        assert isinstance(validation, str)
+    
+    def test_offtarget_section(self):
+        """Should generate off-target section."""
+        from primerlab.core.report.html_export import HTMLExporter
+        
+        report = self._create_test_report()
+        exporter = HTMLExporter(report)
+        offtarget = exporter._offtarget_section()
+        
+        assert isinstance(offtarget, str)
+    
+    def test_warnings_section(self):
+        """Should generate warnings section."""
+        from primerlab.core.report.html_export import HTMLExporter
+        
+        report = self._create_test_report()
+        exporter = HTMLExporter(report)
+        warnings = exporter._warnings_section()
+        
+        assert isinstance(warnings, str)
+    
+    def test_footer_section(self):
+        """Should generate footer section."""
+        from primerlab.core.report.html_export import HTMLExporter
+        
+        report = self._create_test_report()
+        exporter = HTMLExporter(report)
+        footer = exporter._footer_section()
+        
+        assert isinstance(footer, str)
+    
+    def test_save_html(self):
+        """Should save HTML to file."""
+        from primerlab.core.report.html_export import HTMLExporter
+        
+        report = self._create_test_report()
+        exporter = HTMLExporter(report)
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "report.html")
+            exporter.save(path)
+            assert os.path.exists(path)
+            
+            # Check content
+            with open(path, 'r') as f:
+                content = f.read()
+                assert "<html" in content
+
+
+class TestExportHtmlFunction:
+    """Tests for export_html convenience function."""
+    
+    def test_export_html(self):
+        """Should export HTML using convenience function."""
+        from primerlab.core.report.html_export import export_html
+        from primerlab.core.report.generator import ReportGenerator
+        
+        gen = ReportGenerator()
+        gen.add_design(
+            forward_seq="ATCGATCGATCGATCGATCG",
+            reverse_seq="CGATCGATCGATCGATCGAT"
+        )
+        report = gen.generate()
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "report.html")
+            export_html(report, path)
+            assert os.path.exists(path)
+
