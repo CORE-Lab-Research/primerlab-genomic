@@ -5,7 +5,11 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v1.0.0-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v1.0.0)
+[![Coverage](https://img.shields.io/badge/coverage-76%25-green.svg)](https://github.com/engkinandatama/primerlab-genomic)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/pkgs/container/primerlab-genomic)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://engkinandatama.github.io/primerlab-genomic/)
+[![PyPI](https://img.shields.io/pypi/v/primerlab-genomic.svg)](https://pypi.org/project/primerlab-genomic/)
+[![Status](https://img.shields.io/badge/status-v1.0.0-brightgreen.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v1.0.0)
 
 > 🔰 **Latest Release**: [**v1.0.0 - Stable Release**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v1.0.0) 🎉
 
