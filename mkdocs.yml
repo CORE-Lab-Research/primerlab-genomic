@@ -40,14 +40,29 @@ nav:
   - Getting Started: getting-started.md
   - User Guide:
       - CLI Reference: cli/README.md
-      - Configuration: configuration/README.md
-      - Workflows: 
-          - PCR Design: tutorials/pcr-workflow.md
-          - qPCR Design: tutorials/qpcr-workflow.md
+      - Configuration: 
+          - Overview: configuration/README.md
+          - Parameter Reference: configuration/reference.md
+      - Tutorials: 
+          - Quickstart: tutorials/quickstart.md
+          - PCR Design: tutorials/pcr-walkthrough.md
+          - qPCR Design: tutorials/qpcr-design.md
+          - qPCR Advanced: tutorials/qpcr-advanced.md
+          - Nested PCR: tutorials/nested-pcr.md
+          - Multiplex & Dimers: tutorials/multiplex-dimer.md
+          - Species Check: tutorials/species-check.md
+          - Off-target Analysis: tutorials/offtarget-tutorial.md
+  - Features:
+      - Overview: features/README.md
+      - Batch Processing: features/batch-processing.md
+      - Species Specificity: features/species-specificity.md
+      - Melt Curve: features/melt-curve.md
   - API Reference:
       - Overview: api/README.md
-      - Public API: api/public-api.md
+      - Public API: api/public.md
+      - Models: api/models.md
   - Examples: examples/README.md
+  - Troubleshooting: troubleshooting.md
   - Changelog: changelog.md
 
 # Plugins
