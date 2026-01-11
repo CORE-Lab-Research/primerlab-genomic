@@ -5,6 +5,33 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-01-11 - Docker Foundation
+
+### Added
+
+- **Docker Support**
+  - Multi-stage `Dockerfile` with Primer3, ViennaRNA, BLAST+
+  - `.dockerignore` for optimized builds
+  - GitHub Actions `docker.yml` for auto-build on tag push
+  - Image published to GitHub Container Registry (GHCR)
+
+### Documentation
+
+- Installation options: Docker, Conda, Pip
+
+### Usage
+
+```bash
+# Pull and run
+docker pull ghcr.io/engkinandatama/primerlab-genomic:latest
+docker run primerlab-genomic --version
+
+# Run with local config
+docker run -v $(pwd):/data primerlab-genomic run pcr --config /data/config.yaml
+```
+
+---
+
 ## [0.8.4] - 2026-01-11 - Performance Optimization
 
 ### Added

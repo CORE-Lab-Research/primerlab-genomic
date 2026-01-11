@@ -1,0 +1,52 @@
+# =============================================================================
+# Docker Ignore - Exclude files from Docker build context
+# =============================================================================
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Python cache
+__pycache__
+*.py[cod]
+*$py.class
+.pytest_cache
+.mypy_cache
+
+# Test artifacts
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+.env
+
+# Development files
+.dev/
+paper/
+scripts/
+
+# Documentation (built separately)
+docs/
+
+# Large files
+*.db
+*.sqlite
+*.log
+
+# Test outputs
+*_out/
