@@ -411,7 +411,7 @@ primerlab-genomic/
 │   │   └── qpcr/         # qPCR workflow
 │   ├── api/              # Public API
 │   └── config/           # Default configurations
-├── tests/                # 613 automated tests
+├── tests/                # 1286 automated tests
 ├── docs/                 # User documentation
 ├── examples/             # Example files
 │   └── insilico/         # In-silico PCR examples
@@ -422,42 +422,36 @@ primerlab-genomic/
 
 ## 📌 Development Status
 
-### ✅ **v0.6.2** (Current)
+### ✅ **v0.8.4** (Current)
 
-* **Allele Discrimination** (`core/genotyping/`):
-  * SNP genotyping primer scoring
-  * 3' end position analysis
-  * Mismatch Tm calculation
-* **RT-qPCR Validation** (`core/rtpcr/`):
-  * Exon junction detection
-  * gDNA contamination risk assessment
-* **Melt Curve Visualization**:
-  * SVG/PNG melt curve plots
-  * Multi-peak annotation
-* **New CLI Commands**: `probe-check`, `melt-curve`, `amplicon-qc`
-* **`--plot-melt` Option**: Generate melt curve plots during workflow
+* **Performance Optimization** (`core/cache.py`):
+  * LRU caching for Tm, GC, and ΔG calculations
+  * 2-5x speedup for repeated computations
+* **Model Standardization** (v0.8.2):
+  * `to_dict()` methods for 10+ dataclasses
+  * Comprehensive STRUCTURE.md documentation
+* **Code Quality Foundation** (v0.8.0):
+  * Type hints infrastructure (mypy config)
+  * Exception testing (20+ tests)
+  * Flake8 fixes (8,600+ fixes)
+* **1286 Tests** - Comprehensive test coverage
 
 ### v0.7.x Features (PCR Variants & qPCR Advanced)
 
-* **Nested PCR Design** (`core/variants/nested.py`):
-  * Outer/inner primer design with Tm optimization
-* **Semi-Nested PCR** (`core/variants/seminested.py`):
-  * Shared primer detection and unique inner design
-* **Dimer Matrix Analysis** (`core/analysis/dimer_matrix.py`):
-  * NxN pairwise analysis with SVG heatmap
-* **Batch Comparison** (`core/analysis/batch_compare.py`):
-  * Compare design runs with diff reports
-* **Coverage Map** (`core/visualization/coverage_map.py`):
-  * Primer position overlay with SVG export
-* **Enhanced Reports** (`core/report/html_enhanced.py`):
-  * Interactive sortable tables, modern design
-* **Config Templates**: `diagnostic_pcr`, `sequencing_pcr`, `cloning_pcr`
-* **qPCR Efficiency** (`core/qpcr/efficiency.py`):
-  * Standard curve calculator, efficiency prediction
-* **Advanced qPCR** (`core/qpcr/advanced.py`):
-  * HRM optimization, quencher recommendations, dPCR compatibility
-* **CLI Commands**: `nested-design`, `seminested-design`, `dimer-matrix`, `compare-batch`, `coverage-map`, `qpcr-efficiency`
-* **711 Tests** - Comprehensive test coverage
+* **Nested PCR Design** (`core/variants/nested.py`)
+* **Semi-Nested PCR** (`core/variants/seminested.py`)
+* **Dimer Matrix Analysis** (`core/analysis/dimer_matrix.py`)
+* **Batch Comparison** (`core/analysis/batch_compare.py`)
+* **Coverage Map** (`core/visualization/coverage_map.py`)
+* **qPCR Efficiency** (`core/qpcr/efficiency.py`)
+* **Advanced qPCR** (`core/qpcr/advanced.py`): HRM, dPCR, quencher recommendations
+
+### v0.6.x Features (Genotyping & Visualization)
+
+* **Allele Discrimination** (`core/genotyping/`)
+* **RT-qPCR Validation** (`core/rtpcr/`)
+* **Melt Curve Visualization**
+* **CLI Commands**: `probe-check`, `melt-curve`, `amplicon-qc`
 
 ### v0.5.0 Features
 
