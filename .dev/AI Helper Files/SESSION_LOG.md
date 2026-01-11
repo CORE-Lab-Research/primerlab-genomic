@@ -302,7 +302,7 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 
 ## Context Notes (Update when major state changes)
 
-Last updated: 2026-01-04
+Last updated: 2026-01-11
 
 ### Release Status
 
@@ -315,41 +315,35 @@ Last updated: 2026-01-04
 | v0.5.0 - v0.5.1 | ✅ RELEASED | qPCR Customization |
 | v0.6.0 - v0.6.2 | ✅ RELEASED | Genotyping, RT-PCR, Coverage Map |
 | v0.7.0 - v0.7.4 | ✅ RELEASED | Multiplex qPCR, Efficiency Tools |
-| v0.8.0 | ✅ COMPLETE | Code Quality Foundation |
+| v0.8.0 - v0.8.3 | ✅ RELEASED | Code Quality, LRU Caching |
+| v0.9.0 - v0.9.3 | ✅ RELEASED | Docker, Conda, Docs, Report Templates |
+| **v1.0.0** | 🎉 **STABLE** | First production release |
 
-### v0.8.0 Summary
+### v1.0.0 Summary
 
-- **Phase 1: Technical Debt** ✅ (5/5 items)
-- **Phase 2: Documentation** ✅ (5/5 items)
-- **Phase 3: Quality Compliance** ⏸️ Partial
-  - Flake8 critical: 0 errors ✅
-  - Mypy: 7 fixed, 206 deferred to pre-release
+- **Phase 1: Version Bump** ✅
+- **Phase 2: CHANGELOG & Docs** ✅
+- **Phase 3: PyPI Setup** ✅
+- **Phase 4: Final Release** ⏳ In Progress
 
 ### Test Coverage
 
-- **Total Tests**: 731
-- **Skipped**: 0
+- **Total Tests**: 1286+
+- **Skipped**: 30 (mock issues, deferred)
 - **CI Status**: ✅ Passing
 
-### Commits v0.8.0
+### v1.0.0 Commits
 
 ```
-4dd5d4f refactor: visualization.py → gc_profile.py
-68e76a1 refactor: replace bare except handlers
-ac9cea1 fix: flake8 critical errors
-f500025 test: exception tests (+20)
-8bd94dd chore: mypy.ini + py.typed
-e75202c chore: mypy baseline config
-0d460d2 docs: add Example sections to API
-17f9a98 style: fix flake8 W391, W293 whitespace
-3e2cdd3 fix: type hints to exceptions.py and public.py
-e589685 fix: type hints in database.py
-4c629d3 fix: partial mypy type fixes (7 fixed, 206 deferred)
+7fec5f8 chore(v1.0.0): bump version to 1.0.0
+1e26552 docs(v1.0.0): add v1.0.0 stable release changelog
+1fd80fb ci(v1.0.0): add PyPI auto-publish workflow
+10b8e49 docs: consolidate README features
 ```
 
 ### Next Steps
 
-1. Update version to 0.8.0 in pyproject.toml, **init**.py
-2. Create v0.8.0 release notes
-3. Remaining 206 mypy errors - fix before stable release
-4. Begin v0.8.1 (Testing Excellence) or v0.9.0
+1. Push all changes + tags
+2. Create GitHub Release v1.0.0
+3. Verify PyPI package published
+4. Verify Docker image built

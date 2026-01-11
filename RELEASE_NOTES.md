@@ -1,90 +1,83 @@
-# v0.6.2 - Advanced Features & Complete Documentation
+# 🎉 PrimerLab v1.0.0 - Stable Release
 
-**Release Date:** 2026-01-01
+**First production-ready release of PrimerLab!**
 
-## ✨ Highlights
+## Highlights
 
-This release brings **advanced qPCR and molecular biology features** along with comprehensive documentation update.
+- ✅ **1286+ passing tests** with comprehensive coverage
+- ✅ **Full PCR Workflows**: Standard PCR, qPCR, Nested PCR, Semi-Nested PCR
+- ✅ **Complete Analysis Suite**: BLAST off-target, In-silico PCR, Dimer matrix
+- ✅ **Multiple Installation Options**: Docker, Conda, Pip
+- ✅ **Comprehensive Documentation**: API reference, CLI guide, tutorials
 
-- 🧬 Allele Discrimination / SNP Genotyping
-- 🔬 RT-qPCR Exon Junction Detection
-- 📊 Melt Curve SVG/PNG Visualization
-- 🖥️ New CLI Commands: `probe-check`, `melt-curve`, `amplicon-qc`
-- ✅ 613 tests passing
+## Installation
 
----
-
-## 🆕 New in v0.6.x
-
-### v0.6.2 - Final Polish
-
-- CLI tests for new qPCR commands
-- Comprehensive README update
-- Documentation indices update
-
-### v0.6.1 - Documentation & Integration
-
-- CLI documentation for 3 new commands
-- API documentation update
-- `--plot-melt` option for run command
-
-### v0.6.0 - Advanced Features
-
-- **Allele Discrimination** (`core/genotyping/`)
-  - SNP genotyping primer scoring
-  - 3' end position analysis
-  - Mismatch Tm calculation
-
-- **RT-qPCR Validation** (`core/rtpcr/`)
-  - Exon junction detection
-  - gDNA contamination risk assessment
-
-- **Melt Curve Visualization** (`core/qpcr/melt_plot.py`)
-  - SVG melt curve generation
-  - PNG export with matplotlib
-  - Multi-peak annotation
-
-- **New CLI Commands**
-  - `primerlab probe-check` - TaqMan probe binding
-  - `primerlab melt-curve` - SYBR melt curve
-  - `primerlab amplicon-qc` - Amplicon quality
-
----
-
-## 📦 Installation
+### PyPI (Recommended)
 
 ```bash
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.6.2
+pip install primerlab-genomic
 ```
 
-Or upgrade:
+### Docker
 
 ```bash
-pip install --upgrade git+https://github.com/engkinandatama/primerlab-genomic.git@v0.6.2
+docker pull ghcr.io/engkinandatama/primerlab-genomic:1.0.0
+docker run ghcr.io/engkinandatama/primerlab-genomic:1.0.0 --version
 ```
 
----
+### Conda
 
-## 📊 Test Coverage
+```bash
+git clone https://github.com/engkinandatama/primerlab-genomic.git
+cd primerlab-genomic
+conda env create -f environment.yml
+conda activate primerlab
+pip install -e .
+```
 
-- **613 tests passing**
-- Python 3.10, 3.11, 3.12 supported
-- CI/CD via GitHub Actions
+## Quick Start
 
----
+```bash
+# PCR primer design
+primerlab run pcr --config your_config.yaml
 
-## 📚 Documentation
+# qPCR with TaqMan probe
+primerlab run qpcr --config qpcr_config.yaml
 
-- [Getting Started](docs/getting-started.md)
-- [CLI Reference](docs/cli/README.md) - 19 commands
-- [API Reference](docs/api/README.md) - 10+ functions
-- [Features](docs/features/README.md)
-- [Troubleshooting](docs/troubleshooting.md)
+# Nested PCR
+primerlab run nested --config nested_config.yaml
+```
 
----
+## What's New in v1.0.0
 
-## 🔗 Links
+### Added
 
-- **Full Changelog:** [v0.5.0...v0.6.2](https://github.com/engkinandatama/primerlab-genomic/compare/v0.5.0...v0.6.2)
-- **Documentation:** [docs/](docs/)
-- **Issues:** [GitHub Issues](https://github.com/engkinandatama/primerlab-genomic/issues)
+- **Production Status**: Changed from Beta to Production/Stable
+- **Report Standardization**: Unified report format across all workflows
+- **Documentation**: Complete tutorials, API reference, configuration guide
+- **Docker Support**: Multi-stage build with ViennaRNA and BLAST+ included
+- **PyPI Publishing**: Automated release via GitHub Actions
+
+### Changed  
+
+- Version bump from 0.9.x to 1.0.0
+- Updated all badges and documentation to reflect stable release
+
+## Documentation
+
+- 📚 [Full Documentation](https://engkinandatama.github.io/primerlab-genomic/)
+- 🚀 [Getting Started](https://engkinandatama.github.io/primerlab-genomic/getting-started/)
+- 📖 [CLI Reference](https://engkinandatama.github.io/primerlab-genomic/cli/README/)
+- 🔧 [API Reference](https://engkinandatama.github.io/primerlab-genomic/api/README/)
+- 📝 [Tutorials](https://engkinandatama.github.io/primerlab-genomic/tutorials/README/)
+
+## Requirements
+
+- Python 3.10+
+- primer3-py >= 2.0.0
+- biopython >= 1.80
+- Optional: ViennaRNA, BLAST+ (included in Docker)
+
+## Full Changelog
+
+See [CHANGELOG.md](https://github.com/engkinandatama/primerlab-genomic/blob/main/CHANGELOG.md)
