@@ -1,70 +1,112 @@
 # API Reference
 
-Programmatic interface for PrimerLab.
+## Overview
 
-## Modules
+PrimerLab provides a public Python API for programmatic access to primer design functionality.
+
+## Installation
+
+```bash
+pip install primerlab-genomic
+```
+
+## Quick Start
+
+```python
+from primerlab.api import design_pcr_primers, design_qpcr_primers
+
+# Design PCR primers
+result = design_pcr_primers(
+    sequence="ATCGATCG..." * 100,
+    product_size_min=200,
+    product_size_max=400
+)
+
+print(result.primers)
+print(result.success)
+```
+
+## API Modules
 
 | Module | Description |
 |--------|-------------|
-| [Public API](public.md) | Main entry points: `design_pcr_primers()`, `design_qpcr_assays()` |
-| [In-silico API](insilico.md) | Virtual PCR: `run_insilico_pcr()`, binding analysis |
-| [Report API](report.md) | Report generation and export |
-| [Models](models.md) | Data classes: `Primer`, `PrimerPair`, `BlastResult`, etc. |
+| [`primerlab.api.public`](public-api.md) | Main public API functions |
+| `primerlab.core` | Core design engine (internal) |
+| `primerlab.workflows` | Workflow orchestration |
 
-## v0.6.x API Functions
+## Key Functions
 
-| Function | Description |
-|----------|-------------|
-| `score_genotyping_primer_api()` | SNP genotyping primer scoring |
-| `validate_rtpcr_primers_api()` | RT-qPCR exon junction validation |
+### `design_pcr_primers()`
 
-## v0.5.0 API Functions
-
-| Function | Description |
-|----------|-------------|
-| `simulate_probe_binding_api()` | TaqMan probe binding simulation |
-| `predict_melt_curve_api()` | SYBR melt curve prediction |
-| `validate_qpcr_amplicon_api()` | qPCR amplicon validation |
-
-## Quick Start
+Design primers for standard PCR.
 
 ```python
 from primerlab.api import design_pcr_primers
 
 result = design_pcr_primers(
-    sequence="ATGAGTAAAGGAGAAGAACTTTTC...",
-    tm_range=(58, 62),
-    output_dir="output/"
+    sequence="ATCGATCG...",
+    product_size_min=200,
+    product_size_max=400,
+    tm_min=57.0,
+    tm_max=63.0
 )
-
-for pair in result.primers[:3]:
-    print(f"Fwd: {pair.forward.sequence}")
-    print(f"Rev: {pair.reverse.sequence}")
 ```
 
-## Import Patterns
+### `design_qpcr_primers()`
+
+Design primers for quantitative PCR with probe.
 
 ```python
-# Public API
-from primerlab.api import design_pcr_primers, design_qpcr_assays
+from primerlab.api import design_qpcr_primers
 
-# v0.6.x API
-from primerlab.api import score_genotyping_primer_api, validate_rtpcr_primers_api
+result = design_qpcr_primers(
+    sequence="ATCGATCG...",
+    product_size_max=150,  # qPCR prefers shorter amplicons
+    include_probe=True
+)
+```
 
-# v0.5.x API
-from primerlab.api import simulate_probe_binding_api, predict_melt_curve_api
+### `run_audit()`
 
-# In-silico
-from primerlab.core.insilico import run_insilico_pcr, analyze_binding
+Generate a reproducibility audit.
 
-# Report
-from primerlab.core.report import ReportGenerator, ReportExporter
+```python
+from primerlab.api import run_audit
 
-# Models
-from primerlab.core.models import Primer, PrimerPair
+audit = run_audit(result)
+audit.save("audit.json")
+```
+
+## Result Objects
+
+### `WorkflowResult`
+
+```python
+@dataclass
+class WorkflowResult:
+    success: bool
+    workflow_type: str
+    primers: Dict[str, Primer]
+    amplicons: List[Amplicon]
+    qc_results: Dict[str, QCResult]
+    metadata: RunMetadata
+    raw_results: Dict[str, Any]
+```
+
+### `Primer`
+
+```python
+@dataclass
+class Primer:
+    sequence: str
+    tm: float
+    gc_content: float
+    position: int
+    length: int
 ```
 
 ## See Also
 
-- [CLI Reference](../cli/README.md) - Command-line usage
-- [Configuration](../configuration/README.md) - YAML config reference
+- [CLI Reference](../cli/README.md) - Command-line interface
+- [Configuration](../configuration/README.md) - Config file options
+- [Examples](../../examples/README.md) - Example use cases

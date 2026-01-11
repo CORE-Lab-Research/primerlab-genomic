@@ -1,0 +1,80 @@
+# =============================================================================
+# PrimerLab Documentation - MkDocs Configuration
+# v0.9.3 - API Reference and User Guide
+# =============================================================================
+
+site_name: PrimerLab Genomic
+site_description: Automated Primer and Probe Design Framework
+site_author: Engki Nandatama
+site_url: https://engkinandatama.github.io/primerlab-genomic/
+
+repo_name: engkinandatama/primerlab-genomic
+repo_url: https://github.com/engkinandatama/primerlab-genomic
+
+# Theme
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - search.highlight
+    - content.code.copy
+
+# Navigation
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - User Guide:
+      - CLI Reference: cli/README.md
+      - Configuration: configuration/README.md
+      - Workflows: 
+          - PCR Design: tutorials/pcr-workflow.md
+          - qPCR Design: tutorials/qpcr-workflow.md
+  - API Reference:
+      - Overview: api/README.md
+      - Public API: api/public-api.md
+  - Examples: examples/README.md
+  - Changelog: changelog.md
+
+# Plugins
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          selection:
+            docstring_style: google
+          rendering:
+            show_source: true
+
+# Markdown extensions
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+# Extra
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/engkinandatama/primerlab-genomic
