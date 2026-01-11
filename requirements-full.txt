@@ -1,0 +1,38 @@
+# =============================================================================
+# PrimerLab Genomic - Full Requirements
+# v0.9.1 - For pip users with system dependencies
+# =============================================================================
+#
+# IMPORTANT: System tools must be installed separately!
+#
+# Linux (Ubuntu/Debian):
+#   sudo apt-get update
+#   sudo apt-get install -y vienna-rna ncbi-blast+ build-essential
+#
+# macOS:
+#   brew install viennarna blast
+#
+# Windows:
+#   Use WSL (Windows Subsystem for Linux) and follow Linux instructions
+#
+# Then install Python packages:
+#   pip install -r requirements-full.txt
+# =============================================================================
+
+# === Core Dependencies ===
+primer3-py>=2.0.0
+biopython>=1.80
+pyyaml>=6.0
+rich>=13.0.0
+tqdm>=4.65.0
+openpyxl>=3.1.0
+matplotlib>=3.5.0
+
+# === Development (optional) ===
+pytest>=7.0.0
+freezegun>=1.0.0
+
+# =============================================================================
+# After installing, verify:
+#   primerlab health
+# =============================================================================

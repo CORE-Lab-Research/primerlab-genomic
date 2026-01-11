@@ -1,51 +1,103 @@
 # Getting Started
 
-## Installation
+## Installation Options
 
-### Option 1: From GitHub (Recommended)
+PrimerLab offers multiple installation methods. Choose the one that best fits your needs:
+
+| Method | Best For | Includes External Tools |
+|--------|----------|------------------------|
+| **Docker** | Zero-setup, cross-platform | ✅ ViennaRNA, BLAST |
+| **Conda** | Bioinformatics users | ✅ ViennaRNA, BLAST |
+| **Pip** | Python developers | ❌ Manual install |
+
+---
+
+### Option 1: Docker (Recommended for beginners)
 
 ```bash
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.8.4
+# Pull the image
+docker pull ghcr.io/engkinandatama/primerlab-genomic:latest
+
+# Run with your config file
+docker run -v $(pwd):/data primerlab-genomic run pcr --config /data/config.yaml
 ```
 
-### Option 2: From Source (Development)
+No installation needed - everything is included!
+
+---
+
+### Option 2: Conda/Mamba
+
+```bash
+# Clone repository
+git clone https://github.com/engkinandatama/primerlab-genomic.git
+cd primerlab-genomic
+
+# Create environment (includes ViennaRNA, BLAST)
+conda env create -f environment.yml
+conda activate primerlab
+
+# Install PrimerLab
+pip install -e .
+```
+
+For faster install, use [Mamba](https://mamba.readthedocs.io/):
+
+```bash
+mamba env create -f environment.yml
+```
+
+---
+
+### Option 3: Pip (Advanced)
+
+Requires manual installation of system tools.
+
+**Linux (Ubuntu/Debian):**
+
+```bash
+# Install system dependencies
+sudo apt-get update
+sudo apt-get install -y vienna-rna ncbi-blast+ build-essential
+
+# Install PrimerLab
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.9.0
+```
+
+**macOS:**
+
+```bash
+brew install viennarna blast
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.9.0
+```
+
+**Windows:**
+
+Use WSL (Windows Subsystem for Linux) and follow Linux instructions.
+
+---
+
+### Option 4: From Source (Development)
 
 ```bash
 git clone https://github.com/engkinandatama/primerlab-genomic.git
 cd primerlab-genomic
-pip install -e .
+pip install -e ".[dev]"
 ```
 
-### WSL Users (Windows)
-
-PrimerLab requires `primer3-py` which compiles native extensions. For best results on Windows:
-
-1. **Use WSL2** (Windows Subsystem for Linux)
-2. Install dependencies in WSL:
-
-   ```bash
-   sudo apt update && sudo apt install -y python3-pip python3-venv
-   ```
-
-3. Create a virtual environment:
-
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install -e .
-   ```
-
-See [WSL Quickstart Guide](../.dev/Guide/wsl_quickstart.md) for detailed setup.
+---
 
 ## Verify Installation
 
 ```bash
 primerlab --version
-# Output: PrimerLab v0.8.4
+# Output: PrimerLab v0.9.0
 
 primerlab health
-# Shows dependency status
+# Shows dependency status (ViennaRNA, BLAST, Primer3)
 ```
+
+---
 
 ## Quick Start
 
@@ -74,6 +126,41 @@ Results are saved in the output directory:
 - `result.json` - Machine-readable results
 - `report.md` - Human-readable report
 - `audit.json` - Reproducibility log
+
+---
+
+## Troubleshooting
+
+### primer3-py fails to install
+
+```bash
+# Install build tools first
+sudo apt-get install -y build-essential python3-dev
+```
+
+### ViennaRNA not found
+
+```bash
+# Check if installed
+RNAfold --version
+
+# If not, install via apt or conda
+sudo apt-get install vienna-rna
+# or
+conda install -c bioconda viennarna
+```
+
+### BLAST not found
+
+```bash
+# Check if installed
+blastn -version
+
+# If not, install
+sudo apt-get install ncbi-blast+
+```
+
+---
 
 ## Next Steps
 

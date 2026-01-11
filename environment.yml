@@ -1,0 +1,50 @@
+# =============================================================================
+# PrimerLab Genomic - Conda Environment
+# v0.9.1 - Cross-platform environment for non-Docker users
+# =============================================================================
+# 
+# Usage:
+#   conda env create -f environment.yml
+#   conda activate primerlab
+#   primerlab --version
+#
+# For faster install, use mamba:
+#   mamba env create -f environment.yml
+# =============================================================================
+
+name: primerlab
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Python version
+  - python>=3.10
+
+  # === Bioinformatics Tools (from Bioconda) ===
+  - primer3-py>=2.0.0
+  - biopython>=1.80
+  - viennarna>=2.5.0
+  - blast>=2.14.0
+
+  # === Core Dependencies ===
+  - pyyaml>=6.0
+  - rich>=13.0.0
+  - tqdm>=4.65.0
+  - openpyxl>=3.1.0
+  - matplotlib>=3.5.0
+
+  # === Development (optional) ===
+  - pip
+
+  # === Pip packages (if any conda unavailable) ===
+  - pip:
+    - primerlab-genomic  # or install from local: pip install -e .
+
+# =============================================================================
+# Notes:
+# - ViennaRNA and BLAST are included from bioconda channel
+# - primer3-py compiles from source, may take a few minutes
+# - For WSL users: ensure build-essential is installed
+# =============================================================================
