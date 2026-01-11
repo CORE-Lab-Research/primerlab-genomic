@@ -35,61 +35,28 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 * **Safe Execution**: Timeout protection for complex sequences
 * **Structured Output**: JSON + Markdown + HTML reports with interpretable metrics
 
-#### 🆕 v0.3.x Features
+### 📦 Feature Highlights
 
-* **Enhanced Reporting** (v0.3.3): Markdown, HTML, JSON reports with scoring
-* **Tm Correction** (v0.3.4): Mismatch-based Tm adjustment
-* **3' Stability Warning** (v0.3.4): ΔG threshold checks
-* **BLAST Integration** (v0.3.0): Off-target detection with A-F grades
-* **In-silico PCR** (v0.2.4): Validate primers against template
-* **Parallel BLAST** (v0.3.2): Multi-threaded off-target checking
+| Category | Features |
+|----------|----------|
+| **Primer Design** | PCR, qPCR, Nested PCR, Semi-Nested PCR |
+| **Analysis** | BLAST off-target, In-silico PCR, Dimer matrix |
+| **qPCR Tools** | TaqMan probe design, Melt curve, Efficiency calc |
+| **Quality Control** | Hairpin, Homodimer, Heterodimer, Tm balance |
+| **Species Check** | Cross-reactivity, Multi-species comparison |
+| **Batch Processing** | Parallel processing, SQLite caching, CSV export |
+| **Visualization** | Coverage maps, Melt curves, Dimer heatmaps |
+| **Export** | JSON, Markdown, HTML, Excel, IDT plate format |
 
-#### 🆕 v0.4.x Features
+### 📚 Documentation
 
-* **Primer Compatibility Check** (v0.4.0): Analyze primer sets for cross-dimer formation, Tm uniformity, and GC consistency
-* **Excel/IDT Export** (v0.4.0): Export compatibility matrix to Excel, IDT plate format for ordering
-* **Amplicon Analysis** (v0.4.1): Secondary structure, GC profile, quality scoring
-* **Species Specificity** (v0.4.2): Cross-reactivity check, multi-species template comparison, specificity scoring
-* **Tm Gradient Simulation** (v0.4.3): Optimal annealing temperature prediction, temperature sensitivity analysis
-* **Batch Species-Check** (v0.4.3): Parallel processing, SQLite caching, CSV batch export
-
-#### 🆕 v0.5.0 Features
-
-* **Probe Binding Simulation** (v0.5.0): TaqMan probe Tm calculation, binding efficiency, position optimization
-* **qPCR Amplicon Validation** (v0.5.0): Length/GC validation, secondary structure scoring, efficiency prediction
-* **SYBR Melt Curve Prediction** (v0.5.0): Tm prediction, multi-peak detection, quality grading
-
-#### 🆕 v0.6.x Features
-
-* **Allele Discrimination** (v0.6.0): SNP genotyping primer scoring, 3' end position analysis, mismatch Tm calculation
-* **RT-qPCR Validation** (v0.6.0): Exon junction detection, gDNA contamination risk assessment
-* **Melt Curve Visualization** (v0.6.0): SVG/PNG melt curve plots, multi-peak annotation
-* **New CLI Commands** (v0.6.0): `probe-check`, `melt-curve`, `amplicon-qc`
-* **`--plot-melt` Option** (v0.6.1): Generate melt curve plots during qPCR workflow
-
-#### 🆕 v0.7.x Features
-
-* **Nested PCR Design** (v0.7.0): Outer/inner primer design with Tm optimization
-* **Semi-Nested PCR** (v0.7.0): Shared primer detection and unique inner design
-* **Dimer Matrix Analysis** (v0.7.1): NxN pairwise analysis with SVG heatmap
-* **Batch Comparison** (v0.7.1): Compare multiple design runs with diff reports
-* **Coverage Map Visualization** (v0.7.2): Primer position overlay with SVG export
-* **Interactive HTML Reports** (v0.7.2): Sortable tables, modern design
-* **New Config Templates** (v0.7.3): `diagnostic_pcr`, `sequencing_pcr`, `cloning_pcr`
-* **qPCR Efficiency Tools** (v0.7.4): Standard curve calculator, efficiency prediction
-* **HRM Optimization** (v0.7.4): High Resolution Melt design optimization
-* **dPCR Compatibility** (v0.7.4): Digital PCR amplicon checks
-* **Quencher Recommendations** (v0.7.4): FAM/VIC + BHQ/MGB pairing
-
-#### 🆕 v0.8.x Features
-
-* **Code Quality Foundation** (v0.8.0): Type hints, mypy config, exception testing, flake8 fixes
-* **Model Standardization** (v0.8.2): `to_dict()` methods for all dataclasses, comprehensive STRUCTURE.md
-* **LRU Caching** (v1.0.0): Performance optimization for Tm, GC, and ΔG calculations
-  * `cached_calc_tm()` - 10k entry cache for melting temperature
-  * `cached_gc_content()` - 10k entry cache for GC percentage
-  * `cached_delta_g()` - Cache for ViennaRNA ΔG calculations
-* **1286+ Tests** (v1.0.0): Comprehensive test coverage with model serialization tests
+| Resource | Link |
+|----------|------|
+| **Getting Started** | [Installation & Quick Start](https://engkinandatama.github.io/primerlab-genomic/getting-started/) |
+| **CLI Reference** | [Command Reference](https://engkinandatama.github.io/primerlab-genomic/cli/README/) |
+| **API Reference** | [Python API](https://engkinandatama.github.io/primerlab-genomic/api/README/) |
+| **Tutorials** | [Step-by-Step Guides](https://engkinandatama.github.io/primerlab-genomic/tutorials/README/) |
+| **Changelog** | [Version History](CHANGELOG.md) |
 
 ---
 
