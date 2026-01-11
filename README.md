@@ -7,8 +7,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/pkgs/container/primerlab-genomic)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://engkinandatama.github.io/primerlab-genomic/)
+[![DeepWiki](https://img.shields.io/badge/docs-DeepWiki-blue.svg)](https://deepwiki.com/engkinandatama/primerlab-genomic)
 [![PyPI](https://img.shields.io/pypi/v/primerlab-genomic.svg)](https://pypi.org/project/primerlab-genomic/)
-[![Status](https://img.shields.io/badge/status-v1.0.0-brightgreen.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v1.0.0)
+[![Status](https://img.shields.io/badge/status-v1.0.1-brightgreen.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v1.0.1)
 
 > 🔰 **Latest Release**: [**v1.0.0 - Stable Release**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v1.0.0) 🎉
 
