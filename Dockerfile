@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Builder - Install dependencies and build wheel
 # -----------------------------------------------------------------------------
-FROM python:3.12-slim AS builder
+FROM python:3.12-slim-bookworm AS builder
 
 WORKDIR /build
 
@@ -26,11 +26,11 @@ RUN pip install --no-cache-dir build && \
 # -----------------------------------------------------------------------------
 # Stage 2: Runtime - Slim production image
 # -----------------------------------------------------------------------------
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim-bookworm AS runtime
 
 LABEL maintainer="Engki Nandatama <engkinandatama@outlook.com>"
 LABEL description="PrimerLab Genomic - Automated Primer and Probe Design"
-LABEL version="0.9.0"
+LABEL version="1.0.0"
 
 WORKDIR /app
 
