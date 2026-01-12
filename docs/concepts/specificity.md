@@ -80,7 +80,7 @@ primerlab blast \
 | B | 80-89 | Good specificity |
 | C | 70-79 | Acceptable |
 | D | 60-69 | Low specificity |
-| F | <60 | Poor - redesign recommended |
+| F | &lt;60 | Poor - redesign recommended |
 
 ### Factors Affecting Score
 
