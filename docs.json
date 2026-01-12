@@ -6,6 +6,7 @@
     "dark": "docs/assets/logo.png"
   },
   "favicon": "docs/assets/logo.png",
+  "theme": "maple",
   "colors": {
     "primary": "#0D9488",
     "light": "#14B8A6",
