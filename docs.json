@@ -10,8 +10,7 @@
   "colors": {
     "primary": "#0D9488",
     "light": "#14B8A6",
-    "dark": "#0F766E",
-    "anchors": "#0D9488"
+    "dark": "#0F766E"
   },
   "topbarLinks": [
     {
@@ -23,60 +22,77 @@
       "url": "https://pypi.org/project/primerlab-genomic/"
     }
   ],
-  "navigation": [
-    {
-      "group": "Overview",
-      "pages": [
-        "docs/index",
-        "docs/getting-started"
-      ]
-    },
-    {
-      "group": "Tutorials",
-      "pages": [
-        "docs/tutorials/case-study-covid",
-        "docs/tutorials/advanced-config"
-      ]
-    },
-    {
-      "group": "Guides",
-      "pages": [
-        "docs/guides/index",
-        "docs/guides/quickstart",
-        "docs/guides/pcr-design",
-        "docs/guides/qpcr-design",
-        "docs/guides/nested-pcr",
-        "docs/guides/multiplex",
-        "docs/guides/species-specificity",
-        "docs/guides/quality-control",
-        "docs/guides/batch-design"
-      ]
-    },
-    {
-      "group": "Reference",
-      "pages": [
-        "docs/reference/cli",
-        "docs/reference/config",
-        "docs/reference/api"
-      ]
-    },
-    {
-      "group": "Concepts",
-      "pages": [
-        "docs/concepts/index",
-        "docs/concepts/architecture",
-        "docs/concepts/scoring",
-        "docs/concepts/algorithms"
-      ]
-    },
-    {
-      "group": "Help",
-      "pages": [
-        "docs/troubleshooting",
-        "docs/changelog"
-      ]
-    }
-  ],
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "docs/index",
+              "docs/getting-started"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "docs/guides/index",
+              "docs/guides/quickstart",
+              "docs/guides/pcr-design",
+              "docs/guides/qpcr-design",
+              "docs/guides/nested-pcr",
+              "docs/guides/multiplex",
+              "docs/guides/species-specificity",
+              "docs/guides/quality-control",
+              "docs/guides/batch-design"
+            ]
+          },
+          {
+            "group": "Concepts",
+            "pages": [
+              "docs/concepts/index",
+              "docs/concepts/architecture",
+              "docs/concepts/scoring",
+              "docs/concepts/algorithms"
+            ]
+          },
+          {
+            "group": "Help",
+            "pages": [
+              "docs/troubleshooting",
+              "docs/changelog"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Tutorials",
+        "groups": [
+          {
+            "group": "Case Studies",
+            "pages": [
+              "docs/tutorials/case-study-covid",
+              "docs/tutorials/advanced-config"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "API & CLI",
+            "pages": [
+              "docs/reference/cli",
+              "docs/reference/config",
+              "docs/reference/api"
+            ]
+          }
+        ]
+      }
+    ]
+  },
   "footerSocials": {
     "github": "https://github.com/engkinandatama/primerlab-genomic"
   }
