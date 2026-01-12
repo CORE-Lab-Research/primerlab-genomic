@@ -56,7 +56,28 @@
               "docs/concepts/architecture",
               "docs/concepts/scoring",
               "docs/concepts/algorithms",
+              "docs/concepts/specificity",
               "docs/concepts/understanding-results"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "docs/concepts/features/index",
+              "docs/concepts/features/melt-curve",
+              "docs/concepts/features/probe-binding",
+              "docs/concepts/features/species-specificity",
+              "docs/concepts/features/batch-processing",
+              "docs/concepts/features/compat_check",
+              "docs/concepts/features/offtarget-detection",
+              "docs/concepts/features/amplicon",
+              "docs/concepts/features/genotyping",
+              "docs/concepts/features/rtpcr",
+              "docs/concepts/features/masking",
+              "docs/concepts/features/tm-gradient",
+              "docs/concepts/features/auto-suggest",
+              "docs/concepts/features/sequence-handling",
+              "docs/concepts/features/report-generation"
             ]
           },
           {
@@ -72,6 +93,26 @@
         "tab": "Tutorials",
         "groups": [
           {
+            "group": "Getting Started",
+            "pages": [
+              "docs/tutorials/quickstart",
+              "docs/tutorials/pcr-walkthrough",
+              "docs/tutorials/qpcr-design"
+            ]
+          },
+          {
+            "group": "Advanced Tutorials",
+            "pages": [
+              "docs/tutorials/qpcr-advanced",
+              "docs/tutorials/nested-pcr",
+              "docs/tutorials/multiplex-dimer",
+              "docs/tutorials/species-check",
+              "docs/tutorials/batch-species-check",
+              "docs/tutorials/offtarget-tutorial",
+              "docs/tutorials/tm-gradient"
+            ]
+          },
+          {
             "group": "Case Studies",
             "pages": [
               "docs/tutorials/case-study-gapdh",
@@ -84,11 +125,49 @@
         "tab": "Reference",
         "groups": [
           {
-            "group": "API & CLI",
+            "group": "CLI Reference",
             "pages": [
               "docs/reference/cli",
-              "docs/reference/config",
+              {
+                "group": "Commands",
+                "pages": [
+                  "docs/reference/cli/run",
+                  "docs/reference/cli/batch-run",
+                  "docs/reference/cli/blast",
+                  "docs/reference/cli/insilico",
+                  "docs/reference/cli/species-check",
+                  "docs/reference/cli/tm-gradient",
+                  "docs/reference/cli/melt-curve",
+                  "docs/reference/cli/amplicon-qc",
+                  "docs/reference/cli/compat_check",
+                  "docs/reference/cli/probe-check",
+                  "docs/reference/cli/stats",
+                  "docs/reference/cli/validate",
+                  "docs/reference/cli/health",
+                  "docs/reference/cli/init",
+                  "docs/reference/cli/preset",
+                  "docs/reference/cli/plot",
+                  "docs/reference/cli/compare",
+                  "docs/reference/cli/history"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Python API",
+            "pages": [
               "docs/reference/api",
+              "docs/reference/api/index",
+              "docs/reference/api/public",
+              "docs/reference/api/insilico",
+              "docs/reference/api/models",
+              "docs/reference/api/report"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "docs/reference/config",
               "docs/reference/presets"
             ]
           }
