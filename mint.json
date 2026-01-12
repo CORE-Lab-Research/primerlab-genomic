@@ -6,7 +6,7 @@
     "dark": "docs/assets/logo.svg"
   },
   "favicon": "docs/assets/favicon.svg",
-  "theme": "maple",
+  "theme": "prism",
   "colors": {
     "primary": "#0D9488",
     "light": "#14B8A6",

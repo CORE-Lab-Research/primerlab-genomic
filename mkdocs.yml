@@ -43,7 +43,7 @@ nav:
   - Getting Started: getting-started.md
   - Tutorials:
       - guides/index.md
-      - Case Study: COVID-19: tutorials/case-study-covid.md
+      - 'Case Study: COVID-19': tutorials/case-study-covid.md
       - Advanced Configuration: tutorials/advanced-config.md
   - Guides:
       - guides/index.md
