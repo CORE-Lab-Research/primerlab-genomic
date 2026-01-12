@@ -2,10 +2,11 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "PrimerLab Genomic",
   "logo": {
-    "light": "docs/assets/logo.png",
-    "dark": "docs/assets/logo.png"
+    "light": "docs/assets/logo.svg",
+    "dark": "docs/assets/logo.svg"
   },
-  "favicon": "docs/assets/logo.png",
+  "favicon": "docs/assets/favicon.svg",
+  "theme": "maple",
   "colors": {
     "primary": "#0D9488",
     "light": "#14B8A6",
@@ -31,14 +32,24 @@
       ]
     },
     {
+      "group": "Tutorials",
+      "pages": [
+        "docs/tutorials/case-study-covid",
+        "docs/tutorials/advanced-config"
+      ]
+    },
+    {
       "group": "Guides",
       "pages": [
         "docs/guides/index",
         "docs/guides/quickstart",
         "docs/guides/pcr-design",
         "docs/guides/qpcr-design",
-        "docs/guides/batch-design",
-        "docs/guides/advanced"
+        "docs/guides/nested-pcr",
+        "docs/guides/multiplex",
+        "docs/guides/species-specificity",
+        "docs/guides/quality-control",
+        "docs/guides/batch-design"
       ]
     },
     {
@@ -54,8 +65,8 @@
       "pages": [
         "docs/concepts/index",
         "docs/concepts/architecture",
-        "docs/concepts/quality-control",
-        "docs/concepts/specificity"
+        "docs/concepts/scoring",
+        "docs/concepts/algorithms"
       ]
     },
     {

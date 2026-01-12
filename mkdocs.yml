@@ -14,8 +14,8 @@ repo_url: https://github.com/engkinandatama/primerlab-genomic
 # Theme
 theme:
   name: material
-  logo: assets/logo.png
-  favicon: assets/logo.png
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
   palette:
     - scheme: default
       primary: teal
@@ -41,13 +41,20 @@ theme:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Tutorials:
+      - guides/index.md
+      - Case Study: COVID-19: tutorials/case-study-covid.md
+      - Advanced Configuration: tutorials/advanced-config.md
   - Guides:
       - guides/index.md
       - Quick Start: guides/quickstart.md
       - PCR Design: guides/pcr-design.md
       - qPCR Design: guides/qpcr-design.md
+      - Nested PCR: guides/nested-pcr.md
+      - Multiplex PCR: guides/multiplex.md
+      - Species Specificity: guides/species-specificity.md
+      - Quality Control: guides/quality-control.md
       - Batch Processing: guides/batch-design.md
-      - Advanced: guides/advanced.md
   - Reference:
       - CLI: reference/cli.md
       - Configuration: reference/config.md
@@ -55,8 +62,8 @@ nav:
   - Concepts:
       - concepts/index.md
       - Architecture: concepts/architecture.md
-      - Quality Control: concepts/quality-control.md
-      - Specificity: concepts/specificity.md
+      - Scoring System: concepts/scoring.md
+      - Algorithms: concepts/algorithms.md
   - Troubleshooting: troubleshooting.md
   - Changelog: changelog.md
 

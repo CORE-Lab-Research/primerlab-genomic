@@ -2,41 +2,12 @@
 
 **PrimerLab** is a modular bioinformatics framework for automated primer and probe design.
 
-<div class="grid cards" markdown>
+## Quick Links
 
-- :material-rocket-launch: **Quick Start**
-
-    ---
-
-    Design your first primers in 5 minutes
-
-    [:octicons-arrow-right-24: Get Started](guides/quickstart.md)
-
-- :material-book-open-variant: **Guides**
-
-    ---
-
-    Step-by-step tutorials for PCR and qPCR design
-
-    [:octicons-arrow-right-24: View Guides](guides/index.md)
-
-- :material-console: **Reference**
-
-    ---
-
-    CLI, API, and configuration documentation
-
-    [:octicons-arrow-right-24: Reference](reference/cli.md)
-
-- :material-lightbulb: **Concepts**
-
-    ---
-
-    Understand how PrimerLab works
-
-    [:octicons-arrow-right-24: Learn More](concepts/index.md)
-
-</div>
+* **[Quick Start](guides/quickstart.md)**: Design your first primers in 5 minutes.
+* **[Guides](guides/index.md)**: Step-by-step tutorials for PCR, qPCR, and more.
+* **[Reference](reference/cli.md)**: CLI commands, API docs, and configuration.
+* **[Concepts](concepts/index.md)**: Learn about scoring, algorithms, and quality control.
 
 ---
 
@@ -116,6 +87,6 @@ See [Changelog](changelog.md) for version history.
 
 ## Links
 
-- [GitHub Repository](https://github.com/engkinandatama/primerlab-genomic)
-- [PyPI Package](https://pypi.org/project/primerlab-genomic/)
-- [DeepWiki Docs](https://deepwiki.com/engkinandatama/primerlab-genomic)
+* [GitHub Repository](https://github.com/engkinandatama/primerlab-genomic)
+* [PyPI Package](https://pypi.org/project/primerlab-genomic/)
+* [DeepWiki Docs](https://deepwiki.com/engkinandatama/primerlab-genomic)
