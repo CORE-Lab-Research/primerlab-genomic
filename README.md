@@ -6,7 +6,7 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/pkgs/container/primerlab-genomic)
-[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://engkinandatama.github.io/primerlab-genomic/)
+[![Docs](https://img.shields.io/badge/docs-Mintlify-0D9488.svg)](https://primerlab-genomic.mintlify.app/)
 [![DeepWiki](https://img.shields.io/badge/docs-DeepWiki-blue.svg)](https://deepwiki.com/engkinandatama/primerlab-genomic)
 [![PyPI](https://img.shields.io/pypi/v/primerlab-genomic.svg)](https://pypi.org/project/primerlab-genomic/)
 [![Status](https://img.shields.io/badge/status-v1.0.1-brightgreen.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v1.0.1)
@@ -53,10 +53,10 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 
 | Resource | Link |
 |----------|------|
-| **Getting Started** | [Installation & Quick Start](https://engkinandatama.github.io/primerlab-genomic/getting-started/) |
-| **CLI Reference** | [Command Reference](https://engkinandatama.github.io/primerlab-genomic/cli/README/) |
-| **API Reference** | [Python API](https://engkinandatama.github.io/primerlab-genomic/api/README/) |
-| **Tutorials** | [Step-by-Step Guides](https://engkinandatama.github.io/primerlab-genomic/tutorials/README/) |
+| **Getting Started** | [Installation & Quick Start](https://primerlab-genomic.mintlify.app/docs/getting-started) |
+| **CLI Reference** | [Command Reference](https://primerlab-genomic.mintlify.app/docs/reference/cli) |
+| **API Reference** | [Python API](https://primerlab-genomic.mintlify.app/docs/reference/api) |
+| **Tutorials** | [Step-by-Step Guides](https://primerlab-genomic.mintlify.app/docs/tutorials) |
 | **Changelog** | [Version History](CHANGELOG.md) |
 
 ---
@@ -277,11 +277,11 @@ Full documentation is available in the [`docs/`](docs/) directory:
 | Section | Description |
 |---------|-------------|
 | [Getting Started](docs/getting-started.md) | Installation and first steps |
-| [CLI Reference](docs/cli/README.md) | All 25+ commands |
-| [Configuration](docs/configuration/README.md) | YAML config reference |
-| [Presets](docs/configuration/presets.md) | Pre-configured parameter sets |
-| [API Reference](docs/api/README.md) | Programmatic interface |
-| [Features](docs/features/README.md) | Advanced features |
+| [CLI Reference](docs/reference/cli/index.md) | All 25+ commands |
+| [Configuration](docs/reference/config.md) | YAML config reference |
+| [Presets](docs/reference/presets.md) | Pre-configured parameter sets |
+| [API Reference](docs/reference/api/index.md) | Programmatic interface |
+| [Features](docs/concepts/features/index.md) | Advanced features |
 | [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
 
 **Additional Resources:**
