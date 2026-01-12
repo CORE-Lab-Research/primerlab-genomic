@@ -167,6 +167,6 @@ sudo apt-get install ncbi-blast+
 
 ## Next Steps
 
-- [CLI Reference](cli/README.md) - All available commands
-- [Configuration](configuration/README.md) - Config file options
-- [Examples](../examples/README.md) - Example configurations
+- [CLI Reference](reference/cli) - All available commands
+- [Configuration](reference/config) - Config file options
+- [Examples](https://github.com/engkinandatama/primerlab-genomic/tree/main/examples) - Example configurations

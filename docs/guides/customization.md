@@ -245,6 +245,6 @@ primerlab run pcr --config base.yaml --qc-mode relaxed
 
 ## See Also
 
-- [Presets Reference](../reference/presets.md)
-- [Configuration Reference](../reference/config.md)
-- [Understanding Results](../concepts/understanding-results.md)
+- [Presets Reference](../reference/presets)
+- [Configuration Reference](../reference/config)
+- [Understanding Results](../concepts/understanding-results)

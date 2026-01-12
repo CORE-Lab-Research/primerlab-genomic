@@ -200,6 +200,6 @@ parameters:
 
 ## See Also
 
-- [Getting Started](../getting-started.md)
-- [CLI Reference](../cli/README.md)
-- [Examples](../../examples/README.md)
+- [Getting Started](../getting-started)
+- [CLI Reference](cli)
+- [Examples](https://github.com/engkinandatama/primerlab-genomic/tree/main/examples)

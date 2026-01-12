@@ -130,6 +130,6 @@ qc:
 
 ## See Also
 
-- [Scoring System](scoring.md) — Detailed algorithm explanation
-- [Quality Control](../guides/quality-control.md) — QC workflow guide
-- [Troubleshooting](../troubleshooting.md) — Common issues and fixes
+- [Scoring System](scoring) — Detailed algorithm explanation
+- [Quality Control](../guides/quality-control) — QC workflow guide
+- [Troubleshooting](../troubleshooting) — Common issues and fixes

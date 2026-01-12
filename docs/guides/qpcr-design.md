@@ -189,6 +189,6 @@ primerlab melt-curve \
 
 ## See Also
 
-- [PCR Design](pcr-design.md) — Standard PCR primers
-- [Advanced Workflows](advanced.md) — Species specificity
-- [Configuration Reference](../reference/config.md) — All parameters
+- [PCR Design](pcr-design) — Standard PCR primers
+- [Nested PCR](nested-pcr) — Species specificity check
+- [Configuration Reference](../reference/config) — All parameters

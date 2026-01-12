@@ -7,10 +7,10 @@ description: "Modular bioinformatics framework for automated primer and probe de
 
 ## Quick Links
 
-* **[Quick Start](guides/quickstart.md)**: Design your first primers in 5 minutes.
-* **[Guides](guides/index.md)**: Step-by-step tutorials for PCR, qPCR, and more.
-* **[Reference](reference/cli.md)**: CLI commands, API docs, and configuration.
-* **[Concepts](concepts/index.md)**: Learn about scoring, algorithms, and quality control.
+* **[Quick Start](guides/quickstart)**: Design your first primers in 5 minutes.
+* **[Guides](guides/index)**: Step-by-step tutorials for PCR, qPCR, and more.
+* **[Reference](reference/cli)**: CLI commands, API docs, and configuration.
+* **[Concepts](concepts/index)**: Learn about scoring, algorithms, and quality control.
 
 ---
 
@@ -76,7 +76,7 @@ graph LR
     Core --> BLAST[BLAST+]
 ```
 
-Learn more: [System Architecture](concepts/architecture.md)
+Learn more: [System Architecture](concepts/architecture)
 
 ---
 
@@ -84,7 +84,7 @@ Learn more: [System Architecture](concepts/architecture.md)
 
 Current version: **v1.0.1**
 
-See [Changelog](changelog.md) for version history.
+See [Changelog](changelog) for version history.
 
 ---
 

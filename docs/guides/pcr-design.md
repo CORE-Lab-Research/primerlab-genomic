@@ -245,8 +245,8 @@ cat primerlab_output/report.md
 
 ## Next Steps
 
-- [qPCR Design](qpcr-design.md) — Add TaqMan probes
-- [Batch Processing](batch-design.md) — Design for multiple genes
-- [Nested PCR](nested-pcr.md) — Increased specificity
-- [Multiplex PCR](multiplex.md) — Multiple targets
-- [Species Specificity](species-specificity.md) — Pathogen detection
+- [qPCR Design](qpcr-design) — Add TaqMan probes
+- [Batch Processing](batch-design) — Design for multiple genes
+- [Nested PCR](nested-pcr) — Increased specificity
+- [Multiplex PCR](multiplex) — Multiple targets
+- [Species Specificity](species-specificity) — Pathogen detection

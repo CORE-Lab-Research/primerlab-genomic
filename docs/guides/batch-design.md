@@ -166,5 +166,5 @@ cat batch_results/summary.json | jq '.failed[]'
 
 ## See Also
 
-- [PCR Design](pcr-design.md) — Single sequence design
-- [CLI Reference](../reference/cli.md) — All batch options
+- [PCR Design](pcr-design) — Single sequence design
+- [CLI Reference](../reference/cli) — All batch options

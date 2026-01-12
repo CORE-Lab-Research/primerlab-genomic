@@ -292,6 +292,6 @@ print(f"Compatible: {compat.is_compatible}")
 
 ## See Also
 
-- [CLI Reference](cli.md)
-- [Configuration](config.md)
-- [Getting Started](../getting-started.md)
+- [CLI Reference](cli)
+- [Configuration](config)
+- [Getting Started](../getting-started)

@@ -88,9 +88,9 @@ Files generated:
 
 ## Next Steps
 
-- [Full PCR Tutorial](pcr-design.md) — Learn all PCR options
-- [qPCR Design](qpcr-design.md) — Design TaqMan probes
-- [CLI Reference](../reference/cli.md) — All command options
+- [Full PCR Tutorial](pcr-design) — Learn all PCR options
+- [qPCR Design](qpcr-design) — Design TaqMan probes
+- [CLI Reference](../reference/cli) — All command options
 
 ---
 

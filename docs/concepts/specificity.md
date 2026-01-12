@@ -164,5 +164,5 @@ primerlab insilico -p primers.json -t template.fasta
 
 ## See Also
 
-- [CLI Reference](../reference/cli.md) — All specificity commands
-- [Quality Control](quality-control.md) — Other QC checks
+- [CLI Reference](../reference/cli) — All specificity commands
+- [Quality Control](../guides/quality-control) — Other QC checks

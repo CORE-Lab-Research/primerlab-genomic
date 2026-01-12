@@ -184,6 +184,6 @@ qc:
 
 ## See Also
 
-- [Configuration Reference](config.md)
-- [Customization Guide](../guides/customization.md)
-- [CLI Reference](cli.md)
+- [Configuration Reference](config)
+- [Customization Guide](../guides/customization)
+- [CLI Reference](cli)

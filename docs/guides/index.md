@@ -6,11 +6,11 @@ Step-by-step tutorials for using PrimerLab.
 
 | Guide | Description | Time |
 |-------|-------------|:----:|
-| [Quick Start](quickstart.md) | Your first primer design | 5 min |
-| [PCR Design](pcr-design.md) | Complete PCR workflow | 15 min |
-| [qPCR Design](qpcr-design.md) | TaqMan and SYBR assay design | 15 min |
-| [Batch Processing](batch-design.md) | Multi-sequence design | 10 min |
-| [Advanced Workflows](advanced.md) | Nested PCR, species check | 20 min |
+| [Quick Start](quickstart) | Your first primer design | 5 min |
+| [PCR Design](pcr-design) | Complete PCR workflow | 15 min |
+| [qPCR Design](qpcr-design) | TaqMan and SYBR assay design | 15 min |
+| [Batch Processing](batch-design) | Multi-sequence design | 10 min |
+| [Advanced Workflows](nested-pcr) | Nested PCR, species check | 20 min |
 
 ## Prerequisites
 
@@ -32,6 +32,6 @@ Before starting, ensure you have:
 
 ## Need Help?
 
-- [Troubleshooting](../troubleshooting.md)
-- [CLI Reference](../reference/cli.md)
-- [Configuration Reference](../reference/config.md)
+- [Troubleshooting](../troubleshooting)
+- [CLI Reference](../reference/cli)
+- [Configuration Reference](../reference/config)

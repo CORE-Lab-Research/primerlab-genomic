@@ -210,6 +210,6 @@ We successfully designed primers for GAPDH with:
 
 ## See Also
 
-- [PCR Design Guide](../guides/pcr-design.md)
-- [Understanding Results](../concepts/understanding-results.md)
-- [Batch Processing](../guides/batch-design.md)
+- [PCR Design Guide](../guides/pcr-design)
+- [Understanding Results](../concepts/understanding-results)
+- [Batch Processing](../guides/batch-design)
