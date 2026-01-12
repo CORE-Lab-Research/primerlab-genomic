@@ -2,15 +2,15 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "PrimerLab Genomic",
   "logo": {
-    "light": "docs/assets/logo.svg",
-    "dark": "docs/assets/logo.svg"
+    "light": "docs/assets/logo.png",
+    "dark": "docs/assets/logo.png"
   },
-  "favicon": "docs/assets/favicon.svg",
-  "theme": "maple",
+  "favicon": "docs/assets/logo.png",
   "colors": {
     "primary": "#0D9488",
     "light": "#14B8A6",
-    "dark": "#0F766E"
+    "dark": "#0F766E",
+    "anchors": "#0D9488"
   },
   "topbarLinks": [
     {
@@ -20,161 +20,56 @@
     {
       "name": "PyPI",
       "url": "https://pypi.org/project/primerlab-genomic/"
+    },
+    {
+      "name": "DeepWiki",
+      "url": "https://deepwiki.com/engkinandatama/primerlab-genomic"
     }
   ],
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Overview",
-            "pages": [
-              "docs/index",
-              "docs/getting-started"
-            ]
-          },
-          {
-            "group": "Guides",
-            "pages": [
-              "docs/guides/index",
-              "docs/guides/quickstart",
-              "docs/guides/pcr-design",
-              "docs/guides/qpcr-design",
-              "docs/guides/nested-pcr",
-              "docs/guides/multiplex",
-              "docs/guides/species-specificity",
-              "docs/guides/quality-control",
-              "docs/guides/batch-design",
-              "docs/guides/customization"
-            ]
-          },
-          {
-            "group": "Concepts",
-            "pages": [
-              "docs/concepts/index",
-              "docs/concepts/architecture",
-              "docs/concepts/scoring",
-              "docs/concepts/algorithms",
-              "docs/concepts/specificity",
-              "docs/concepts/understanding-results"
-            ]
-          },
-          {
-            "group": "Features",
-            "pages": [
-              "docs/concepts/features/index",
-              "docs/concepts/features/melt-curve",
-              "docs/concepts/features/probe-binding",
-              "docs/concepts/features/species-specificity",
-              "docs/concepts/features/batch-processing",
-              "docs/concepts/features/compat_check",
-              "docs/concepts/features/offtarget-detection",
-              "docs/concepts/features/amplicon",
-              "docs/concepts/features/genotyping",
-              "docs/concepts/features/rtpcr",
-              "docs/concepts/features/masking",
-              "docs/concepts/features/tm-gradient",
-              "docs/concepts/features/auto-suggest",
-              "docs/concepts/features/sequence-handling",
-              "docs/concepts/features/report-generation"
-            ]
-          },
-          {
-            "group": "Help",
-            "pages": [
-              "docs/troubleshooting",
-              "docs/changelog"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Tutorials",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": [
-              "docs/tutorials/quickstart",
-              "docs/tutorials/pcr-walkthrough",
-              "docs/tutorials/qpcr-design"
-            ]
-          },
-          {
-            "group": "Advanced Tutorials",
-            "pages": [
-              "docs/tutorials/qpcr-advanced",
-              "docs/tutorials/nested-pcr",
-              "docs/tutorials/multiplex-dimer",
-              "docs/tutorials/species-check",
-              "docs/tutorials/batch-species-check",
-              "docs/tutorials/offtarget-tutorial",
-              "docs/tutorials/tm-gradient"
-            ]
-          },
-          {
-            "group": "Case Studies",
-            "pages": [
-              "docs/tutorials/case-study-gapdh",
-              "docs/tutorials/advanced-config"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Reference",
-        "groups": [
-          {
-            "group": "CLI Reference",
-            "pages": [
-              "docs/reference/cli",
-              {
-                "group": "Commands",
-                "pages": [
-                  "docs/reference/cli/run",
-                  "docs/reference/cli/batch-run",
-                  "docs/reference/cli/blast",
-                  "docs/reference/cli/insilico",
-                  "docs/reference/cli/species-check",
-                  "docs/reference/cli/tm-gradient",
-                  "docs/reference/cli/melt-curve",
-                  "docs/reference/cli/amplicon-qc",
-                  "docs/reference/cli/compat_check",
-                  "docs/reference/cli/probe-check",
-                  "docs/reference/cli/stats",
-                  "docs/reference/cli/validate",
-                  "docs/reference/cli/health",
-                  "docs/reference/cli/init",
-                  "docs/reference/cli/preset",
-                  "docs/reference/cli/plot",
-                  "docs/reference/cli/compare",
-                  "docs/reference/cli/history"
-                ]
-              }
-            ]
-          },
-          {
-            "group": "Python API",
-            "pages": [
-              "docs/reference/api",
-              "docs/reference/api/index",
-              "docs/reference/api/public",
-              "docs/reference/api/insilico",
-              "docs/reference/api/models",
-              "docs/reference/api/report"
-            ]
-          },
-          {
-            "group": "Configuration",
-            "pages": [
-              "docs/reference/config",
-              "docs/reference/presets"
-            ]
-          }
-        ]
-      }
-    ]
-  },
+  "navigation": [
+    {
+      "group": "Overview",
+      "pages": [
+        "docs/index",
+        "docs/getting-started"
+      ]
+    },
+    {
+      "group": "Guides",
+      "pages": [
+        "docs/guides/index",
+        "docs/guides/quickstart",
+        "docs/guides/pcr-design",
+        "docs/guides/qpcr-design",
+        "docs/guides/batch-design",
+        "docs/guides/advanced"
+      ]
+    },
+    {
+      "group": "Reference",
+      "pages": [
+        "docs/reference/cli",
+        "docs/reference/config",
+        "docs/reference/api"
+      ]
+    },
+    {
+      "group": "Concepts",
+      "pages": [
+        "docs/concepts/index",
+        "docs/concepts/architecture",
+        "docs/concepts/quality-control",
+        "docs/concepts/specificity"
+      ]
+    },
+    {
+      "group": "Help",
+      "pages": [
+        "docs/troubleshooting",
+        "docs/changelog"
+      ]
+    }
+  ],
   "footerSocials": {
     "github": "https://github.com/engkinandatama/primerlab-genomic"
   }
