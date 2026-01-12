@@ -45,7 +45,8 @@
               "docs/guides/multiplex",
               "docs/guides/species-specificity",
               "docs/guides/quality-control",
-              "docs/guides/batch-design"
+              "docs/guides/batch-design",
+              "docs/guides/customization"
             ]
           },
           {
@@ -54,7 +55,8 @@
               "docs/concepts/index",
               "docs/concepts/architecture",
               "docs/concepts/scoring",
-              "docs/concepts/algorithms"
+              "docs/concepts/algorithms",
+              "docs/concepts/understanding-results"
             ]
           },
           {
@@ -72,7 +74,7 @@
           {
             "group": "Case Studies",
             "pages": [
-              "docs/tutorials/case-study-covid",
+              "docs/tutorials/case-study-gapdh",
               "docs/tutorials/advanced-config"
             ]
           }
@@ -86,7 +88,8 @@
             "pages": [
               "docs/reference/cli",
               "docs/reference/config",
-              "docs/reference/api"
+              "docs/reference/api",
+              "docs/reference/presets"
             ]
           }
         ]

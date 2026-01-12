@@ -43,7 +43,7 @@ nav:
   - Getting Started: getting-started.md
   - Tutorials:
       - guides/index.md
-      - 'Case Study: COVID-19': tutorials/case-study-covid.md
+      - 'Case Study: GAPDH': tutorials/case-study-gapdh.md
       - Advanced Configuration: tutorials/advanced-config.md
   - Guides:
       - guides/index.md
@@ -55,15 +55,18 @@ nav:
       - Species Specificity: guides/species-specificity.md
       - Quality Control: guides/quality-control.md
       - Batch Processing: guides/batch-design.md
+      - Customization: guides/customization.md
   - Reference:
       - CLI: reference/cli.md
       - Configuration: reference/config.md
       - API: reference/api.md
+      - Presets: reference/presets.md
   - Concepts:
       - concepts/index.md
       - Architecture: concepts/architecture.md
       - Scoring System: concepts/scoring.md
       - Algorithms: concepts/algorithms.md
+      - Understanding Results: concepts/understanding-results.md
   - Troubleshooting: troubleshooting.md
   - Changelog: changelog.md
 
