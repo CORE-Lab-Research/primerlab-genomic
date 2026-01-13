@@ -8,7 +8,7 @@ version = "1.0.1"
 description = "A modular, AI-friendly bioinformatics framework for automated primer and probe design."
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "BSD-3-Clause"}
+license = {text = "GPL-2.0"}
 authors = [
     {name = "Engki Nandatama", email = "engkinandatama@outlook.com"}
 ]
@@ -17,7 +17,7 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
-    "License :: OSI Approved :: BSD License",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",

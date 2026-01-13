@@ -3,7 +3,7 @@
 A modular bioinformatics framework for automated **primer and probe design**, built with clean architecture and reproducible workflows.
 
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-GPLv2-blue.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/pkgs/container/primerlab-genomic)
 [![Docs](https://img.shields.io/badge/docs-Mintlify-0D9488.svg)](https://primerlab-genomic.mintlify.app/)
@@ -465,8 +465,12 @@ Key principles:
 
 ## 📄 License
 
-This project is licensed under the **BSD 3-Clause License**.
+This project is licensed under the **GNU General Public License v2.0 (GPL-2.0)**.
 See the [LICENSE](LICENSE) file for details.
+
+> **Note on Dependencies:**
+> This project depends on [primer3-py](https://github.com/libnano/primer3-py) which is licensed under GPL-2.0.
+> As such, PrimerLab Genomic adopts the compatible GPL-2.0 license to ensure compliance and freedom for end users.
 
 © 2025–present — **Engki Nandatama**
 
