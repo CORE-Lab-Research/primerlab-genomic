@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Configuration Reference"
 description: "YAML configuration file reference for PrimerLab"
 ---
@@ -65,6 +65,28 @@ output:
 | `primer_size.opt` | 20 | 18-22 | Optimal length |
 | `primer_size.max` | 25 | 20-30 | Maximum length |
 
+### GC Content
+
+| Parameter | Default | Description |
+|-----------|:-------:|-------------|
+| `gc.min` | 40.0 | Minimum GC% |
+| `gc.opt` | 50.0 | Optimal GC% (v0.8.0) |
+| `gc.max` | 60.0 | Maximum GC% |
+
+### Sequence Composition & Filtering (v0.8.0)
+
+| Parameter | Default | Description |
+|-----------|:-------:|-------------|
+| `max_poly_x` | 4 | Maximum allowed mononucleotide repeat length |
+| `max_ns` | 0 | Maximum allowed Ns in primer |
+| `max_tm_diff` | 5.0 | Maximum Tm difference between forward and reverse primers |
+| `num_candidates` | 50 | Number of primer pairs to generate |
+| `included_region` | None | Dict with `start` and `length` to restrict design |
+| `force_left_start`/`end` | None | Force forward primer coordinates |
+| `force_right_start`/`end` | None | Force reverse primer coordinates |
+| `must_match_five_prime` | None | 5' end constraint pattern |
+| `must_match_three_prime` | None | 3' end constraint pattern |
+
 ### Product Size
 
 | Parameter | Default | Description |
@@ -79,13 +101,6 @@ output:
 | Standard PCR | 200 | 1000 | Flexible |
 | qPCR | 70 | 150 | Short preferred |
 | Long-range PCR | 1000 | 10000 | Specialized enzymes |
-
-### GC Content
-
-| Parameter | Default | Description |
-|-----------|:-------:|-------------|
-| `gc.min` | 40.0 | Minimum GC% |
-| `gc.max` | 60.0 | Maximum GC% |
 
 ---
 
@@ -113,15 +128,29 @@ parameters:
 
 ## Advanced Parameters
 
-### Salt Concentrations
+### Thermodynamics and Salt Concentrations
+
+PrimerLab natively uses Primer3's ThermoAnalysis engine to calculate precise melting temperatures and thermodynamic penalties.
 
 ```yaml
 parameters:
-  salt:
-    monovalent: 50.0   # mM (Na+, K+)
-    divalent: 1.5      # mM (Mg2+)
-    dntp: 0.2          # mM
+  thermodynamics:
+    salt_monovalent: 50.0      # mM (Na+, K+), default: 50.0
+    salt_divalent: 1.5         # mM (Mg2+), default: 1.5
+    dntp_conc: 0.6             # mM, default: 0.6
+    dna_conc: 50.0             # nM, default: 50.0
+    tm_method: santalucia      # santalucia or breslauer, default: santalucia
+    salt_corrections: santalucia # santalucia, schildkraut, or owczarzy, default: santalucia
 ```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `salt_monovalent` | float | 50.0 | Concentration of monovalent cations (mM) |
+| `salt_divalent` | float | 1.5 | Concentration of divalent cations like Mg²⁺ (mM) |
+| `dntp_conc` | float | 0.6 | Concentration of dNTPs (mM) |
+| `dna_conc` | float | 50.0 | Concentration of oligos (nM) |
+| `tm_method` | enum | santalucia | Nearest-neighbor parameter set (`santalucia` or `breslauer`) |
+| `salt_corrections`| enum | santalucia | Salt correction formula (`santalucia`, `owczarzy`, or `schildkraut`) |
 
 ### Thermodynamic Thresholds
 
@@ -131,6 +160,27 @@ parameters:
     hairpin_dg_max: -2.0    # kcal/mol
     homodimer_dg_max: -5.0  # kcal/mol
     heterodimer_dg_max: -5.0
+```
+
+### Advanced Primer3 Parameters (v0.8.0)
+
+```yaml
+parameters:
+  qc_method: threshold # 'threshold' (using dG) or 'any' (using alignment scores)
+  max_self_any_th: 47.0
+  max_self_end_th: 47.0
+  max_pair_compl_any_th: 47.0
+  max_pair_compl_end_th: 47.0
+  max_hairpin_th: 47.0
+  
+  weights:
+    tm_gt: 1.0
+    tm_lt: 1.0
+    size_gt: 1.0
+    size_lt: 1.0
+    gc_percent_gt: 1.0
+    gc_percent_lt: 1.0
+    end_stability: 1.0
 ```
 
 ---
