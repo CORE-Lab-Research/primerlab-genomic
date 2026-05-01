@@ -41,12 +41,15 @@ def _run_health_check():
     try:
         from primerlab.core.tools.vienna_wrapper import ViennaWrapper
         vienna = ViennaWrapper()
-        if vienna.is_available:  # Property, not method
+        if vienna.is_available:
             print(f"✅ ViennaRNA (available)")
         else:
-            print("⚠️ ViennaRNA not found (optional, install for secondary structure QC)")
+            print("❌ ViennaRNA NOT FOUND (required for secondary structure QC)")
+            print("   Please install it via:")
+            print("   - Linux: sudo apt install vienna-rna")
+            print("   - Conda: conda install -c bioconda viennarna")
     except Exception as e:
-        print(f"⚠️ ViennaRNA check failed: {e}")
+        print(f"❌ ViennaRNA check failed: {e}")
 
     # PyYAML
     try:

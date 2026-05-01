@@ -20,11 +20,11 @@ class ViennaWrapper:
 
         if not self.is_available and not ViennaWrapper._warned:
             ViennaWrapper._warned = True
-            logger.warning(
-                "⚠️ ViennaRNA not found. Secondary structure QC will be skipped.\n"
-                "   Install ViennaRNA for full QC:\n"
+            logger.error(
+                "❌ ViennaRNA (RNAfold/RNAcofold) not found in PATH.\n"
+                "   This is a required dependency for secondary structure analysis.\n"
+                "   Please install it via:\n"
                 "   - Linux: sudo apt install vienna-rna\n"
-                "   - macOS: brew install viennarna\n"
                 "   - Conda: conda install -c bioconda viennarna"
             )
 
