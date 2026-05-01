@@ -10,7 +10,7 @@ from primerlab.core.tools.primer3_wrapper import Primer3Wrapper
 import json
 
 # Version definition
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 
 def _run_health_check():
@@ -119,7 +119,7 @@ def main():
 
     # --- RUN Command ---
     run_parser = subparsers.add_parser("run", help="Run a specific workflow")
-    run_parser.add_argument("workflow", choices=["pcr", "qpcr", "crispr"], help="Workflow to run")
+    run_parser.add_argument("workflow", choices=["pcr", "qpcr", "crispr", "raa"], help="Workflow to run")
     run_parser.add_argument("--config", "-c", type=str, help="Path to user config YAML file")
     run_parser.add_argument("--out", "-o", type=str, help="Override output directory")
     run_parser.add_argument("--debug", action="store_true", help="Enable debug logging")
@@ -1515,6 +1515,9 @@ def main():
             elif args.workflow == "qpcr":
                 from primerlab.workflows.qpcr import run_qpcr_workflow
                 result = run_qpcr_workflow(config)
+            elif args.workflow == "raa":
+                from primerlab.workflows.raa import run_raa_workflow
+                result = run_raa_workflow(config)
 
             if result is not None:
                 # 5. Save Output

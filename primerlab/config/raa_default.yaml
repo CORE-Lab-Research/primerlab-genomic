@@ -1,0 +1,78 @@
+workflow: raa
+preset: raa
+
+input:
+  sequence: null
+  sequence_path: null
+  preserve_iupac: true
+  type: auto
+
+parameters:
+  thermodynamics:
+    salt_monovalent: 50.0
+    salt_divalent: 14.0        # RAA buffer: high Mg2+
+    dntp_conc: 0.8
+    dna_conc: 480.0            # RAA uses high primer concentration
+    tm_method: santalucia
+    salt_corrections: owczarzy # Best for high divalent cation
+
+  primer_size:
+    min: 30
+    opt: 32
+    max: 35
+
+  tm:
+    min: 57.0
+    opt: 62.0
+    max: 67.0
+
+  gc:
+    min: 35.0
+    max: 60.0
+
+  product_size_range: [[100, 250]]
+
+  max_poly_x: 4               # Strict: no AAAA runs
+
+  # Exo-probe (optional, enabled via probe.enabled)
+  probe:
+    enabled: false
+    type: exo                  # exo | simple
+    size:
+      min: 46
+      opt: 49
+      max: 52
+    tm:
+      min: 48.0
+      opt: 52.0
+      max: 55.0
+    gc:
+      min: 35.0
+      max: 60.0
+    # Exo-probe structural constraints
+    thf_upstream_min: 30       # Min nt 5' of THF site
+    thf_downstream_min: 15     # Min nt 3' of THF site
+    labels:
+      fluorophore: "FAM"
+      quencher: "BHQ1"
+      blocker: "C3-spacer"
+
+qc:
+  mode: strict
+  tm_diff_max: 3.0
+  hairpin_dg_min: -2.0         # Stricter for long primers
+  dimer_dg_min: -6.0           # Long primers = more dimer risk
+  cross_dimer_dg_min: -7.0     # Reject cross-dimer between FWD/REV and Probe
+  end_3prime_check: true       # RAA-critical: check 3' end stability
+  max_3prime_entropy: 0.15     # Max entropy at last 5bp of 3' end
+  gc_clamp: true               # Require strong GC clamp at 3' end
+  probe_end_check: true        # Prevent >3 G/C at probe 5' end (quenches fluorophore)
+
+output:
+  directory: "primerlab_out"
+
+advanced:
+  debug: false
+  timeout: 120
+  assay_type: "RT-RAA"
+  reaction_temperature: 39.0   # Isothermal reaction temp (°C)

@@ -90,7 +90,7 @@ def validate_config(config: Dict[str, Any]):
         )
 
     # Check for valid workflow types
-    valid_workflows = ["pcr", "qpcr", "compat_check"]
+    valid_workflows = ["pcr", "qpcr", "compat_check", "raa"]
     if workflow.lower() not in valid_workflows:
         raise ConfigError(
             f"Unknown workflow '{workflow}'. "

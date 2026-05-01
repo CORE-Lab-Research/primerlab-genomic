@@ -7,7 +7,12 @@ minimum free energy (MFE) secondary structure.
 
 import logging
 from typing import Tuple, List, Optional
-import RNA
+
+try:
+    import RNA
+    HAS_VIENNARNA = True
+except ImportError:
+    HAS_VIENNARNA = False
 
 from .models import SecondaryStructure
 
@@ -49,6 +54,16 @@ class SecondaryStructureAnalyzer:
             SecondaryStructure with structure, delta_g, and problematic regions
         """
         seq = sequence.upper().replace("U", "T")
+
+        if not HAS_VIENNARNA:
+            logger.warning("ViennaRNA not installed. Skipping secondary structure prediction.")
+            return SecondaryStructure(
+                sequence=seq,
+                structure="." * len(seq),
+                delta_g=0.0,
+                is_problematic=False,
+                problematic_regions=[]
+            )
 
         # Create fold compound with DNA parameters
         md = RNA.md()
