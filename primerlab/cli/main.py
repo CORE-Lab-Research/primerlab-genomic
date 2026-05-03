@@ -191,6 +191,8 @@ def main():
     raa_parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     raa_parser.add_argument("--verbose", action="store_true", help="Show detailed progress")
     raa_parser.add_argument("--cores", "-j", type=int, help="Number of CPU cores to use for parallel search")
+    raa_parser.add_argument("--window-size", type=int, help="Size of each search window (default: 350)")
+    raa_parser.add_argument("--overlap", type=int, help="Overlap between search windows (default: 200)")
 
     # --- CHECK-PRIMERS Command (Phase 4) ---
     check_parser = subparsers.add_parser("check-primers", help="Evaluate existing primers against a template (Phase 4)")
@@ -3143,6 +3145,14 @@ qc:
         if args.cores:
             if "advanced" not in config: config["advanced"] = {}
             config["advanced"]["cores"] = args.cores
+
+        if args.window_size:
+            if "advanced" not in config: config["advanced"] = {}
+            config["advanced"]["window_size"] = args.window_size
+
+        if args.overlap:
+            if "advanced" not in config: config["advanced"] = {}
+            config["advanced"]["overlap"] = args.overlap
 
         try:
             result = run_raa_workflow(config)

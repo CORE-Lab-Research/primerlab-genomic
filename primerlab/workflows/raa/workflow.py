@@ -49,8 +49,8 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
 
     # 2. Run Search (Parallel Windowing for Long Sequences)
     input_len = len(sequence)
-    window_size = 500
-    overlap = 150
+    window_size = config.get("advanced", {}).get("window_size", 350)
+    overlap = config.get("advanced", {}).get("overlap", 200)
     
     windows = []
     if input_len > 600:
