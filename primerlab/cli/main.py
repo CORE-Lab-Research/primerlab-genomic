@@ -108,6 +108,10 @@ def _run_health_check():
     print("Health check complete.\n")
 
 def main():
+    # Debug info for HPC environment
+    if os.environ.get("PRIMERLAB_DEBUG_ENV"):
+        print(f"DEBUG: Running PrimerLab from {__file__} (v{__version__})")
+        
     parser = argparse.ArgumentParser(
         description="PrimerLab: Automated Primer Design Framework",
         formatter_class=argparse.RawTextHelpFormatter
