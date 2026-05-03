@@ -148,16 +148,19 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     candidates = parse_primer3_output(raw_results, config)
     logger.info(f"Processing {len(candidates)} candidate sets for deep QC...")
 
-    # 4. Evaluate and Score all candidates
-    qc_engine = RAAQC(config)
-    evaluated_results = []
-
-    for i, primers_triplet in enumerate(candidates):
+    # 4. Evaluate and Score all candidates (Parallelized in v1.2.4)
+    logger.info(f"🔬 Deep QC: Evaluating {len(candidates)} candidates using {max_workers} cores...")
+    
+    def _evaluate_single_candidate(args_tuple):
+        idx, primers_triplet, sequence, config, raw_results = args_tuple
+        from primerlab.workflows.raa.qc import RAAQC
+        qc_engine = RAAQC(config)
+        
         fwd = primers_triplet["forward"]
         rev = primers_triplet["reverse"]
         probe = primers_triplet.get("probe")
         
-        # RAA-specific pair QC (includes cross dimer and GC clamp checks with ViennaRNA)
+        # RAA-specific pair QC
         qcr = qc_engine.evaluate_pair_extended(fwd, rev, probe)
         
         # Probe-specific QC
@@ -167,38 +170,36 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             if not probe_qc["probe_tm_ok"]:
                 qcr.tm_balance_ok = False
 
-        # Calculate a combined score for ranking:
-        # Base penalty from Primer3 (lower is better) + 
-        # penalty for QC warnings (higher is worse)
-        p3_penalty = raw_results.get(f'PRIMER_PAIR_{i}_PENALTY', 100.0)
-        qc_penalty = len(qcr.warnings) * 10.0 # Heavy penalty for warnings
-        
-        # Dimer penalty: add absolute dG if below -8.0 (more negative = more penalty)
+        # Scoring logic
+        p3_penalty = raw_results.get(f'PRIMER_PAIR_{idx}_PENALTY', 100.0)
+        qc_penalty = len(qcr.warnings) * 10.0
         dimer_penalty = 0
         if qcr.cross_dimer_dg < -8.0:
             dimer_penalty += abs(qcr.cross_dimer_dg) * 2.0
             
         total_score = p3_penalty + qc_penalty + dimer_penalty
         
-        # Create Amplicon for this candidate
-        product_size = raw_results.get(f'PRIMER_PAIR_{i}_PRODUCT_SIZE', 0)
+        product_size = raw_results.get(f'PRIMER_PAIR_{idx}_PRODUCT_SIZE', 0)
+        from primerlab.core.models import Amplicon
         amplicon = Amplicon(
-            start=fwd.start,
-            end=rev.start,
-            length=product_size,
-            sequence="N/A",
-            gc=0.0,
-            tm_forward=fwd.tm,
-            tm_reverse=rev.tm
+            start=fwd.start, end=rev.start, length=product_size,
+            sequence="N/A", gc=0.0, tm_forward=fwd.tm, tm_reverse=rev.tm
         )
         
-        evaluated_results.append({
+        return {
             "primers": primers_triplet,
             "amplicon": amplicon,
             "qc": qcr,
             "score": total_score
-        })
+        }
 
+    evaluated_results = []
+    # Prepare task arguments
+    tasks = [(i, c, sequence, config, raw_results) for i, c in enumerate(candidates)]
+    
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        evaluated_results = list(executor.map(_evaluate_single_candidate, tasks))
+    
     # 5. Rerank based on total_score (Lowest is Best)
     evaluated_results.sort(key=lambda x: x["score"])
     
