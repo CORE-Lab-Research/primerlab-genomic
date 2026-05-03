@@ -89,6 +89,7 @@ output:
 
 advanced:
   debug: false
-  timeout: 120
+  timeout: 300                  # Increased for HPC long sequences
   assay_type: "RT-RAA"
   reaction_temperature: 39.0   # Isothermal reaction temp (°C)
+  cores: 4                     # Default parallel cores (v1.2.1)

@@ -67,8 +67,14 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     from concurrent.futures import ProcessPoolExecutor
     import os
     
-    # Use multiple cores (up to 8 to manage overhead)
-    max_workers = min(len(windows), os.cpu_count() or 1, 8)
+    # Use dynamic core allocation from config (v1.2.1)
+    req_cores = config.get("advanced", {}).get("cores")
+    if req_cores is None:
+        max_workers = min(len(windows), os.cpu_count() or 1, 8) # Default safe limit
+    else:
+        # User specified cores (could be 64 on HPC!)
+        max_workers = min(len(windows), int(req_cores))
+    
     p3_wrapper = Primer3Wrapper()
     
     if max_workers > 1:
