@@ -186,7 +186,7 @@ def main():
     raa_parser.add_argument("--out", "-o", type=str, help="Output directory")
     raa_parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     raa_parser.add_argument("--verbose", action="store_true", help="Show detailed progress")
-    raa_parser.add_argument("--cores", "-c", type=int, help="Number of CPU cores to use for parallel search")
+    raa_parser.add_argument("--cores", "-j", type=int, help="Number of CPU cores to use for parallel search")
 
     # --- CHECK-PRIMERS Command (Phase 4) ---
     check_parser = subparsers.add_parser("check-primers", help="Evaluate existing primers against a template (Phase 4)")
