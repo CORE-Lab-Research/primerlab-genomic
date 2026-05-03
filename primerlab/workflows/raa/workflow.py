@@ -47,13 +47,78 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     else:
         logger.info(f"RAA Mode: Probe-based ({probe_cfg.get('type', 'exo')})")
 
+    # 2. Run Search (Parallel Windowing for Long Sequences)
+    input_len = len(sequence)
+    window_size = 500
+    overlap = 150
+    
+    windows = []
+    if input_len > 600:
+        logger.info(f"🚀 Long sequence detected ({input_len}bp). Enabling Multi-core Parallel Search...")
+        for i in range(0, input_len - window_size + overlap, window_size - overlap):
+            start = i
+            end = min(i + window_size, input_len)
+            windows.append((start, end))
+            if end == input_len: break
+    else:
+        windows = [(0, input_len)]
+
+    all_raw_data = []
+    from concurrent.futures import ProcessPoolExecutor
+    import os
+    
+    # Use multiple cores (up to 8 to manage overhead)
+    max_workers = min(len(windows), os.cpu_count() or 1, 8)
     p3_wrapper = Primer3Wrapper()
     
-    # RAA typically requires long primers and specialized conditions
-    raw_results = p3_wrapper.design_primers(sequence, config)
+    if max_workers > 1:
+        logger.info(f"📡 Dispatching searches across {max_workers} CPU cores...")
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            futures = []
+            for start, end in windows:
+                sub_seq = sequence[start:end]
+                futures.append(executor.submit(p3_wrapper.design_primers, sub_seq, config))
+            
+            for i, future in enumerate(futures):
+                try:
+                    res = future.result(timeout=config.get("advanced", {}).get("timeout", 300))
+                    all_raw_data.append((res, windows[i][0]))
+                except Exception as e:
+                    logger.warning(f"⚠️ Window {windows[i]} failed: {e}")
+    else:
+        raw_results = p3_wrapper.design_primers(sequence, config)
+        all_raw_data = [(raw_results, 0)]
 
-    num_returned = raw_results.get('PRIMER_LEFT_NUM_RETURNED', 0)
-    logger.info(f"Primer3 returned {num_returned} sets.")
+    # 3. Merge and Deduplicate Results
+    raw_results = {}
+    total_pairs = 0
+    seen_hashes = set()
+    
+    for res_dict, offset in all_raw_data:
+        num_returned = res_dict.get('PRIMER_PAIR_NUM_RETURNED', 0)
+        for i in range(num_returned):
+            fwd_seq = res_dict.get(f'PRIMER_LEFT_{i}_SEQUENCE')
+            rev_seq = res_dict.get(f'PRIMER_RIGHT_{i}_SEQUENCE')
+            if not fwd_seq or not rev_seq: continue
+            
+            pair_hash = f"{fwd_seq}_{rev_seq}"
+            if pair_hash not in seen_hashes:
+                idx = total_pairs
+                for key, val in res_dict.items():
+                    if any(key.startswith(p) for p in [f'PRIMER_LEFT_{i}', f'PRIMER_RIGHT_{i}', f'PRIMER_INTERNAL_{i}', f'PRIMER_PAIR_{i}']):
+                        new_key = key.replace(f'_{i}', f'_{idx}')
+                        # Adjust coordinates (POS is a comma-separated string: "start,len")
+                        if '_POS' in key and isinstance(val, str) and ',' in val:
+                            p_start, p_len = map(int, val.split(','))
+                            raw_results[new_key] = f"{p_start + offset},{p_len}"
+                        else:
+                            raw_results[new_key] = val
+                seen_hashes.add(pair_hash)
+                total_pairs += 1
+
+    raw_results['PRIMER_PAIR_NUM_RETURNED'] = total_pairs
+    raw_results['PRIMER_LEFT_NUM_RETURNED'] = total_pairs
+    logger.info(f"✅ Parallel search complete. Found {total_pairs} unique candidates across all windows.")
     
     # Advanced: Evaluate target sequence accessibility
     qc_engine = RAAQC(config)
