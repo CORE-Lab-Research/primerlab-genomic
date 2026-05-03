@@ -153,6 +153,27 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         }
         alternatives_data.append(alt)
 
+    # 7. Post-processing: Label Exo-probes
+    def format_exo_probe(seq, labels):
+        if not seq or len(seq) < 45: return seq
+        # Standard RAA Exo-probe layout:
+        # [5'] -- (~30nt) -- [FAM-dT][THF][BHQ1-dT] -- (~15nt) -- [3' Blocker]
+        # We'll place it at 30bp from 5' end as a heuristic if not specified
+        pos = 30
+        labeled = (
+            seq[:pos-1] + 
+            f"[{labels.get('fluorophore', 'FAM')}-dT]" +
+            "[THF]" +
+            f"[{labels.get('quencher', 'BHQ1')}-dT]" +
+            seq[pos+2:] +
+            f"[{labels.get('blocker', 'C3-spacer')}]"
+        )
+        return labeled
+
+    if probe:
+        probe_labels = config.get("parameters", {}).get("probe", {}).get("labels", {})
+        probe.labeled_sequence = format_exo_probe(probe.sequence, probe_labels)
+
     result = WorkflowResult(
         workflow="raa",
         primers=primers,

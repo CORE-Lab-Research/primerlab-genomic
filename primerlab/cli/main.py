@@ -3143,7 +3143,8 @@ qc:
                 print(f"FWD: {fwd.sequence} (Tm: {fwd.tm:.1f}C)")
                 print(f"REV: {rev.sequence} (Tm: {rev.tm:.1f}C)")
                 if prb:
-                    print(f"PRB: {prb.sequence} (Tm: {prb.tm:.1f}C)")
+                    seq_str = getattr(prb, "labeled_sequence", prb.sequence)
+                    print(f"PRB: {seq_str} (Tm: {prb.tm:.1f}C)")
                 print(f"Amplicon: {result.amplicons[0].length} bp")
                 
                 if result.qc and result.qc.cross_dimer_dg is not None:
