@@ -56,54 +56,76 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     num_returned = raw_results.get('PRIMER_LEFT_NUM_RETURNED', 0)
     logger.info(f"Primer3 returned {num_returned} sets.")
 
-    # 3. Parse Results using RAA probe module (annotates THF)
-    primers = parse_primer3_output(raw_results, config)
+    # 3. Parse Results (returns List of triplets)
+    candidates = parse_primer3_output(raw_results, config)
+    logger.info(f"Processing {len(candidates)} candidate sets for deep QC...")
 
-    # 4. Create Amplicon
-    amplicons = []
-    if primers and "forward" in primers and "reverse" in primers:
-        fwd = primers["forward"]
-        rev = primers["reverse"]
-        product_size = raw_results.get('PRIMER_PAIR_0_PRODUCT_SIZE')
+    # 4. Evaluate and Score all candidates
+    qc_engine = RAAQC(config)
+    evaluated_results = []
 
+    for i, primers_triplet in enumerate(candidates):
+        fwd = primers_triplet["forward"]
+        rev = primers_triplet["reverse"]
+        probe = primers_triplet.get("probe")
+        
+        # RAA-specific pair QC (includes cross dimer and GC clamp checks with ViennaRNA)
+        qcr = qc_engine.evaluate_pair_extended(fwd, rev, probe)
+        
+        # Probe-specific QC
+        if probe:
+            probe_qc = qc_engine.evaluate_probe(probe, fwd, rev)
+            qcr.warnings.extend(probe_qc["warnings"])
+            if not probe_qc["probe_tm_ok"]:
+                qcr.tm_balance_ok = False
+
+        # Calculate a combined score for ranking:
+        # Base penalty from Primer3 (lower is better) + 
+        # penalty for QC warnings (higher is worse)
+        p3_penalty = raw_results.get(f'PRIMER_PAIR_{i}_PENALTY', 100.0)
+        qc_penalty = len(qcr.warnings) * 10.0 # Heavy penalty for warnings
+        
+        # Dimer penalty: add absolute dG if below -8.0 (more negative = more penalty)
+        dimer_penalty = 0
+        if qcr.cross_dimer_dg < -8.0:
+            dimer_penalty += abs(qcr.cross_dimer_dg) * 2.0
+            
+        total_score = p3_penalty + qc_penalty + dimer_penalty
+        
+        # Create Amplicon for this candidate
+        product_size = raw_results.get(f'PRIMER_PAIR_{i}_PRODUCT_SIZE', 0)
         amplicon = Amplicon(
             start=fwd.start,
             end=rev.start,
             length=product_size,
-            sequence="N/A",  # Primer3Wrapper doesn't return full amplicon seq directly here
+            sequence="N/A",
             gc=0.0,
             tm_forward=fwd.tm,
             tm_reverse=rev.tm
         )
-        amplicons.append(amplicon)
+        
+        evaluated_results.append({
+            "primers": primers_triplet,
+            "amplicon": amplicon,
+            "qc": qcr,
+            "score": total_score
+        })
 
-    # 5. Run QC (using RAAQC)
-    qc_engine = RAAQC(config)
-    qc_result = None
-
-    if primers and "forward" in primers and "reverse" in primers:
-        fwd = primers["forward"]
-        rev = primers["reverse"]
-        probe = primers.get("probe")
-
-        # RAA-specific pair QC (includes cross dimer and GC clamp checks)
-        qc_result = qc_engine.evaluate_pair_extended(fwd, rev, probe)
-
-        # Probe-specific QC
-        if probe:
-            probe_qc = qc_engine.evaluate_probe(probe, fwd, rev)
-            qc_result.warnings.extend(probe_qc["warnings"])
-            if not probe_qc["probe_tm_ok"]:
-                qc_result.tm_balance_ok = False
-
-        # Amplicon size validation
-        if amplicons:
-            size_qc = qc_engine.validate_amplicon_size(amplicons[0].length)
-            if not size_qc["size_ok"]:
-                qc_result.warnings.extend(size_qc["warnings"])
-
-        if qc_result.warnings:
-            logger.warning(f"QC Warnings: {qc_result.warnings}")
+    # 5. Rerank based on total_score (Lowest is Best)
+    evaluated_results.sort(key=lambda x: x["score"])
+    
+    # 6. Select Top Result and prepare Output
+    if evaluated_results:
+        top_res = evaluated_results[0]
+        primers = top_res["primers"]
+        qc_result = top_res["qc"]
+        amplicons = [res["amplicon"] for res in evaluated_results]
+        logger.info(f"Top candidate selected (Global Score: {top_res['score']:.2f})")
+    else:
+        primers = {}
+        qc_result = None
+        amplicons = []
+        logger.warning("No valid candidates found.")
 
     # 6. Metadata & Result
     from primerlab import __version__

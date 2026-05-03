@@ -72,67 +72,82 @@ def annotate_exo_probe(probe_primer: Primer, thf_upstream_min: int = 30, thf_dow
         "blocker": "C3-spacer"
     }
 
-def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
+def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
-    Parses Primer3 output and applies RAA-specific Probe annotations.
+    Parses Primer3 output and extracts multiple primer/probe triplets.
+    Applies RAA-specific Probe annotations to each candidate.
+    
+    Returns:
+        List of dicts, each containing 'forward', 'reverse', and optionally 'probe'.
     """
-    primers = {}
+    all_candidates = []
     
     num_returned = raw_results.get('PRIMER_LEFT_NUM_RETURNED', 0)
     
-    if num_returned > 0:
+    for i in range(num_returned):
+        candidate = {}
+        
         # Forward Primer
-        fwd_start, fwd_len = raw_results.get('PRIMER_LEFT_0')
-        primers["forward"] = Primer(
-            id="forward_0",
-            sequence=raw_results.get('PRIMER_LEFT_0_SEQUENCE'),
-            tm=raw_results.get('PRIMER_LEFT_0_TM'),
-            gc=raw_results.get('PRIMER_LEFT_0_GC_PERCENT'),
-            length=fwd_len,
-            start=fwd_start,
-            end=fwd_start + fwd_len - 1,
-            hairpin_dg=raw_results.get('PRIMER_LEFT_0_HAIRPIN_TH', 0.0),
-            homodimer_dg=raw_results.get('PRIMER_LEFT_0_HOMODIMER_TH', 0.0)
-        )
-        
+        fwd_key = f'PRIMER_LEFT_{i}'
+        if fwd_key in raw_results:
+            fwd_start, fwd_len = raw_results.get(fwd_key)
+            candidate["forward"] = Primer(
+                id=f"forward_{i}",
+                sequence=raw_results.get(f'PRIMER_LEFT_{i}_SEQUENCE'),
+                tm=raw_results.get(f'PRIMER_LEFT_{i}_TM'),
+                gc=raw_results.get(f'PRIMER_LEFT_{i}_GC_PERCENT'),
+                length=fwd_len,
+                start=fwd_start,
+                end=fwd_start + fwd_len - 1,
+                hairpin_dg=raw_results.get(f'PRIMER_LEFT_{i}_HAIRPIN_TH', 0.0),
+                homodimer_dg=raw_results.get(f'PRIMER_LEFT_{i}_HOMODIMER_TH', 0.0)
+            )
+            
         # Reverse Primer
-        rev_start, rev_len = raw_results.get('PRIMER_RIGHT_0')
-        primers["reverse"] = Primer(
-            id="reverse_0",
-            sequence=raw_results.get('PRIMER_RIGHT_0_SEQUENCE'),
-            tm=raw_results.get('PRIMER_RIGHT_0_TM'),
-            gc=raw_results.get('PRIMER_RIGHT_0_GC_PERCENT'),
-            length=rev_len,
-            start=rev_start - rev_len + 1,
-            end=rev_start,
-            hairpin_dg=raw_results.get('PRIMER_RIGHT_0_HAIRPIN_TH', 0.0),
-            homodimer_dg=raw_results.get('PRIMER_RIGHT_0_HOMODIMER_TH', 0.0)
-        )
-        
+        rev_key = f'PRIMER_RIGHT_{i}'
+        if rev_key in raw_results:
+            rev_start, rev_len = raw_results.get(rev_key)
+            candidate["reverse"] = Primer(
+                id=f"reverse_{i}",
+                sequence=raw_results.get(f'PRIMER_RIGHT_{i}_SEQUENCE'),
+                tm=raw_results.get(f'PRIMER_RIGHT_{i}_TM'),
+                gc=raw_results.get(f'PRIMER_RIGHT_{i}_GC_PERCENT'),
+                length=rev_len,
+                start=rev_start - rev_len + 1,
+                end=rev_start,
+                hairpin_dg=raw_results.get(f'PRIMER_RIGHT_{i}_HAIRPIN_TH', 0.0),
+                homodimer_dg=raw_results.get(f'PRIMER_RIGHT_{i}_HOMODIMER_TH', 0.0)
+            )
+            
         # Probe (if enabled)
-        probe_seq = raw_results.get('PRIMER_INTERNAL_0_SEQUENCE')
+        probe_seq_key = f'PRIMER_INTERNAL_{i}_SEQUENCE'
+        probe_seq = raw_results.get(probe_seq_key)
         if probe_seq:
-            probe_start, probe_len = raw_results.get('PRIMER_INTERNAL_0')
+            probe_key = f'PRIMER_INTERNAL_{i}'
+            probe_start, probe_len = raw_results.get(probe_key)
             probe = Primer(
-                id="probe_0",
+                id=f"probe_{i}",
                 sequence=probe_seq,
-                tm=raw_results.get('PRIMER_INTERNAL_0_TM'),
-                gc=raw_results.get('PRIMER_INTERNAL_0_GC_PERCENT'),
+                tm=raw_results.get(f'PRIMER_INTERNAL_{i}_TM'),
+                gc=raw_results.get(f'PRIMER_INTERNAL_{i}_GC_PERCENT'),
                 length=probe_len,
                 start=probe_start,
                 end=probe_start + probe_len - 1,
-                hairpin_dg=raw_results.get('PRIMER_INTERNAL_0_HAIRPIN_TH', 0.0),
-                homodimer_dg=raw_results.get('PRIMER_INTERNAL_0_HOMODIMER_TH', 0.0)
+                hairpin_dg=raw_results.get(f'PRIMER_INTERNAL_{i}_HAIRPIN_TH', 0.0),
+                homodimer_dg=raw_results.get(f'PRIMER_INTERNAL_{i}_HOMODIMER_TH', 0.0)
             )
-            primers["probe"] = probe
+            candidate["probe"] = probe
             
             # Apply Exo-probe annotations
             probe_cfg = config.get("parameters", {}).get("probe", {})
             if probe_cfg.get("type") == "exo":
-                primers["probe_annotation"] = annotate_exo_probe(
+                candidate["probe_annotation"] = annotate_exo_probe(
                     probe,
                     thf_upstream_min=probe_cfg.get("thf_upstream_min", 30),
                     thf_downstream_min=probe_cfg.get("thf_downstream_min", 15)
                 )
+        
+        if "forward" in candidate and "reverse" in candidate:
+            all_candidates.append(candidate)
                 
-    return primers
+    return all_candidates
