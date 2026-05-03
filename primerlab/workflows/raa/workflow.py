@@ -52,29 +52,41 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     window_size = config.get("advanced", {}).get("window_size", 350)
     overlap = config.get("advanced", {}).get("overlap", 200)
     
+    # Pre-calculate max_workers for auto-balancing (v1.2.3)
+    req_cores = config.get("advanced", {}).get("cores")
+    if req_cores is None:
+        # Default behavior: use up to 8 cores for windowing if not specified
+        temp_max = min(8, os.cpu_count() or 1)
+    else:
+        temp_max = int(req_cores)
+
     windows = []
     if input_len > 600:
         logger.info(f"🚀 Long sequence detected ({input_len}bp). Enabling Multi-core Parallel Search...")
-        for i in range(0, input_len - window_size + overlap, window_size - overlap):
+        
+        # Auto-balance overlap to match requested cores
+        if temp_max > 1 and config.get("advanced", {}).get("overlap") is None:
+            # step = (input_len - window_size) / (temp_max - 1)
+            step = max(1, (input_len - window_size) // (temp_max - 1))
+            overlap = max(150, window_size - step)
+            logger.info(f"⚖️ Auto-balancing: using {temp_max} cores (step={step}bp, overlap={overlap}bp)")
+
+        for i in range(0, input_len - window_size + 1, window_size - overlap):
             start = i
             end = min(i + window_size, input_len)
             windows.append((start, end))
             if end == input_len: break
+            
+        if windows and windows[-1][1] < input_len:
+            windows.append((input_len - window_size, input_len))
     else:
         windows = [(0, input_len)]
 
     all_raw_data = []
     from concurrent.futures import ProcessPoolExecutor
-    import os
     
-    # Use dynamic core allocation from config (v1.2.1)
-    req_cores = config.get("advanced", {}).get("cores")
-    if req_cores is None:
-        max_workers = min(len(windows), os.cpu_count() or 1, 8) # Default safe limit
-    else:
-        # User specified cores (could be 64 on HPC!)
-        max_workers = min(len(windows), int(req_cores))
-    
+    # Final worker count based on actual windows generated
+    max_workers = min(len(windows), temp_max)
     p3_wrapper = Primer3Wrapper()
     
     if max_workers > 1:
