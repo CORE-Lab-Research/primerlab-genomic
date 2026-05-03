@@ -3102,6 +3102,10 @@ qc:
         from primerlab.workflows.raa.workflow import run_raa_workflow
         import yaml
         from primerlab.core.sequence import SequenceLoader
+        from primerlab.core.logger import setup_logging
+        
+        # Initialize logging
+        setup_logging(debug=args.debug)
 
         # Load base config
         config_path = args.config if args.config else "primerlab/config/raa_default.yaml"
