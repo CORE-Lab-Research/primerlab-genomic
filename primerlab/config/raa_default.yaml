@@ -8,9 +8,22 @@ input:
   type: auto
 
 parameters:
+  # --- THERMODYNAMIC CONDITIONS ---
+  # Two-condition design (see docs/raa_thermodynamic_rationale.md):
+  #
+  # These values (salt_divalent: 14.0, dna_conc: 480.0) are used ONLY for:
+  #   1. Tm calculation  → primers must work at 39-42°C in actual RAA buffer
+  #   2. 3' end stability → binding affinity under actual reaction conditions
+  #
+  # Dimer/hairpin screening uses STANDARD conditions (Mg 1.5mM) — NOT these values.
+  # Rationale: In RAA, RecA/UvsX enzyme coats primers into nucleoprotein filaments
+  # before strand invasion. Free primer dimer formation is kinetically disfavored.
+  # High Mg2+ optimizes RecA ATPase activity, not dimer stability.
+  # Reference: Cui et al. 2023 (Frontiers Microbiol, DOI:10.3389/fcimb.2022.1071288)
+  #            Boyle et al. 2013 (mBio, DOI:10.1128/mBio.00135-13)
   thermodynamics:
     salt_monovalent: 50.0
-    salt_divalent: 14.0        # RAA buffer: high Mg2+
+    salt_divalent: 14.0        # RAA buffer: high Mg2+ (optimizes RecA ATPase)
     dntp_conc: 0.8
     dna_conc: 480.0            # RAA uses high primer concentration
     tm_method: santalucia
