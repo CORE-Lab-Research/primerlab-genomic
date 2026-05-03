@@ -3130,20 +3130,42 @@ qc:
             print("\n" + "="*50)
             print(f"🚀 RAA DESIGN COMPLETE (v{__version__})")
             print("="*50)
+            
+            alternatives = result.alternatives or []
+            print(f"🔍 Candidates Found: {len(alternatives)}")
+            
             if result.primers:
-                fwd = result.primers["forward"]
-                rev = result.primers["reverse"]
+                fwd = result.primers.get("forward")
+                rev = result.primers.get("reverse")
                 prb = result.primers.get("probe")
+                
+                print(f"\n🏆 BEST CANDIDATE (Score: {result.score:.2f})")
                 print(f"FWD: {fwd.sequence} (Tm: {fwd.tm:.1f}C)")
                 print(f"REV: {rev.sequence} (Tm: {rev.tm:.1f}C)")
                 if prb:
                     print(f"PRB: {prb.sequence} (Tm: {prb.tm:.1f}C)")
                 print(f"Amplicon: {result.amplicons[0].length} bp")
-                print(f"Cross-Dimer dG: {result.qc.cross_dimer_dg:.2f} kcal/mol")
-                print(f"Final Score: {result.score:.2f}")
-                print(f"Results saved to: {config.get('output', {}).get('directory', 'results')}")
+                
+                if result.qc and result.qc.cross_dimer_dg is not None:
+                    print(f"Cross-Dimer dG: {result.qc.cross_dimer_dg:.2f} kcal/mol")
+                
+                # Top 5 Table
+                if len(alternatives) > 1:
+                    print("\n📊 TOP CANDIDATES SUMMARY:")
+                    print(f"{'Rank':<5} {'Score':<8} {'dG (Dim)':<10} {'Tm (F/R)':<12} {'Size':<5}")
+                    print("-" * 45)
+                    for i, alt in enumerate(alternatives[:5]):
+                        rank = i + 1
+                        s = alt.get("score", 0)
+                        dg = alt.get("cross_dimer_dg", 0)
+                        tm_f = alt.get("fwd_tm", 0)
+                        tm_r = alt.get("rev_tm", 0)
+                        sz = alt.get("product_size", 0)
+                        print(f"{rank:<5} {s:<8.2f} {dg:<10.2f} {tm_f:>4.1f}/{tm_r:<4.1f} {sz:<5}")
+                
+                print(f"\n📂 Results saved to: {config.get('output', {}).get('directory', 'results')}")
             else:
-                print("❌ No valid primer/probe candidates found.")
+                print("\n❌ No valid primer/probe candidates found.")
             sys.exit(0)
         except Exception as e:
             print(f"❌ Error running RAA workflow: {e}")

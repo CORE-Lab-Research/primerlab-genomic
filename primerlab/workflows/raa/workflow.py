@@ -141,6 +141,18 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         parameters=config.get("parameters", {})
     )
 
+    # Prepare alternatives for transparency (Top 10)
+    alternatives_data = []
+    for res in evaluated_results[:10]:
+        alt = {
+            "score": res["score"],
+            "fwd_tm": res["primers"].get("forward").tm if res["primers"].get("forward") else 0,
+            "rev_tm": res["primers"].get("reverse").tm if res["primers"].get("reverse") else 0,
+            "product_size": res["amplicon"].length,
+            "cross_dimer_dg": res["qc"].cross_dimer_dg
+        }
+        alternatives_data.append(alt)
+
     result = WorkflowResult(
         workflow="raa",
         primers=primers,
@@ -148,6 +160,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         metadata=metadata,
         qc=qc_result,
         score=top_res.get("score") if evaluated_results else None,
+        alternatives=alternatives_data,
         raw=raw_results
     )
 
