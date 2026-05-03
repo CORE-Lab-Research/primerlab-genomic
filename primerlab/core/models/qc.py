@@ -13,6 +13,7 @@ class QCResult:
     homodimer_dg: float
     heterodimer_dg: Optional[float]
     end_stability_dg: Optional[float]
+    cross_dimer_dg: Optional[float] = None # Added for RAA (v1.2.0)
 
     tm_diff: float
 
@@ -36,6 +37,7 @@ class QCResult:
             "homodimer_dg": round(self.homodimer_dg, 2) if self.homodimer_dg is not None else None,
             "heterodimer_dg": round(self.heterodimer_dg, 2) if self.heterodimer_dg is not None else None,
             "end_stability_dg": round(self.end_stability_dg, 2) if self.end_stability_dg is not None else None,
+            "cross_dimer_dg": round(self.cross_dimer_dg, 2) if self.cross_dimer_dg is not None else None,
             "tm_diff": round(self.tm_diff, 2),
             "quality_score": self.quality_score,
             "quality_category": self.quality_category,

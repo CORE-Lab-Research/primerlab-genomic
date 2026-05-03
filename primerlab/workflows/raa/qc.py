@@ -59,8 +59,9 @@ class RAAQC(BaseQC):
         warnings = base_result.warnings
         
         # RAA specific cross-dimer check
-        # Uses screening_thermo (standard buffer, Mg 1.5mM) — see BaseQC for rationale.
         cross_dimer_res = self.screening_thermo.calc_heterodimer(fwd.sequence, rev.sequence)
+        base_result.cross_dimer_dg = cross_dimer_res.dg
+        
         if cross_dimer_res.dg < self.cross_dimer_dg_min:
             warnings.append(f"Strong cross-dimer between FWD and REV: ΔG={cross_dimer_res.dg:.2f} (threshold: {self.cross_dimer_dg_min})")
             
@@ -168,7 +169,7 @@ class RAAQC(BaseQC):
         res = vienna.fold(sequence)
         
         # Heuristic: if dG per 100bp is lower than -20, it's quite stable
-        normalized_dg = (res.dg / len(sequence)) * 100
+        normalized_dg = (res["mfe"] / len(sequence)) * 100
         is_accessible = normalized_dg > -25.0 # Threshold for accessibility
         
         warnings = []
@@ -177,7 +178,7 @@ class RAAQC(BaseQC):
             
         return {
             "accessible": is_accessible,
-            "dg": res.dg,
+            "dg": res["mfe"],
             "normalized_dg": normalized_dg,
             "warnings": warnings
         }
