@@ -186,7 +186,7 @@ def main():
     raa_parser.add_argument("--sequence", "-s", type=str, help="Template DNA sequence")
     raa_parser.add_argument("--sequence-path", "-sp", type=str, help="Path to template FASTA file")
     raa_parser.add_argument("--config", "-c", type=str, help="Path to RAA config YAML")
-    raa_parser.add_argument("--num-candidates", "-n", type=int, default=100, help="Number of candidates to rank (default: 100)")
+    raa_parser.add_argument("--num-candidates", "-n", type=int, default=None, help="Number of candidates to rank (default: from config)")
     raa_parser.add_argument("--out", "-o", type=str, help="Output directory")
     raa_parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     raa_parser.add_argument("--verbose", action="store_true", help="Show detailed progress")
