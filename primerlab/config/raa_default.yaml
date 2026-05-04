@@ -64,7 +64,7 @@ parameters:
 
   # 4. PROBE SETTINGS (Exo-Probe / qPCR)
   probe:
-    enabled: false               # true: desain triplet (F+R+Probe) | false: primer saja
+    enabled: true                # true: desain triplet (F+R+Probe) | false: primer saja
     type: exo                    # exo (untuk RAA) | simple (standard qPCR)
     size: { min: 46, opt: 48, max: 52 }
     tm:   { min: 54.0, opt: 65.0, max: 85.0 }
