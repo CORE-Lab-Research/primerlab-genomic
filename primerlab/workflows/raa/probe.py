@@ -90,32 +90,42 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
     if inner_len < min_size:
         return None
         
-    # Pick a candidate window. For simplicity, we'll try to center it 
-    # or pick the first one that fits.
-    # Standard RAA: Probe is usually close to one of the primers or centered.
-    
+    # Pick a candidate window.
     # Try multiple sizes from max to min
+    
+    # Get buffer conditions for accurate Tm calculation
+    thermo_cfg = config.get("parameters", {}).get("thermodynamics", {})
+    ta = ThermocalcWrapper(
+        mv_conc=thermo_cfg.get("salt_monovalent", 50.0),
+        dv_conc=thermo_cfg.get("salt_divalent", 1.5),
+        dntp_conc=thermo_cfg.get("dntp_conc", 0.6),
+        dna_conc=thermo_cfg.get("dna_conc", 50.0),
+        tm_method=thermo_cfg.get("tm_method", 'santalucia'),
+        salt_corrections=thermo_cfg.get("salt_corrections", 'santalucia')
+    )
+    
     for size in range(max_size, min_size - 1, -1):
         if inner_len >= size:
             # Simple centering logic
             start_off = (inner_len - size) // 2
             probe_seq = inner_seq[start_off : start_off + size]
             
-            # Create Primer object
-            ta = ThermocalcWrapper()
+            # Calculate Tm
             tm = ta.calc_tm(probe_seq)
             
             # Check if Tm is acceptable (RAA 39C needs stable probes)
             tm_min = probe_cfg.get("tm", {}).get("min", 54.0)
             if tm >= tm_min:
+                logger.debug(f"Found manual probe: {probe_seq[:10]}... Tm: {tm:.1f}")
                 return Primer(
                     id="manual_probe",
                     sequence=probe_seq,
                     tm=tm,
                     gc=(probe_seq.count('G') + probe_seq.count('C')) / len(probe_seq) * 100,
-                    length=len(probe_seq)
+                    length=size
                 )
     
+    logger.debug(f"No suitable probe found in {inner_len}bp inner region (min_size={min_size}, min_tm={probe_cfg.get('tm', {}).get('min', 54.0)})")
     return None
 
 def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) -> List[Dict[str, Any]]:

@@ -180,9 +180,9 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         
         # Probe-specific logic
         if not probe and config.get("parameters", {}).get("probe", {}).get("enabled"):
-            # Try manual fallback for long RAA probes
             probe = find_exo_probe(amp_seq, fwd.length, rev.length, config)
             if probe:
+                logger.debug(f"Manual fallback found probe for triplet {orig_i}")
                 # Add annotation
                 ann = annotate_exo_probe(probe)
                 probe.labeled_sequence = ann["annotated_sequence"]
@@ -217,6 +217,11 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     
     # 5. Rerank based on total_score (Lowest is Best)
     evaluated_results.sort(key=lambda x: x["score"])
+
+    # Log Top 5 for debugging
+    for i, res in enumerate(evaluated_results[:5]):
+        p_status = "YES" if res["primers"].get("probe") else "NO"
+        logger.info(f"Candidate Rank {i+1}: Score={res['score']:.2f}, Probe={p_status}")
 
     # 5.1 ViennaRNA Tiering (Advanced QC for RAA accessibility)
     vienna_limit = config.get("qc", {}).get("vienna_ranking_limit", 20)
@@ -276,7 +281,8 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             "fwd_tm": res["primers"].get("forward").tm if res["primers"].get("forward") else 0,
             "rev_tm": res["primers"].get("reverse").tm if res["primers"].get("reverse") else 0,
             "product_size": res["amplicon"].length,
-            "cross_dimer_dg": res["qc"].cross_dimer_dg
+            "cross_dimer_dg": res["qc"].cross_dimer_dg,
+            "has_probe": "Yes" if res["primers"].get("probe") else "No"
         }
         alternatives_data.append(alt)
 
