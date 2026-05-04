@@ -47,6 +47,10 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             config["parameters"]["probe"]["enabled"] = False
     else:
         logger.info(f"RAA Mode: Probe-based ({probe_cfg.get('type', 'exo')})")
+        # Ensure Primer3Wrapper knows to pick internal oligos
+        if "probe" not in config["parameters"]:
+            config["parameters"]["probe"] = {}
+        config["parameters"]["probe"]["enabled"] = True
 
     # 2. Run Search (Parallel Windowing for Long Sequences)
     input_len = len(sequence)

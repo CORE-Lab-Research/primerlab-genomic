@@ -43,7 +43,7 @@ class Primer3Wrapper:
         # Task 4.4 and 4.5: pick_only support
         pick_left = 1
         pick_right = 1
-        pick_internal = 1 if workflow_type == 'qpcr' else 0
+        pick_internal = 1 if workflow_type in ['qpcr', 'raa'] else 0
         
         pick_only = params.get('pick_only', None)
         if pick_only == 'left':
