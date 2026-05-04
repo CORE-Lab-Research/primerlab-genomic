@@ -59,7 +59,7 @@ parameters:
     opt: 50.0
     max: 70.0
 
-  product_size_range: [[80, 250]] # Rentang panjang amplikon yang diinginkan
+  product_size_range: [[120, 250]] # Rentang panjang amplikon yang diinginkan (Min 120 untuk probe 50nt)
   max_poly_x: 4                   # Maksimal repetisi basa yang sama (AAAA, dsb)
 
   # 4. PROBE SETTINGS (Exo-Probe / qPCR)
