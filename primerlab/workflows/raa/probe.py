@@ -6,6 +6,7 @@ Handles post-processing of Primer3 internal oligos to annotate THF abasic sites.
 from typing import Dict, Any, Optional, List
 from primerlab.core.models import Primer
 from primerlab.core.logger import get_logger
+from primerlab.core.tools.thermocalc_wrapper import ThermocalcWrapper
 
 logger = get_logger()
 
@@ -101,8 +102,8 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
             probe_seq = inner_seq[start_off : start_off + size]
             
             # Create Primer object
-            from primerlab.core.qc.thermo import calculate_tm
-            tm = calculate_tm(probe_seq)
+            ta = ThermocalcWrapper()
+            tm = ta.calc_tm(probe_seq)
             
             # Check if Tm is acceptable (RAA 39C needs stable probes)
             tm_min = probe_cfg.get("tm", {}).get("min", 54.0)
