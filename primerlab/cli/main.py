@@ -3195,7 +3195,15 @@ qc:
                         sz = alt.get("product_size", 0)
                         print(f"{rank:<5} {s:<8.2f} {dg:<10.2f} {tm_f:>4.1f}/{tm_r:<4.1f} {sz:<5}")
                 
-                print(f"\n📂 Results saved to: {config.get('output', {}).get('directory', 'results')}")
+                # 8. Save Results to Disk
+                out_dir = config.get("output", {}).get("directory", "results")
+                os.makedirs(out_dir, exist_ok=True)
+                
+                res_path = os.path.join(out_dir, "raa_result.json")
+                with open(res_path, "w") as f:
+                    json.dump(result.to_dict(), f, indent=2)
+                
+                print(f"\n📂 Results saved to: {res_path}")
             else:
                 print("\n❌ No valid primer/probe candidates found.")
             sys.exit(0)

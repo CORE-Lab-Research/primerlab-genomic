@@ -241,7 +241,6 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         if not seq or len(seq) < 45: return seq
         # Standard RAA Exo-probe layout:
         # [5'] -- (~30nt) -- [FAM-dT][THF][BHQ1-dT] -- (~15nt) -- [3' Blocker]
-        # We'll place it at 30bp from 5' end as a heuristic if not specified
         pos = 30
         labeled = (
             seq[:pos-1] + 
@@ -253,9 +252,11 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         )
         return labeled
 
-    if probe:
+    # Use the probe from the top candidate
+    actual_probe = primers.get("probe")
+    if actual_probe:
         probe_labels = config.get("parameters", {}).get("probe", {}).get("labels", {})
-        probe.labeled_sequence = format_exo_probe(probe.sequence, probe_labels)
+        actual_probe.labeled_sequence = format_exo_probe(actual_probe.sequence, probe_labels)
 
     result = WorkflowResult(
         workflow="raa",
