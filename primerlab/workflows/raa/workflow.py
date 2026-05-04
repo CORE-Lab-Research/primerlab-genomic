@@ -61,7 +61,9 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         temp_max = int(req_cores)
 
     windows = []
-    if input_len > 600:
+    has_target = config.get("parameters", {}).get("target_region") is not None
+    
+    if input_len > 600 and not has_target:
         # Auto-balance overlap if needed
         if temp_max > 1 and config.get("advanced", {}).get("overlap") is None:
             step = max(1, (input_len - window_size) // (temp_max - 1))

@@ -182,13 +182,20 @@ class Primer3Wrapper:
         # Target Region
         target_region = params.get('target_region')
         if target_region:
-            start  = max(target_region.get('start', 0), 0)
+            start  = target_region.get('start', 0)
             length = target_region.get('length', 100)
-            if start + length > len(sequence):
-                length = len(sequence) - start
-                logger.warning(f"Target region adjusted to fit sequence: {start},{length}")
-            seq_args['SEQUENCE_TARGET'] = [[start, length]]
-            logger.info(f"Target region set: position {start}, length {length}")
+            
+            # Critical Fix: Ensure target is within current window
+            if start >= len(sequence):
+                logger.warning(f"Target region start ({start}) is outside current window ({len(sequence)}bp). Skipping target.")
+            else:
+                if start + length > len(sequence):
+                    length = len(sequence) - start
+                    logger.warning(f"Target region adjusted to fit window: {start},{length}")
+                
+                if length > 0:
+                    seq_args['SEQUENCE_TARGET'] = [[start, length]]
+                    logger.info(f"Target region set: position {start}, length {length}")
 
         # Excluded Regions
         excluded_regions = params.get('excluded_regions', [])
