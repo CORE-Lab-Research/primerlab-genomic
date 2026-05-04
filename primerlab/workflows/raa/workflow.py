@@ -173,7 +173,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         # Extract amplicon sequence for this candidate
         from primerlab.core.models import Amplicon
         product_size = raw_results.get(f'PRIMER_PAIR_{orig_i}_PRODUCT_SIZE', 0)
-        amp_seq = sequence[fwd.start : rev.start + 1]
+        amp_seq = sequence[fwd.start : rev.end + 1]
         
         # RAA-specific pair QC
         qcr = qc_engine.evaluate_pair_extended(fwd, rev, probe)
