@@ -212,30 +212,36 @@ def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) ->
 def create_amplicon_map(amplicon_seq: str, fwd: Primer, rev: Primer, probe: Optional[Primer] = None) -> str:
     """
     Creates a visual text map of the amplicon.
-    Example: (FWD)>>>-------------------(PRB)====-------------------<<<(REV)
+    Refined to prevent overwriting and show true relative positions.
     """
-    f_len = len(fwd.sequence)
-    r_len = len(rev.sequence)
     amp_len = len(amplicon_seq)
-    
-    # Fill with dashes
     map_list = ["-"] * amp_len
     
-    # Mark FWD
+    f_len = len(fwd.sequence)
+    r_len = len(rev.sequence)
+    
+    # 1. Mark FWD (always at start in our extracted amp_seq)
     for i in range(min(f_len, amp_len)):
         map_list[i] = ">"
         
-    # Mark REV (Reverse orientation)
-    for i in range(max(0, amp_len - r_len), amp_len):
-        map_list[i] = "<"
-        
-    # Mark Probe
+    # 2. Mark REV (always at end in our extracted amp_seq)
+    # We use rev_len and go from the back
+    for i in range(amp_len - r_len, amp_len):
+        if i >= 0:
+            map_list[i] = "<"
+            
+    # 3. Mark Probe (Overlay with priority)
     if probe:
-        # Find probe position in amplicon
         p_seq = probe.sequence
+        # Handle case where probe sequence might have labels in its object but we need raw
         p_idx = amplicon_seq.find(p_seq)
         if p_idx != -1:
-            for i in range(p_idx, min(p_idx + len(p_seq), amp_len)):
-                map_list[i] = "="
+            p_len = len(p_seq)
+            for i in range(p_idx, min(p_idx + p_len, amp_len)):
+                # If it hits a primer, it's an overlap! We mark it with 'X'
+                if map_list[i] in [">", "<"]:
+                    map_list[i] = "X" 
+                else:
+                    map_list[i] = "="
                 
     return "".join(map_list)
