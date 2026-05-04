@@ -298,7 +298,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         )
 
     # Add map to top candidate metadata
-    metadata["visual_map"] = create_amplicon_map(
+    metadata.parameters["visual_map"] = create_amplicon_map(
         amplicons[0].sequence,
         primers.get("forward"),
         primers.get("reverse"),
