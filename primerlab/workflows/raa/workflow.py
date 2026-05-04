@@ -7,7 +7,7 @@ from primerlab.core.sequence import SequenceLoader
 from primerlab.core.logger import get_logger
 from primerlab.core.exceptions import WorkflowError
 from primerlab.workflows.raa.qc import RAAQC
-from primerlab.workflows.raa.probe import parse_primer3_output, find_exo_probe, annotate_exo_probe
+from primerlab.workflows.raa.probe import parse_primer3_output, find_exo_probe, annotate_probe, create_amplicon_map
 
 logger = get_logger()
 
@@ -184,7 +184,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             if probe:
                 logger.debug(f"Manual fallback found probe for triplet {orig_i}")
                 # Add annotation
-                ann = annotate_exo_probe(probe)
+                ann = annotate_probe(probe, config)
                 probe.labeled_sequence = ann["annotated_sequence"]
                 primers_triplet["probe"] = probe
         
@@ -286,27 +286,24 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         }
         alternatives_data.append(alt)
 
-    # 7. Post-processing: Label Exo-probes
-    def format_exo_probe(seq, labels):
-        if not seq or len(seq) < 45: return seq
-        # Standard RAA Exo-probe layout:
-        # [5'] -- (~30nt) -- [FAM-dT][THF][BHQ1-dT] -- (~15nt) -- [3' Blocker]
-        pos = 30
-        labeled = (
-            seq[:pos-1] + 
-            f"[{labels.get('fluorophore', 'FAM')}-dT]" +
-            "[THF]" +
-            f"[{labels.get('quencher', 'BHQ1')}-dT]" +
-            seq[pos+2:] +
-            f"[{labels.get('blocker', 'C3-spacer')}]"
+    # 7. Metadata and Result Construction
+    # Add amplicon maps to alternatives
+    for i, alt in enumerate(alternatives_data):
+        res = evaluated_results[i]
+        alt["visual_map"] = create_amplicon_map(
+            res["amplicon"].sequence,
+            res["primers"].get("forward"),
+            res["primers"].get("reverse"),
+            res["primers"].get("probe")
         )
-        return labeled
 
-    # Use the probe from the top candidate
-    actual_probe = primers.get("probe")
-    if actual_probe:
-        probe_labels = config.get("parameters", {}).get("probe", {}).get("labels", {})
-        actual_probe.labeled_sequence = format_exo_probe(actual_probe.sequence, probe_labels)
+    # Add map to top candidate metadata
+    metadata["visual_map"] = create_amplicon_map(
+        amplicons[0].sequence,
+        primers.get("forward"),
+        primers.get("reverse"),
+        primers.get("probe")
+    )
 
     result = WorkflowResult(
         workflow="raa",

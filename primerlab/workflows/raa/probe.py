@@ -10,67 +10,68 @@ from primerlab.core.tools.thermocalc_wrapper import ThermocalcWrapper
 
 logger = get_logger()
 
-def annotate_exo_probe(probe_primer: Primer, thf_upstream_min: int = 30, thf_downstream_min: int = 15) -> Dict[str, Any]:
+def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Annotates an Exo-probe with THF, Fluorophore, and Quencher positions.
-    
-    Exo-probe requirements:
-    - ~30nt upstream of THF
-    - ~15nt downstream of THF
-    - THF replaces a natural base (often 'T' or a purine depending on chemistry, here we just pick a valid index)
-    
-    Args:
-        probe_primer: The Primer object representing the raw probe sequence
-        thf_upstream_min: Minimum bases required 5' of the THF site
-        thf_downstream_min: Minimum bases required 3' of the THF site
-        
-    Returns:
-        Dict containing annotation metadata.
+    Annotates a probe based on the type specified in the config.
+    Supports: exo, taqman, fpg.
     """
+    probe_cfg = config.get("parameters", {}).get("probe", {})
+    p_type = probe_cfg.get("type", "exo")
+    labels = probe_cfg.get("labels", {})
     seq = probe_primer.sequence
-    seq_len = len(seq)
     
-    # Check if probe is long enough
-    min_required = thf_upstream_min + 1 + thf_downstream_min
-    if seq_len < min_required:
-        logger.warning(f"Probe length ({seq_len}) is too short for Exo-probe constraints (min {min_required})")
+    if p_type == "taqman":
+        f = labels.get("fluorophore", "FAM")
+        q = labels.get("quencher", "BHQ1")
         return {
-            "valid_exo": False,
-            "reason": "too_short",
-            "thf_index": None,
-            "annotated_sequence": seq
+            "type": "taqman",
+            "annotated_sequence": f"[{f}]{seq}[{q}]",
+            "metadata": {"fluorophore": f, "quencher": q}
         }
-        
-    # Find optimal THF site. Usually we want it exactly at `thf_upstream_min` index.
-    # In practice, scientists often look for a 'T' near this region to replace with THF.
-    # We will search within a 5nt window around the target index for a 'T'.
     
-    target_idx = thf_upstream_min
+    elif p_type == "fpg":
+        f = labels.get("fluorophore", "FAM")
+        q = labels.get("quencher", "BHQ1")
+        return {
+            "type": "fpg",
+            "annotated_sequence": f"[{f}]{seq}[{q}]",
+            "metadata": {"fluorophore": f, "quencher": q}
+        }
+
+    # Default: 'exo'
+    thf_up = probe_cfg.get("thf_upstream_min", 30)
+    thf_down = probe_cfg.get("thf_downstream_min", 15)
+    f = labels.get("fluorophore", "FAM")
+    q = labels.get("quencher", "BHQ1")
+    b = labels.get("blocker", "C3-spacer")
+    a = labels.get("abasic", "THF")
+
+    seq_len = len(seq)
+    min_req = thf_up + 1 + thf_down
+    if seq_len < min_req:
+        return {"valid": False, "reason": "too_short", "annotated_sequence": seq}
+
+    target_idx = thf_up
     search_window = seq[target_idx - 2 : target_idx + 3]
-    
     if 'T' in search_window:
         offset = search_window.find('T') - 2
         thf_index = target_idx + offset
     else:
-        # Fallback to exact index if no T found
         thf_index = target_idx
-        
-    # Ensure the found index still respects the downstream minimum
-    if (seq_len - thf_index - 1) < thf_downstream_min:
-        # Push it back if needed
-        thf_index = seq_len - thf_downstream_min - 1
-        
-    # Create annotated sequence (e.g., [FAM]-ATG...GCA[THF]GCT...AGC-[C3])
-    annotated = f"[FAM]-{seq[:thf_index]}[THF]{seq[thf_index+1:]}-[C3]"
+
+    # Boundary check
+    if (seq_len - thf_index - 1) < thf_down:
+        thf_index = seq_len - thf_down - 1
+
+    left = seq[:thf_index]
+    right = seq[thf_index+1:]
+    annotated = f"{left}[{f}-dT][{a}][{q}-dT]{right}[{b}]"
     
     return {
-        "valid_exo": True,
+        "type": "exo",
         "thf_index": thf_index,
-        "replaced_base": seq[thf_index],
         "annotated_sequence": annotated,
-        "fluorophore": "FAM",
-        "quencher": "BHQ1 (internal, near THF)",
-        "blocker": "C3-spacer"
+        "metadata": {"fluorophore": f, "quencher": q, "abasic": a, "blocker": b}
     }
 
 def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[str, Any]) -> Optional[Primer]:
@@ -194,16 +195,41 @@ def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) ->
             )
             candidate["probe"] = probe
             
-            # Apply Exo-probe annotations
-            probe_cfg = config.get("parameters", {}).get("probe", {})
-            if probe_cfg.get("type") == "exo":
-                candidate["probe_annotation"] = annotate_exo_probe(
-                    probe,
-                    thf_upstream_min=probe_cfg.get("thf_upstream_min", 30),
-                    thf_downstream_min=probe_cfg.get("thf_downstream_min", 15)
-                )
+            # Apply Probe annotations
+            candidate["probe_annotation"] = annotate_probe(probe, config)
         
         if "forward" in candidate and "reverse" in candidate:
             all_candidates.append(candidate)
                 
     return all_candidates
+
+def create_amplicon_map(amplicon_seq: str, fwd: Primer, rev: Primer, probe: Optional[Primer] = None) -> str:
+    """
+    Creates a visual text map of the amplicon.
+    Example: (FWD)>>>-------------------(PRB)====-------------------<<<(REV)
+    """
+    f_len = len(fwd.sequence)
+    r_len = len(rev.sequence)
+    amp_len = len(amplicon_seq)
+    
+    # Fill with dashes
+    map_list = ["-"] * amp_len
+    
+    # Mark FWD
+    for i in range(min(f_len, amp_len)):
+        map_list[i] = ">"
+        
+    # Mark REV (Reverse orientation)
+    for i in range(max(0, amp_len - r_len), amp_len):
+        map_list[i] = "<"
+        
+    # Mark Probe
+    if probe:
+        # Find probe position in amplicon
+        p_seq = probe.sequence
+        p_idx = amplicon_seq.find(p_seq)
+        if p_idx != -1:
+            for i in range(p_idx, min(p_idx + len(p_seq), amp_len)):
+                map_list[i] = "="
+                
+    return "".join(map_list)

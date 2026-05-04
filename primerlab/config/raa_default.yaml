@@ -63,19 +63,27 @@ parameters:
   max_poly_x: 4                   # Maksimal repetisi basa yang sama (AAAA, dsb)
 
   # 4. PROBE SETTINGS (Exo-Probe / qPCR)
+  # Pilih tipe probe yang sesuai dengan chemistry Anda:
+  # - exo: Standar RAA/RPA (Panjang 46-52nt, butuh THF untuk Exonuclease III)
+  # - taqman: Standar qPCR (Panjang 20-30nt, label FAM di 5' dan BHQ1 di 3')
+  # - fpg: Alternatif RAA (Butuh dR-Biotin/situs FPG)
   probe:
     enabled: true                # true: desain triplet (F+R+Probe) | false: primer saja
-    type: exo                    # exo (untuk RAA) | simple (standard qPCR)
+    type: exo                    # exo | taqman | fpg
     size: { min: 46, opt: 48, max: 52 }
     tm:   { min: 54.0, opt: 65.0, max: 85.0 }
     gc:   { min: 20.0, max: 80.0 }
+    
     # Structural (Exo-specific)
     thf_upstream_min: 30         # Min basa di sisi 5' dari titik THF
     thf_downstream_min: 15       # Min basa di sisi 3' dari titik THF
+    
+    # Labeling Defaults
     labels:
       fluorophore: "FAM"
       quencher: "BHQ1"
       blocker: "C3-spacer"
+      abasic: "THF"
 
   # 5. CLONING / OVERHANGS
   add_sites: []              # Tambah restriksi di ujung 5' (Contoh: ["EcoRI", "BamHI"])
