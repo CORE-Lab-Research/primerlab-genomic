@@ -90,9 +90,9 @@ output:
 advanced:
   # Target Region Optimization (Crucial for 1000bp sequences)
   # Set this to your 150bp conserved zone coordinates to prevent timeouts
-  # target_region: 
-  #   start: 400
-  #   length: 150
+  target_region:
+    start: 400
+    length: 150
 
   debug: false
   timeout: 600                  # Increased to 10 mins for complex RAA triplets
