@@ -26,6 +26,9 @@ class QCResult:
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
 
+    # v1.2.5: For extra metadata (e.g. ViennaRNA)
+    additional_metrics: Dict[str, Any] = field(default_factory=dict)
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "hairpin_ok": self.hairpin_ok,
@@ -44,5 +47,6 @@ class QCResult:
             "quality_category_emoji": self.quality_category_emoji,
             "quality_penalties": self.quality_penalties,
             "warnings": self.warnings,
-            "errors": self.errors
+            "errors": self.errors,
+            "additional_metrics": self.additional_metrics
         }
