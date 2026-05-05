@@ -230,6 +230,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             dimer_penalty += abs(qcr.cross_dimer_dg) * 2.0
             
         total_score = p3_penalty + qc_penalty + dimer_penalty
+        quality_score = max(0, min(100, 100 - total_score))
         
         amplicon = Amplicon(
             start=fwd.start, end=rev.start, length=product_size,
@@ -240,7 +241,8 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             "primers": primers_triplet,
             "amplicon": amplicon,
             "qc": qcr,
-            "score": total_score
+            "score": total_score,
+            "quality_score": quality_score
         })
     
     # 5. Rerank based on total_score (Lowest is Best)

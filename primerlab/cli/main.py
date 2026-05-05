@@ -3188,11 +3188,11 @@ qc:
                 # Top 5 Table
                 if len(alternatives) > 1:
                     print("\n📊 TOP CANDIDATES SUMMARY:")
-                    print(f"{'Rank':<5} {'Score':<8} {'dG (Dim)':<10} {'Tm (F/R)':<12} {'Probe':<6} {'Size':<5}")
+                    print(f"{'Rank':<5} {'Quality %':<10} {'dG (Dim)':<10} {'Tm (F/R)':<12} {'Probe':<6} {'Size':<5}")
                     print("-" * 55)
                     for i, alt in enumerate(alternatives[:5]):
                         rank = i + 1
-                        s = alt.get("score", 0)
+                        q_score = alt.get("quality_score", 0)
                         
                         # Extract from new nested structure
                         qc = alt.get("qc", {})
@@ -3211,7 +3211,7 @@ qc:
                         prb_found = "Yes" if "probe" in primers else "No"
                         sz = alt.get("amplicon", {}).get("length", 0)
                         
-                        print(f"{rank:<5} {s:<8.2f} {dg:<10.2f} {tm_f:>4.1f}/{tm_r:<4.1f} {prb_found:<6} {sz:<5}")
+                        print(f"{rank:<5} {q_score:<10.1f} {dg:<10.2f} {tm_f:>4.1f}/{tm_r:<4.1f} {prb_found:<6} {sz:<5}")
                 
                 # 8. Save Results to Disk
                 base_out_dir = config.get("output", {}).get("directory", "results")
