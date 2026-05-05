@@ -3187,31 +3187,33 @@ qc:
                 
                 # Top 5 Table
                 if len(alternatives) > 1:
-                    print("\n📊 TOP CANDIDATES SUMMARY:")
-                    print(f"{'Rank':<5} {'Quality %':<10} {'dG (Dim)':<10} {'Tm (F/R)':<12} {'Probe':<6} {'Size':<5}")
-                    print("-" * 55)
+                    print("\n📊 TOP CANDIDATES SUMMARY (Ranked by Primer3 Penalty, lower = better):")
+                    print(f"{'Rank':<5} {'P3 Penalty':<12} {'dG (Dim)':<12} {'Tm (F/R)':<14} {'Probe':<6} {'Size':<6} {'QC Flags'}")
+                    print("-" * 70)
                     for i, alt in enumerate(alternatives[:5]):
                         rank = i + 1
-                        q_score = alt.get("quality_score", 0)
-                        
-                        # Extract from new nested structure
+                        p3 = alt.get("score", 0)
+
+                        # Extract from nested structure
                         qc = alt.get("qc", {})
                         dg_raw = qc.get("cross_dimer_dg", 0)
-                        dg = float(dg_raw.split()[0]) if isinstance(dg_raw, str) else dg_raw
-                        
+                        dg = float(dg_raw.split()[0]) if isinstance(dg_raw, str) else (dg_raw or 0)
+                        warnings_count = len(qc.get("warnings", []))
+
                         primers = alt.get("primers", {})
                         fwd = primers.get("forward", {})
                         rev = primers.get("reverse", {})
-                        
+
                         tm_f_raw = fwd.get("tm", "0.0")
                         tm_r_raw = rev.get("tm", "0.0")
                         tm_f = float(str(tm_f_raw).split()[0])
                         tm_r = float(str(tm_r_raw).split()[0])
-                        
+
                         prb_found = "Yes" if "probe" in primers else "No"
                         sz = alt.get("amplicon", {}).get("length", 0)
-                        
-                        print(f"{rank:<5} {q_score:<10.1f} {dg:<10.2f} {tm_f:>4.1f}/{tm_r:<4.1f} {prb_found:<6} {sz:<5}")
+                        flag_str = f"{warnings_count} warning(s)" if warnings_count > 0 else "✅ Clean"
+
+                        print(f"{rank:<5} {p3:<12.3f} {dg:<12.2f} {tm_f:>5.1f}/{tm_r:<6.1f} {prb_found:<6} {sz:<6} {flag_str}")
                 
                 # 8. Save Results to Disk
                 base_out_dir = config.get("output", {}).get("directory", "results")

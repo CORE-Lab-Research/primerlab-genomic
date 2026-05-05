@@ -222,26 +222,10 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             if not probe_qc["probe_tm_ok"]:
                 qcr.tm_balance_ok = False
 
-        # 6. Scoring logic (Calibrated for RAA)
-        # RAA penalties are naturally higher; we scale p3_penalty more leniently
+        # 6. Ranking Score = Pure Primer3 Penalty (Objective)
+        # Lower penalty = closer to ideal thermodynamic parameters.
+        # QC checks are informational labels only, NOT score deductions.
         p3_penalty = raw_results.get(f'PRIMER_PAIR_{orig_i}_PENALTY', 100.0)
-        p3_deduction = min(30, int(p3_penalty * 0.5)) 
-        
-        qc_penalty = len(qcr.warnings) * 5.0 # More lenient warning penalty
-        dimer_penalty = 0
-        if qcr.cross_dimer_dg < -8.0:
-            dimer_penalty += abs(qcr.cross_dimer_dg) * 1.5
-            
-        # Total Penalty
-        total_penalty = p3_deduction + qc_penalty + dimer_penalty
-        
-        # Base Quality (Starts at 90 if probe is found, 80 otherwise)
-        base_quality = 90 if probe else 80
-        quality_score = max(0, min(100, base_quality - total_penalty))
-        
-        # Add a small bonus for excellent thermal stability
-        if qcr.tm_balance_ok:
-            quality_score = min(100, quality_score + 5)
         
         amplicon = Amplicon(
             start=fwd.start, end=rev.start, length=product_size,
@@ -252,11 +236,10 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             "primers": primers_triplet,
             "amplicon": amplicon,
             "qc": qcr,
-            "score": total_penalty,
-            "quality_score": quality_score
+            "score": p3_penalty  # Pure Primer3 penalty — lower is better
         })
     
-    # 5. Rerank based on total_score (Lowest is Best)
+    # 5. Rerank by Primer3 penalty (Lowest is Best — purely objective)
     evaluated_results.sort(key=lambda x: x["score"])
 
     # Log Top 5 for debugging
@@ -306,22 +289,25 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         amplicons = []
         logger.warning("No valid candidates found.")
 
-    # 6.1 Build Ranking Details (for CSV export)
+    # 6.1 Build Ranking Details (for CSV export — all objective physical values)
     ranking_details = []
     for i, res in enumerate(evaluated_results[:vienna_limit]):
         row = {
             "rank": i + 1,
-            "score": round(res["score"], 3),
+            "p3_penalty": round(res["score"], 3),  # Primary rank key
             "fwd_tm": res["primers"]["forward"].tm if res["primers"].get("forward") else None,
             "rev_tm": res["primers"]["reverse"].tm if res["primers"].get("reverse") else None,
             "prb_tm": res["primers"]["probe"].tm if res["primers"].get("probe") else None,
+            "fwd_gc": res["primers"]["forward"].gc if res["primers"].get("forward") else None,
+            "rev_gc": res["primers"]["reverse"].gc if res["primers"].get("reverse") else None,
             "product_size": res["amplicon"].length,
-            "fwd_seq": res["primers"]["forward"].sequence if res["primers"].get("forward") else None,
-            "rev_seq": res["primers"]["reverse"].sequence if res["primers"].get("reverse") else None,
-            "prb_seq": res["primers"]["probe"].sequence if res["primers"].get("probe") else None,
             "cross_dimer_dg": res["qc"].cross_dimer_dg,
             "vienna_dg": res["qc"].additional_metrics.get("vienna_dg") if res["qc"].additional_metrics else None,
             "normalized_dg": res["qc"].additional_metrics.get("normalized_dg") if res["qc"].additional_metrics else None,
+            "qc_warnings": len(res["qc"].warnings),
+            "fwd_seq": res["primers"]["forward"].sequence if res["primers"].get("forward") else None,
+            "rev_seq": res["primers"]["reverse"].sequence if res["primers"].get("reverse") else None,
+            "prb_seq": res["primers"]["probe"].sequence if res["primers"].get("probe") else None,
         }
         ranking_details.append(row)
 
@@ -330,7 +316,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     alternatives_data = []
     for res in evaluated_results[:num_alt_export]:
         alt = {
-            "score": round(res["score"], 3),
+            "p3_penalty": round(res["score"], 3),  # Primary rank key (objective)
             "primers": {k: v.to_dict() for k, v in res["primers"].items()},
             "amplicon": res["amplicon"].to_dict(),
             "qc": res["qc"].to_dict(),
