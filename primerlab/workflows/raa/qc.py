@@ -98,11 +98,11 @@ class RAAQC(BaseQC):
 
         # Probe secondary structure — use screening_thermo
         probe_res = self.screening_thermo.calc_hairpin(probe.sequence)
-        probe_dg = probe_res.dg
+        probe_dg = probe_res.dg / 1000.0
 
         probe_hairpin_ok = probe_dg >= self.hairpin_dg_min
         if not probe_hairpin_ok:
-            warnings.append(f"Probe hairpin ΔG ({probe_dg:.2f}) too stable (threshold: {self.hairpin_dg_min})")
+            warnings.append(f"Probe hairpin ΔG ({probe_dg:.2f} kcal/mol) too stable (threshold: {self.hairpin_dg_min})")
 
         # 2. Probe End Check (Fluorophore Quenching)
         if self.qc_config.get("probe_end_check", True):

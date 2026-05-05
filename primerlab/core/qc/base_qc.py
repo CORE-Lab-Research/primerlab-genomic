@@ -128,8 +128,8 @@ class BaseQC:
         fwd_res = self.screening_thermo.calc_hairpin(fwd.sequence)
         rev_res = self.screening_thermo.calc_hairpin(rev.sequence)
 
-        fwd_dg = fwd_res.dg
-        rev_dg = rev_res.dg
+        fwd_dg = fwd_res.dg / 1000.0
+        rev_dg = rev_res.dg / 1000.0
         
         fwd.hairpin_dg = fwd_dg
         rev.hairpin_dg = rev_dg
@@ -140,9 +140,9 @@ class BaseQC:
         hairpin_ok = fwd_hairpin_ok and rev_hairpin_ok
 
         if not fwd_hairpin_ok:
-            warnings.append(f"Forward primer hairpin ΔG ({fwd_dg:.2f}) too stable")
+            warnings.append(f"Forward primer hairpin ΔG ({fwd_dg:.2f} kcal/mol) too stable")
         if not rev_hairpin_ok:
-            warnings.append(f"Reverse primer hairpin ΔG ({rev_dg:.2f}) too stable")
+            warnings.append(f"Reverse primer hairpin ΔG ({rev_dg:.2f} kcal/mol) too stable")
 
         return {
             "hairpin_ok": hairpin_ok,
@@ -168,27 +168,27 @@ class BaseQC:
         fwd_res = self.screening_thermo.calc_homodimer(fwd.sequence)
         rev_res = self.screening_thermo.calc_homodimer(rev.sequence)
 
-        fwd_homo_dg = fwd_res.dg
-        rev_homo_dg = rev_res.dg
+        fwd_dg = fwd_res.dg / 1000.0
+        rev_dg = rev_res.dg / 1000.0
 
         # Update Primer objects
-        fwd.homodimer_dg = fwd_homo_dg
-        rev.homodimer_dg = rev_homo_dg
+        fwd.homodimer_dg = fwd_dg
+        rev.homodimer_dg = rev_dg
 
-        fwd_homo_ok = fwd_homo_dg >= self.dimer_dg_min
-        rev_homo_ok = rev_homo_dg >= self.dimer_dg_min
+        fwd_homo_ok = fwd_dg >= self.dimer_dg_min
+        rev_homo_ok = rev_dg >= self.dimer_dg_min
 
         homodimer_ok = fwd_homo_ok and rev_homo_ok
 
         if not fwd_homo_ok:
-            warnings.append(f"Forward primer homodimer ΔG ({fwd_homo_dg:.2f}) too stable")
+            warnings.append(f"Forward primer homodimer ΔG ({fwd_dg:.2f} kcal/mol) too stable")
         if not rev_homo_ok:
-            warnings.append(f"Reverse primer homodimer ΔG ({rev_homo_dg:.2f}) too stable")
+            warnings.append(f"Reverse primer homodimer ΔG ({rev_dg:.2f} kcal/mol) too stable")
 
         return {
             "homodimer_ok": homodimer_ok,
-            "fwd_homo_dg": fwd_homo_dg,
-            "rev_homo_dg": rev_homo_dg,
+            "fwd_homo_dg": fwd_dg,
+            "rev_homo_dg": rev_dg,
             "warnings": warnings
         }
 

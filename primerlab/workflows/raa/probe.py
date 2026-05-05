@@ -184,8 +184,9 @@ def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) ->
                 length=fwd_len,
                 start=fwd_start,
                 end=fwd_start + fwd_len - 1,
-                hairpin_dg=raw_results.get(f'PRIMER_LEFT_{i}_HAIRPIN_TH', 0.0),
-                homodimer_dg=raw_results.get(f'PRIMER_LEFT_{i}_HOMODIMER_TH', 0.0)
+                hairpin_dg=raw_results.get(f'PRIMER_LEFT_{i}_HAIRPIN_TH', 0.0) / 1000.0,
+                homodimer_dg=raw_results.get(f'PRIMER_LEFT_{i}_HOMODIMER_TH', 0.0) / 1000.0,
+                end_stability_dg=raw_results.get(f'PRIMER_LEFT_{i}_END_STABILITY', 0.0) / 1000.0
             )
             
         # Reverse Primer
@@ -200,8 +201,9 @@ def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) ->
                 length=rev_len,
                 start=rev_start - rev_len + 1,
                 end=rev_start,
-                hairpin_dg=raw_results.get(f'PRIMER_RIGHT_{i}_HAIRPIN_TH', 0.0),
-                homodimer_dg=raw_results.get(f'PRIMER_RIGHT_{i}_HOMODIMER_TH', 0.0)
+                hairpin_dg=raw_results.get(f'PRIMER_RIGHT_{i}_HAIRPIN_TH', 0.0) / 1000.0,
+                homodimer_dg=raw_results.get(f'PRIMER_RIGHT_{i}_HOMODIMER_TH', 0.0) / 1000.0,
+                end_stability_dg=raw_results.get(f'PRIMER_RIGHT_{i}_END_STABILITY', 0.0) / 1000.0
             )
             
         # Probe (if enabled)
@@ -218,8 +220,9 @@ def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) ->
                 length=probe_len,
                 start=probe_start,
                 end=probe_start + probe_len - 1,
-                hairpin_dg=raw_results.get(f'PRIMER_INTERNAL_{i}_HAIRPIN_TH', 0.0),
-                homodimer_dg=raw_results.get(f'PRIMER_INTERNAL_{i}_HOMODIMER_TH', 0.0)
+                hairpin_dg=raw_results.get(f'PRIMER_INTERNAL_{i}_HAIRPIN_TH', 0.0) / 1000.0,
+                homodimer_dg=raw_results.get(f'PRIMER_INTERNAL_{i}_HOMODIMER_TH', 0.0) / 1000.0,
+                end_stability_dg=raw_results.get(f'PRIMER_INTERNAL_{i}_END_STABILITY', 0.0) / 1000.0
             )
             candidate["probe"] = probe
             
