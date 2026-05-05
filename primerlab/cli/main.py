@@ -3201,14 +3201,49 @@ qc:
                         print(f"{rank:<5} {s:<8.2f} {dg:<10.2f} {tm_f:>4.1f}/{tm_r:<4.1f} {prb_found:<6} {sz:<5}")
                 
                 # 8. Save Results to Disk
-                out_dir = config.get("output", {}).get("directory", "results")
+                base_out_dir = config.get("output", {}).get("directory", "results")
+                
+                # Use project_name from config, fallback to a default if not found
+                project_name = config.get("metadata", {}).get("project_name", "primerlab_project")
+                
+                # Create a project-specific directory
+                out_dir = os.path.join(base_out_dir, project_name)
                 os.makedirs(out_dir, exist_ok=True)
                 
-                res_path = os.path.join(out_dir, "raa_result.json")
-                with open(res_path, "w") as f:
-                    json.dump(result.to_dict(), f, indent=2)
+                res_dict = result.to_dict()
                 
-                print(f"\n📂 Results saved to: {res_path}")
+                # Split the JSON into readable components
+                with open(os.path.join(out_dir, "summary.json"), "w") as f:
+                    summary = {
+                        "workflow": res_dict.get("workflow"),
+                        "status": res_dict.get("status"),
+                        "score": res_dict.get("score"),
+                        "created_at": res_dict.get("created_at")
+                    }
+                    json.dump(summary, f, indent=2)
+
+                with open(os.path.join(out_dir, "metadata.json"), "w") as f:
+                    json.dump(res_dict.get("metadata", {}), f, indent=2)
+                    
+                with open(os.path.join(out_dir, "best_primers.json"), "w") as f:
+                    json.dump(res_dict.get("primers", {}), f, indent=2)
+                    
+                with open(os.path.join(out_dir, "amplicons.json"), "w") as f:
+                    json.dump(res_dict.get("amplicons", []), f, indent=2)
+                    
+                with open(os.path.join(out_dir, "alternatives.json"), "w") as f:
+                    json.dump(res_dict.get("alternatives", []), f, indent=2)
+                    
+                with open(os.path.join(out_dir, "qc_metrics.json"), "w") as f:
+                    json.dump(res_dict.get("qc", {}), f, indent=2)
+                
+                print(f"\n📂 Project results saved to: {out_dir}")
+                print(f"   ├─ summary.json")
+                print(f"   ├─ metadata.json")
+                print(f"   ├─ best_primers.json")
+                print(f"   ├─ amplicons.json")
+                print(f"   ├─ alternatives.json")
+                print(f"   └─ qc_metrics.json")
             else:
                 print("\n❌ No valid primer/probe candidates found.")
             sys.exit(0)
