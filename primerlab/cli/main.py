@@ -3188,8 +3188,8 @@ qc:
                 # Top 5 Table
                 if len(alternatives) > 1:
                     print("\n📊 TOP CANDIDATES SUMMARY (Ranked by Primer3 Penalty, lower = better):")
-                    print(f"{'Rank':<5} {'P3 Penalty':<12} {'dG (Dim)':<12} {'Tm (F/R)':<14} {'Probe':<6} {'Size':<6} {'QC Flags'}")
-                    print("-" * 70)
+                    print(f"{'Rank':<5} {'P3 Penalty':<12} {'dG (Dim)':<12} {'Tm (F/R)':<14} {'Probe':<6} {'Size':<6} {'Deviations'}")
+                    print("-" * 75)
                     for i, alt in enumerate(alternatives[:5]):
                         rank = i + 1
                         p3 = alt.get("score", 0)
@@ -3211,7 +3211,7 @@ qc:
 
                         prb_found = "Yes" if "probe" in primers else "No"
                         sz = alt.get("amplicon", {}).get("length", 0)
-                        flag_str = f"{warnings_count} warning(s)" if warnings_count > 0 else "✅ Clean"
+                        flag_str = f"{warnings_count} deviation(s)" if warnings_count > 0 else "✅ Perfect Match"
 
                         print(f"{rank:<5} {p3:<12.3f} {dg:<12.2f} {tm_f:>5.1f}/{tm_r:<6.1f} {prb_found:<6} {sz:<6} {flag_str}")
                 
