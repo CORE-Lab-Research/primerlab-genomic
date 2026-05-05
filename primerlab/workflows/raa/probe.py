@@ -128,6 +128,18 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
     # Run full thermo QC for the best candidate (v1.2.0)
     hairpin = primer3.calc_hairpin(best["sequence"]).dg / 1000.0 # cal to kcal
     homodimer = primer3.calc_homodimer(best["sequence"]).dg / 1000.0
+
+    # Calculate end stability (Delta G of last 5 bases)
+    end_seq = best["sequence"][-5:]
+    comp_end = "".join({"A":"T", "T":"A", "C":"G", "G":"C", "N":"N"}.get(b, b) for b in reversed(end_seq))
+    end_stability = primer3.calc_heterodimer(end_seq, comp_end).dg / 1000.0
+
+    # Calculate worst-case heterodimer against FWD and REV
+    fwd_seq = amplicon_seq[:fwd_len]
+    rev_seq = "".join({"A":"T", "T":"A", "C":"G", "G":"C", "N":"N"}.get(b, b) for b in reversed(amplicon_seq[-rev_len:]))
+    het_fwd = primer3.calc_heterodimer(best["sequence"], fwd_seq).dg / 1000.0
+    het_rev = primer3.calc_heterodimer(best["sequence"], rev_seq).dg / 1000.0
+    heterodimer = min(het_fwd, het_rev) # Most negative Delta G is the most stable
     
     probe = Primer(
         id="manual_probe",
@@ -138,7 +150,9 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
         start=fwd_start + best["local_start"],
         end=fwd_start + best["local_start"] + len(best["sequence"]) - 1,
         hairpin_dg=hairpin,
-        homodimer_dg=homodimer
+        homodimer_dg=homodimer,
+        heterodimer_dg=heterodimer,
+        end_stability_dg=end_stability
     )
     
     return probe
