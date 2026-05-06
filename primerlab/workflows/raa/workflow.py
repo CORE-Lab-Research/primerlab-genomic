@@ -284,44 +284,54 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         p_status = "YES" if res["primers"].get("probe") else "NO"
         logger.info(f"Stage 1 Rank {i+1}: Tier {res['tier']} | P3 Penalty={res['p3_penalty']:.2f}, Probe={p_status}")
 
-    # 5.1 Stage 2: ViennaRNA Accessibility Refining
+    # 5.1 Stage 2: ViennaRNA Accessibility Refining (Parallelized)
     vienna_limit = config.get("qc", {}).get("vienna_ranking_limit", 20)
     if vienna_limit > 0 and qc_engine.vienna.is_available:
         count = min(len(evaluated_results), vienna_limit)
-        logger.info(f"Refining Top {count} candidates with ViennaRNA folding at Stage 2...")
-        for res in evaluated_results[:count]:
-            # Extract amplicon sequence
+        workers = temp_max  # Reuse core count from earlier config
+        logger.info(f"Refining Top {count} candidates with ViennaRNA folding at Stage 2 ({workers} workers)...")
+
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        def _fold_one(res):
+            """Fold a single amplicon. Returns (res, vienna_result)."""
             amp = res["amplicon"]
             amp_seq = sequence[amp.start : amp.end + 1]
-            
-            # Run ViennaRNA folding
             v_res = qc_engine.evaluate_target_structure(amp_seq)
-            
-            # Store vienna data in result for transparency
-            res["amplicon"].sequence = amp_seq
-            res["qc"].additional_metrics = {"vienna_dg": v_res["dg"], "normalized_dg": v_res["normalized_dg"]}
-            
-            # Calculate vienna penalty
-            vienna_penalty = 0.0
-            if not v_res["accessible"]:
-                # Penalty based on stability (normalized dG)
-                vienna_penalty = abs(v_res["normalized_dg"]) * 1.5
-                res["qc"].warnings.append(
-                    f"Amplicon secondary structure stable (normalized ΔG: {v_res['normalized_dg']:.2f} kcal/mol). "
-                    f"Target accessibility re-ranking penalty applied: +{vienna_penalty:.2f} ranks."
-                )
-            
-            res["vienna_penalty"] = vienna_penalty
-            res["final_score"] = float(res["stage1_rank"]) + vienna_penalty
-        
+            return res, amp_seq, v_res
+
+        top_results = evaluated_results[:count]
+
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = {executor.submit(_fold_one, res): res for res in top_results}
+            for future in as_completed(futures):
+                res, amp_seq, v_res = future.result()
+
+                res["amplicon"].sequence = amp_seq
+                res["qc"].additional_metrics = {
+                    "vienna_dg": v_res["dg"],
+                    "normalized_dg": v_res["normalized_dg"]
+                }
+
+                vienna_penalty = 0.0
+                if not v_res["accessible"]:
+                    vienna_penalty = abs(v_res["normalized_dg"]) * 1.5
+                    res["qc"].warnings.append(
+                        f"Amplicon secondary structure stable (normalized ΔG: {v_res['normalized_dg']:.2f} kcal/mol). "
+                        f"Target accessibility re-ranking penalty applied: +{vienna_penalty:.2f} ranks."
+                    )
+
+                res["vienna_penalty"] = vienna_penalty
+                res["final_score"] = float(res["stage1_rank"]) + vienna_penalty
+
         # Ensure any candidate outside count has high final score
         for res in evaluated_results[count:]:
             res["vienna_penalty"] = 0.0
             res["final_score"] = float(res["stage1_rank"]) + 999.0
-            
+
         # Re-sort after ViennaRNA penalties
         evaluated_results.sort(key=lambda x: x["final_score"])
-        
+
         # Finalize ranks
         for idx, res in enumerate(evaluated_results):
             res["final_rank"] = idx + 1
