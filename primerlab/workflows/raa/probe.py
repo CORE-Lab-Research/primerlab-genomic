@@ -133,14 +133,18 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
     if not candidates:
         return None
 
-    # Rank candidates: compute homodimer dG for each and sort by:
-    #   1. Highest homodimer dG (least negative = least self-dimerization)
-    #   2. Highest Tm as tiebreaker
-    for c in candidates:
+    # Two-stage ranking to avoid calling calc_homodimer on thousands of candidates:
+    # Stage A: Pre-filter by Tm descending → keep top 20 candidates
+    # Stage B: Compute homodimer dG only for those 20, then re-rank by
+    #          (best homodimer, then best Tm as tiebreaker)
+    candidates.sort(key=lambda x: -x["tm"])
+    top_candidates = candidates[:20]
+
+    for c in top_candidates:
         c["homodimer_dg"] = primer3.calc_homodimer(c["sequence"]).dg / 1000.0
 
-    candidates.sort(key=lambda x: (-x["homodimer_dg"], -x["tm"]))
-    best = candidates[0]
+    top_candidates.sort(key=lambda x: (-x["homodimer_dg"], -x["tm"]))
+    best = top_candidates[0]
     
     # Run full thermo QC for the best candidate (v1.2.0)
     hairpin = primer3.calc_hairpin(best["sequence"]).dg / 1000.0 # cal to kcal
