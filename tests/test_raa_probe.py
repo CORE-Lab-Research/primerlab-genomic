@@ -34,7 +34,7 @@ def test_find_exo_probe_valid(mock_config):
     # Amplicon 150bp, inner gap ~80bp
     # FWD (30nt) + GAP (90nt) + REV (30nt)
     fwd_seq = "A" * 30
-    gap_seq = "G" * 90
+    gap_seq = "GATC" * 22 + "GG"
     rev_seq = "T" * 30
     amp_seq = fwd_seq + gap_seq + rev_seq
     

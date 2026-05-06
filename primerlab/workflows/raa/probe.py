@@ -86,10 +86,10 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
     """
     import primer3
     p_cfg = config.get("parameters", {}).get("probe", {})
-    p_len_min = p_cfg.get("min_size", 46)
-    p_len_max = p_cfg.get("max_size", 52)
-    p_tm_min = p_cfg.get("min_tm", 57.0)
-    p_tm_max = p_cfg.get("max_tm", 80.0)
+    p_len_min = p_cfg.get("size", {}).get("min", p_cfg.get("min_size", 46))
+    p_len_max = p_cfg.get("size", {}).get("max", p_cfg.get("max_size", 52))
+    p_tm_min = p_cfg.get("tm", {}).get("min", p_cfg.get("min_tm", 57.0))
+    p_tm_max = p_cfg.get("tm", {}).get("max", p_cfg.get("max_tm", 80.0))
     
     # RAA specific: probe must be between primers with some gap
     # inner_seq = amplicon_seq[fwd_len + 1 : -rev_len - 1]

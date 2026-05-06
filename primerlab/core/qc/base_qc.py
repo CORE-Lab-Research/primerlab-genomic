@@ -207,7 +207,7 @@ class BaseQC:
 
         # Use screening_thermo (standard conditions) for structural QC
         hetero_res = self.screening_thermo.calc_heterodimer(fwd.sequence, rev.sequence)
-        hetero_dg = hetero_res.dg
+        hetero_dg = hetero_res.dg / 1000.0
 
         # Update Primer objects
         fwd.heterodimer_dg = hetero_dg
@@ -216,7 +216,7 @@ class BaseQC:
         heterodimer_ok = hetero_dg >= self.dimer_dg_min
 
         if not heterodimer_ok:
-            warnings.append(f"Heterodimer (Fwd+Rev) ΔG ({hetero_dg:.2f}) too stable")
+            warnings.append(f"Heterodimer (Fwd+Rev) ΔG ({hetero_dg:.2f} kcal/mol) too stable")
 
         return {
             "heterodimer_ok": heterodimer_ok,
@@ -241,14 +241,11 @@ class BaseQC:
         """
         warnings = []
         
-        # End stability uses actual reaction conditions (thermo), not screening.
-        # 3' end stability is reaction-temperature-dependent and directly
-        # affects binding in the specific assay buffer.
         fwd_res = self.thermo.calc_end_stability(fwd.sequence)
         rev_res = self.thermo.calc_end_stability(rev.sequence)
         
-        fwd_end_dg = fwd_res.dg
-        rev_end_dg = rev_res.dg
+        fwd_end_dg = fwd_res.dg / 1000.0
+        rev_end_dg = rev_res.dg / 1000.0
         
         fwd.end_stability_dg = fwd_end_dg
         rev.end_stability_dg = rev_end_dg

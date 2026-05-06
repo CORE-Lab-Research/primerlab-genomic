@@ -49,25 +49,13 @@ class TestProbeMishybLibrary:
                 }
             }
             with pytest.MonkeyPatch.context() as m:
-                import multiprocessing
+                import primer3.bindings
                 
-                # Mock the process to just put a dummy result in the queue immediately
-                class MockProcess:
-                    def __init__(self, target, args):
-                        self.target = target
-                        self.args = args
-                        # args[1] is p3_settings! We can just save it to wrapper
-                        wrapper.captured_settings = args[1]
-                        
-                        # Put dummy result in queue
-                        queue = args[2]
-                        queue.put({"success": True, "data": {"PRIMER_PAIR_NUM_RETURNED": 1}})
-                        
-                    def start(self): pass
-                    def join(self, *a, **kw): pass
-                    def is_alive(self): return False
-                    
-                m.setattr(multiprocessing, "Process", MockProcess)
+                def mock_design_primers(seq_args, p3_settings):
+                    wrapper.captured_settings = p3_settings
+                    return {"PRIMER_PAIR_NUM_RETURNED": 0}
+                
+                m.setattr(primer3.bindings, "design_primers", mock_design_primers)
                 try:
                     wrapper.design_primers("ATGC" * 50, config)
                 except Exception:

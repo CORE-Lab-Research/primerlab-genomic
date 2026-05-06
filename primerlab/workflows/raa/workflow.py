@@ -232,48 +232,76 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             sequence=amp_seq, gc=0.0, tm_forward=fwd.tm, tm_reverse=rev.tm
         )
         
+        # Calculate Tier based on warnings
+        num_warnings = len(qcr.warnings)
+        tier = 1 if num_warnings == 0 else (2 if num_warnings <= 2 else 3)
+
         evaluated_results.append({
             "primers": primers_triplet,
             "amplicon": amplicon,
             "qc": qcr,
-            "score": p3_penalty  # Pure Primer3 penalty — lower is better
+            "p3_penalty": p3_penalty,
+            "tier": tier,
+            "score": p3_penalty  # Keep 'score' for backward compatibility
         })
     
-    # 5. Rerank by Primer3 penalty (Lowest is Best — purely objective)
-    evaluated_results.sort(key=lambda x: x["score"])
+    # 5. Stage 1: Sort by (tier, p3_penalty) — Clean candidates first, then minor devs, then suboptimal.
+    # Within each tier, sort by p3_penalty ascending (lowest is best).
+    evaluated_results.sort(key=lambda x: (x["tier"], x["p3_penalty"]))
+
+    # Store Stage 1 Ranks & Initial Scores
+    for idx, res in enumerate(evaluated_results):
+        res["stage1_rank"] = idx + 1
+        res["vienna_penalty"] = 0.0
+        res["final_score"] = float(idx + 1)
+        res["final_rank"] = idx + 1
 
     # Log Top 5 for debugging
     for i, res in enumerate(evaluated_results[:5]):
         p_status = "YES" if res["primers"].get("probe") else "NO"
-        logger.info(f"Candidate Rank {i+1}: Score={res['score']:.2f}, Probe={p_status}")
+        logger.info(f"Stage 1 Rank {i+1}: Tier {res['tier']} | P3 Penalty={res['p3_penalty']:.2f}, Probe={p_status}")
 
-    # 5.1 ViennaRNA Tiering (Advanced QC for RAA accessibility)
+    # 5.1 Stage 2: ViennaRNA Accessibility Refining
     vienna_limit = config.get("qc", {}).get("vienna_ranking_limit", 20)
     if vienna_limit > 0 and qc_engine.vienna.is_available:
         count = min(len(evaluated_results), vienna_limit)
-        logger.info(f"Refining Top {count} candidates with ViennaRNA folding...")
+        logger.info(f"Refining Top {count} candidates with ViennaRNA folding at Stage 2...")
         for res in evaluated_results[:count]:
             # Extract amplicon sequence
             amp = res["amplicon"]
-            # Coordinates from Primer3: start is 5' of FWD, end is 3' of REV
             amp_seq = sequence[amp.start : amp.end + 1]
             
             # Run ViennaRNA folding
             v_res = qc_engine.evaluate_target_structure(amp_seq)
             
-            # Add accessibility penalty: more stable structure = higher score (worse)
-            if not v_res["accessible"]:
-                # Penalty based on stability (normalized dG)
-                penalty = abs(v_res["normalized_dg"]) / 5.0
-                res["score"] += penalty
-                res["qc"].warnings.append(f"Amplicon secondary structure stable (normalized ΔG: {v_res['normalized_dg']:.2f}). Penalty applied.")
-            
             # Store vienna data in result for transparency
             res["amplicon"].sequence = amp_seq
             res["qc"].additional_metrics = {"vienna_dg": v_res["dg"], "normalized_dg": v_res["normalized_dg"]}
+            
+            # Calculate vienna penalty
+            vienna_penalty = 0.0
+            if not v_res["accessible"]:
+                # Penalty based on stability (normalized dG)
+                vienna_penalty = abs(v_res["normalized_dg"]) * 1.5
+                res["qc"].warnings.append(
+                    f"Amplicon secondary structure stable (normalized ΔG: {v_res['normalized_dg']:.2f} kcal/mol). "
+                    f"Target accessibility re-ranking penalty applied: +{vienna_penalty:.2f} ranks."
+                )
+            
+            res["vienna_penalty"] = vienna_penalty
+            res["final_score"] = float(res["stage1_rank"]) + vienna_penalty
         
-        # Final rerank after ViennaRNA penalties
-        evaluated_results.sort(key=lambda x: x["score"])
+        # Ensure any candidate outside count has high final score
+        for res in evaluated_results[count:]:
+            res["vienna_penalty"] = 0.0
+            res["final_score"] = float(res["stage1_rank"]) + 999.0
+            
+        # Re-sort after ViennaRNA penalties
+        evaluated_results.sort(key=lambda x: x["final_score"])
+        
+        # Finalize ranks
+        for idx, res in enumerate(evaluated_results):
+            res["final_rank"] = idx + 1
 
     # 6. Select Top Result and prepare Output
     if evaluated_results:
@@ -282,7 +310,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         qc_result = top_res["qc"]
         # Only include the TOP amplicon in the main list to avoid confusion
         amplicons = [top_res["amplicon"]]
-        logger.info(f"Top candidate selected (Global Score: {top_res['score']:.2f})")
+        logger.info(f"Top candidate selected (Stage 1 Rank: {top_res['stage1_rank']}, Final Rank: {top_res['final_rank']}, Final Score: {top_res['final_score']:.2f})")
     else:
         primers = {}
         qc_result = None
@@ -291,10 +319,15 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
 
     # 6.1 Build Ranking Details (for CSV export — all objective physical values)
     ranking_details = []
-    for i, res in enumerate(evaluated_results[:vienna_limit]):
+    # Include up to len(evaluated_results) for better user review
+    for res in evaluated_results[:max(20, len(evaluated_results))]:
         row = {
-            "rank": i + 1,
-            "p3_penalty": round(res["score"], 3),  # Primary rank key
+            "rank": res["final_rank"],
+            "stage1_rank": res["stage1_rank"],
+            "tier": f"Tier {res['tier']}",
+            "p3_penalty": round(res["p3_penalty"], 3),
+            "vienna_penalty": round(res.get("vienna_penalty", 0.0), 3),
+            "final_score": round(res["final_score"], 3),
             "fwd_tm": res["primers"]["forward"].tm if res["primers"].get("forward") else None,
             "rev_tm": res["primers"]["reverse"].tm if res["primers"].get("reverse") else None,
             "prb_tm": res["primers"]["probe"].tm if res["primers"].get("probe") else None,
@@ -302,8 +335,8 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             "rev_gc": res["primers"]["reverse"].gc if res["primers"].get("reverse") else None,
             "product_size": res["amplicon"].length,
             "cross_dimer_dg": res["qc"].cross_dimer_dg,
-            "vienna_dg": res["qc"].additional_metrics.get("vienna_dg") if res["qc"].additional_metrics else None,
-            "normalized_dg": res["qc"].additional_metrics.get("normalized_dg") if res["qc"].additional_metrics else None,
+            "vienna_dg": res["qc"].additional_metrics.get("vienna_dg") if res["qc"] and res["qc"].additional_metrics else None,
+            "normalized_dg": res["qc"].additional_metrics.get("normalized_dg") if res["qc"] and res["qc"].additional_metrics else None,
             "qc_warnings": len(res["qc"].warnings),
             "fwd_seq": res["primers"]["forward"].sequence if res["primers"].get("forward") else None,
             "rev_seq": res["primers"]["reverse"].sequence if res["primers"].get("reverse") else None,
@@ -316,7 +349,12 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     alternatives_data = []
     for res in evaluated_results[:num_alt_export]:
         alt = {
-            "p3_penalty": round(res["score"], 3),  # Primary rank key (objective)
+            "final_rank": res["final_rank"],
+            "stage1_rank": res["stage1_rank"],
+            "tier": res["tier"],
+            "p3_penalty": round(res["p3_penalty"], 3),
+            "vienna_penalty": round(res.get("vienna_penalty", 0.0), 3),
+            "final_score": round(res["final_score"], 3),
             "primers": {k: v.to_dict() for k, v in res["primers"].items()},
             "amplicon": res["amplicon"].to_dict(),
             "qc": res["qc"].to_dict(),
