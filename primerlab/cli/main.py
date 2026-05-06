@@ -331,8 +331,8 @@ def main():
     blast_parser = subparsers.add_parser("blast", help="Off-target check for primers (v0.3.0)")
     blast_parser.add_argument("--primers", "-p", required=True,
                              help="Primer sequences (JSON file, FASTA, or comma-separated)")
-    blast_parser.add_argument("--database", "-d", required=True,
-                             help="Path to FASTA database or BLAST DB")
+    blast_parser.add_argument("--database", "-d", required=False,
+                             help="Path to FASTA database or BLAST DB (required unless --online is used)")
     blast_parser.add_argument("--target", "-t", type=str,
                              help="Expected target sequence ID")
     blast_parser.add_argument("--output", "-o", type=str, default="blast_output",
@@ -609,8 +609,6 @@ def main():
     # --- STATS Command Handler (v0.1.6) ---
     if args.command == "stats":
 
-        from pathlib import Path
-
         seq_input = args.sequence
 
         try:
@@ -696,7 +694,6 @@ def main():
 
     # --- INSILICO Command Handler (v0.2.0) ---
     if args.command == "insilico":
-        from pathlib import Path
 
         from primerlab.core.insilico import run_insilico_pcr
         from primerlab.core.sequence import SequenceLoader
@@ -730,8 +727,12 @@ def main():
             if content.strip().startswith('{'):
                 # JSON format
                 primers_data = json.loads(content)
-                fwd_primer = primers_data.get("forward", primers_data.get("fwd", ""))
-                rev_primer = primers_data.get("reverse", primers_data.get("rev", ""))
+                fwd_data = primers_data.get("forward", primers_data.get("fwd", ""))
+                rev_data = primers_data.get("reverse", primers_data.get("rev", ""))
+                
+                # Handle nested dict from standard result.json (Phase 4 fix)
+                fwd_primer = fwd_data.get("sequence", fwd_data) if isinstance(fwd_data, dict) else fwd_data
+                rev_primer = rev_data.get("sequence", rev_data) if isinstance(rev_data, dict) else rev_data
             elif content.strip().startswith('>'):
                 # FASTA format - expect 2 sequences
                 lines = content.strip().split('\n')
@@ -860,6 +861,9 @@ def main():
 
             # v0.3.1: Database info mode
             if getattr(args, 'db_info', False):
+                if not args.database:
+                    print("❌ --database is required for --db-info mode")
+                    sys.exit(1)
                 db_path = Path(args.database)
                 if not db_path.exists():
                     print(f"❌ Database not found: {db_path}")
@@ -890,8 +894,12 @@ def main():
                 if primers_input.endswith('.json'):
                     with open(primers_input) as f:
                         primer_data = json.load(f)
-                    forward_primer = primer_data.get("forward") or primer_data.get("fwd")
-                    reverse_primer = primer_data.get("reverse") or primer_data.get("rev")
+                    fwd_raw = primer_data.get("forward") or primer_data.get("fwd")
+                    rev_raw = primer_data.get("reverse") or primer_data.get("rev")
+                    
+                    # Handle nested dict (v0.3.3 fix)
+                    forward_primer = fwd_raw.get("sequence", fwd_raw) if isinstance(fwd_raw, dict) else fwd_raw
+                    reverse_primer = rev_raw.get("sequence", rev_raw) if isinstance(rev_raw, dict) else rev_raw
                 else:  # FASTA
                     seqs = []
                     with open(primers_input) as f:
@@ -921,8 +929,16 @@ def main():
                 print("❌ No primers found in input")
                 sys.exit(1)
 
+            # v0.3.2: Default database for online mode
+            if getattr(args, 'online', False) and not args.database:
+                args.database = "nt"
+
+            if not args.database and not getattr(args, 'online', False):
+                print("❌ --database is required for local BLAST")
+                sys.exit(1)
+
             print(f"🔬 Off-target Check (v0.3.0)")
-            print(f"   Database: {args.database}")
+            print(f"   Database: {args.database} {'(Online)' if getattr(args, 'online', False) else ''}")
             print(f"   Forward:  {forward_primer[:30]}..." if len(forward_primer) > 30 else f"   Forward:  {forward_primer}")
             if reverse_primer:
                 print(f"   Reverse:  {reverse_primer[:30]}..." if len(reverse_primer) > 30 else f"   Reverse:  {reverse_primer}")
