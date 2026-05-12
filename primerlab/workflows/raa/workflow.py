@@ -265,6 +265,20 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                                 if cand_list:
                                     c = cand_list[0]
                                     
+                                    # RAA: Primer3 doesn't pick probes (size limit).
+                                    # Find the probe manually between the primer pair.
+                                    if probe_enabled and not c.get("probe"):
+                                        fwd = c["forward"]
+                                        rev = c["reverse"]
+                                        # The amplicon region between primers is where the probe lives
+                                        amp_start = fwd.start + fwd.length
+                                        amp_end = rev.start
+                                        amp_inner = sub_seq[amp_start:amp_end]
+                                        if len(amp_inner) >= config.get("parameters", {}).get("probe", {}).get("size", {}).get("min", 46):
+                                            found_probe = find_exo_probe(amp_inner, 5, 5, config, fwd_start=amp_start + start)
+                                            if found_probe:
+                                                c["probe"] = found_probe
+                                    
                                     # --- STRICT OVERLAP CHECK ---
                                     if c.get("probe"):
                                         p = c["probe"]
@@ -275,7 +289,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                                         
                                         min_gap = 5
                                         if (p_start < f_end + min_gap) or (p_end > r_start - min_gap):
-                                            continue
+                                            c["probe"] = None  # Drop colliding probe, keep the pair
 
                                     qcr = qc_engine.evaluate_pair_extended(c["forward"], c["reverse"], c.get("probe"))
                                     
