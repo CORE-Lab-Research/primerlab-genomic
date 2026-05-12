@@ -179,7 +179,20 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                 probe_pool.append(prb)
 
         logger.info(f"Found {len(probe_pool)} probe candidates. Finding flanking primers...")
+        
+        # Min primer size to estimate if probe is too close to sequence boundary
+        min_primer_size = params.get("primer_size", {}).get("min", 30)
+        min_amplicon = min(s_range[0] for s_range in size_ranges) if size_ranges else 150
+        
         for prb in probe_pool[:50]:
+            # Skip probes too close to sequence boundaries (no room for flanking primers)
+            if prb.start < min_primer_size + 5:
+                logger.debug(f"Skipping probe at {prb.start}: too close to sequence start")
+                continue
+            probe_end = prb.start + prb.length
+            if probe_end > len(sequence) - min_primer_size - 5:
+                logger.debug(f"Skipping probe at {prb.start}: too close to sequence end ({probe_end}/{len(sequence)})")
+                continue
             local_cfg = copy.deepcopy(config)
             # Use SEQUENCE_TARGET so primers are guaranteed to flank the probe
             local_cfg["parameters"]["target_region"] = {"start": prb.start, "length": prb.length}
@@ -265,17 +278,24 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                                 if cand_list:
                                     c = cand_list[0]
                                     
-                                    # RAA: Primer3 doesn't pick probes (size limit).
-                                    # Find the probe manually between the primer pair.
+                                    # RAA: Primer3 doesn't pick probes (size limit ~36nt).
+                                    # Find the probe manually in the inner amplicon region.
                                     if probe_enabled and not c.get("probe"):
                                         fwd = c["forward"]
                                         rev = c["reverse"]
-                                        # The amplicon region between primers is where the probe lives
                                         amp_start = fwd.start + fwd.length
                                         amp_end = rev.start
                                         amp_inner = sub_seq[amp_start:amp_end]
-                                        if len(amp_inner) >= config.get("parameters", {}).get("probe", {}).get("size", {}).get("min", 46):
-                                            found_probe = find_exo_probe(amp_inner, 5, 5, config, fwd_start=amp_start + start)
+                                        p_min_size = config.get("parameters", {}).get("probe", {}).get("size", {}).get("min", 46)
+                                        if len(amp_inner) >= p_min_size:
+                                            # Pass actual primer lengths so find_exo_probe enforces the correct gap
+                                            found_probe = find_exo_probe(
+                                                amp_inner,
+                                                fwd_len=fwd.length,
+                                                rev_len=rev.length,
+                                                config=config,
+                                                fwd_start=amp_start + start
+                                            )
                                             if found_probe:
                                                 c["probe"] = found_probe
                                     
