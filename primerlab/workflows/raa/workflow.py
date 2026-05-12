@@ -113,159 +113,217 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         if windows and windows[-1][1] < input_len:
             windows.append((input_len - window_size, input_len))
 
+    # 2. Run Search
+    params = config.get("parameters", {})
+    target = params.get("target_region")
+    search_strategy = params.get("search_strategy", "standard")
+    hard_filter = params.get("hard_qc_filter", False)
+    target_quota = params.get("num_candidates", 1000)
+    max_iters = params.get("max_search_iterations", 5)
+
+    # Prepare Size Buckets if diversified
+    size_ranges = params.get('product_size_range', [[150, 300]])
+    if search_strategy == "diversified" and len(size_ranges) == 1:
+        s_min, s_max = size_ranges[0]
+        step = (s_max - s_min) // 3
+        if step >= 20:
+            size_ranges = [
+                [s_min, s_min + step],
+                [s_min + step + 1, s_min + 2 * step],
+                [s_min + 2 * step + 1, s_max]
+            ]
+            logger.info(f"Diversified Search: Splitting range into buckets: {size_ranges}")
+
+    # Windowing Logic (Opt-in)
+    user_window_size = config.get("advanced", {}).get("window_size")
+    windows = []
+    if target:
+        t_start = target.get("start", 0)
+        t_len = target.get("length", 150)
+        buffer = 300
+        slice_start = max(0, t_start - buffer)
+        slice_end = min(input_len, t_start + t_len + buffer)
+        logger.info(f"Target detected. Slicing: {slice_start}-{slice_end}")
+        sequence = sequence[slice_start:slice_end]
+        params["target_region"]["start"] = t_start - slice_start
+        windows = [(0, len(sequence))]
+    elif user_window_size:
+        window_size = int(user_window_size)
+        overlap = config.get("advanced", {}).get("overlap", 200)
+        for i in range(0, input_len - window_size + 1, window_size - overlap):
+            windows.append((i, min(i + window_size, input_len)))
+            if windows[-1][1] == input_len: break
     else:
-        # Default: full sequence in one Primer3 call — no windowing
-        logger.info(f"Full-sequence search mode (no windowing, {input_len}bp)")
         windows = [(0, input_len)]
 
     import copy
-    all_raw_data = []
     p3_wrapper = Primer3Wrapper()
-    for start, end in windows:
-        sub_seq = sequence[start:end]
-        
-        # Localize config to prevent modifying the global dict and to adjust coordinates
-        local_config = copy.deepcopy(config)
-        global_excluded = config.get("parameters", {}).get("excluded_regions", [])
-        
-        if global_excluded:
-            local_excluded = []
-            for r in global_excluded:
-                if isinstance(r, (list, tuple)):
-                    r_start, r_len = r[0], r[1]
-                elif isinstance(r, dict):
-                    r_start, r_len = r['start'], r['length']
-                else:
-                    continue
-                
-                r_end = r_start + r_len
-                # Check overlap with current window
-                if r_start < end and r_end > start:
-                    local_r_start = max(0, r_start - start)
-                    local_r_end = min(end - start, r_end - start)
-                    if local_r_end > local_r_start:
-                        local_excluded.append([local_r_start, local_r_end - local_r_start])
-            
-            if "parameters" not in local_config:
-                local_config["parameters"] = {}
-            local_config["parameters"]["excluded_regions"] = local_excluded
-            
-        try:
-            res = p3_wrapper.design_primers(sub_seq, local_config)
-            all_raw_data.append((res, start + slice_start))
-        except Exception as e:
-            logger.warning(f"⚠️ Window {(start, end)} failed: {e}")
-
-
-    # 3. Merge and Deduplicate Results
-    raw_results = {}
-    total_pairs = 0
+    qc_engine = RAAQC(config)
+    
+    all_valid_candidates = []
     seen_hashes = set()
     
-    for res_dict, offset in all_raw_data:
-        num_returned = res_dict.get('PRIMER_PAIR_NUM_RETURNED', 0)
-        for i in range(num_returned):
-            fwd_seq = res_dict.get(f'PRIMER_LEFT_{i}_SEQUENCE')
-            rev_seq = res_dict.get(f'PRIMER_RIGHT_{i}_SEQUENCE')
-            if not fwd_seq or not rev_seq: continue
-            
-            pair_hash = f"{fwd_seq}_{rev_seq}"
-            if pair_hash not in seen_hashes:
-                idx = total_pairs
-                for key, val in res_dict.items():
-                    if any(key.startswith(p) for p in [f'PRIMER_LEFT_{i}', f'PRIMER_RIGHT_{i}', f'PRIMER_INTERNAL_{i}', f'PRIMER_PAIR_{i}']):
-                        new_key = key.replace(f'_{i}', f'_{idx}')
-                        # Adjust coordinates (POS is a comma-separated string: "start,len")
-                        if '_POS' in key and isinstance(val, str) and ',' in val:
-                            p_start, p_len = map(int, val.split(','))
-                            raw_results[new_key] = f"{p_start + offset},{p_len}"
-                        else:
-                            raw_results[new_key] = val
-                seen_hashes.add(pair_hash)
-                total_pairs += 1
+    # Probe-Centered Search (Probe-First) — only when probe is enabled
+    if search_strategy == "probe_centered" and config.get("parameters", {}).get("probe", {}).get("enabled"):
+        logger.info("Strategy: Probe-Centered Search. Scanning for optimal probes first...")
+        from primerlab.workflows.raa.probe import find_exo_probe, parse_primer3_output as parse_p3
 
-    raw_results['PRIMER_PAIR_NUM_RETURNED'] = total_pairs
-    raw_results['PRIMER_LEFT_NUM_RETURNED'] = total_pairs
-    logger.info(f"✅ Parallel search complete. Found {total_pairs} unique candidates across all windows.")
+        p_cfg = config.get("parameters", {}).get("probe", {})
+        p_len = p_cfg.get("size", {}).get("opt", 48)
+        probe_pool = []
+
+        for scan_i in range(0, len(sequence) - p_len, 10):
+            sub = sequence[scan_i: scan_i + p_len + 100]
+            prb = find_exo_probe(sub, 5, 5, config, fwd_start=scan_i)
+            if prb and prb.sequence not in [x.sequence for x in probe_pool]:
+                probe_pool.append(prb)
+
+        logger.info(f"Found {len(probe_pool)} probe candidates. Finding flanking primers...")
+        for prb in probe_pool[:50]:
+            local_cfg = copy.deepcopy(config)
+            # Use SEQUENCE_TARGET so primers are guaranteed to flank the probe
+            local_cfg["parameters"]["target_region"] = {"start": prb.start, "length": prb.length}
+            try:
+                res_dict = p3_wrapper.design_primers(sequence, local_cfg)
+                cand_list = parse_p3(res_dict, config)
+                for ci, cand in enumerate(cand_list):
+                    h = f"{cand['forward'].sequence}_{cand['reverse'].sequence}"
+                    if h in seen_hashes:
+                        continue
+                    cand["probe"] = prb
+                    qcr = qc_engine.evaluate_pair_extended(cand["forward"], cand["reverse"], prb)
+                    probe_qcr = qc_engine.evaluate_probe(prb, cand["forward"], cand["reverse"])
+                    qcr.warnings.extend(probe_qcr.get("warnings", []))
+                    if hard_filter and len(qcr.warnings) > 0:
+                        continue
+                    seen_hashes.add(h)
+                    all_valid_candidates.append({
+                        "triplet": cand,
+                        "p3_penalty": res_dict.get(f'PRIMER_PAIR_{ci}_PENALTY', 99.0),
+                        "product_size": res_dict.get(f'PRIMER_PAIR_{ci}_PRODUCT_SIZE', 0),
+                        "qc": qcr
+                    })
+            except Exception as e:
+                logger.debug(f"Probe-centered search failed for probe at {prb.start}: {e}")
+                continue
+
+
+    # STANDARD / DIVERSIFIED SEARCH with Iterative Loop
+    else:
+        for s_range in size_ranges:
+            current_bucket_valid = []
+            bucket_quota = target_quota // len(size_ranges)
+            excluded_regions = copy.deepcopy(params.get("excluded_regions", []))
+            
+            for iteration in range(max_iters):
+                if len(current_bucket_valid) >= bucket_quota: break
+                
+                logger.info(f"Search Iteration {iteration+1} for size {s_range} (Found: {len(current_bucket_valid)}/{bucket_quota})")
+                
+                for start, end in windows:
+                    sub_seq = sequence[start:end]
+                    local_config = copy.deepcopy(config)
+                    local_config["parameters"]["product_size_range"] = [s_range]
+                    local_config["parameters"]["num_candidates"] = bucket_quota * 2 # Over-request
+                    local_config["parameters"]["excluded_regions"] = excluded_regions
+                    
+                    try:
+                        res_dict = p3_wrapper.design_primers(sub_seq, local_config)
+                        num_returned = res_dict.get('PRIMER_PAIR_NUM_RETURNED', 0)
+                        
+                        for i in range(num_returned):
+                            f_seq = res_dict.get(f'PRIMER_LEFT_{i}_SEQUENCE')
+                            r_seq = res_dict.get(f'PRIMER_RIGHT_{i}_SEQUENCE')
+                            if not f_seq or not r_seq: continue
+                            
+                            pair_hash = f"{f_seq}_{r_seq}"
+                            if pair_hash not in seen_hashes:
+                                # Perform RAPID QC check for dimer threshold
+                                # We need to create Primer objects to use QC engine
+                                from primerlab.workflows.raa.probe import parse_primer3_output
+                                # Minimal dict to trick parse_primer3_output
+                                mini_res = {
+                                    'PRIMER_LEFT_NUM_RETURNED': 1,
+                                    f'PRIMER_LEFT_0': res_dict.get(f'PRIMER_LEFT_{i}'),
+                                    f'PRIMER_LEFT_0_SEQUENCE': f_seq,
+                                    f'PRIMER_LEFT_0_TM': res_dict.get(f'PRIMER_LEFT_{i}_TM'),
+                                    f'PRIMER_LEFT_0_GC_PERCENT': res_dict.get(f'PRIMER_LEFT_{i}_GC_PERCENT'),
+                                    f'PRIMER_RIGHT_0': res_dict.get(f'PRIMER_RIGHT_{i}'),
+                                    f'PRIMER_RIGHT_0_SEQUENCE': r_seq,
+                                    f'PRIMER_RIGHT_0_TM': res_dict.get(f'PRIMER_RIGHT_{i}_TM'),
+                                    f'PRIMER_RIGHT_0_GC_PERCENT': res_dict.get(f'PRIMER_RIGHT_{i}_GC_PERCENT'),
+                                }
+                                if f'PRIMER_INTERNAL_{i}_SEQUENCE' in res_dict:
+                                    mini_res[f'PRIMER_INTERNAL_0_SEQUENCE'] = res_dict.get(f'PRIMER_INTERNAL_{i}_SEQUENCE')
+                                    mini_res[f'PRIMER_INTERNAL_0'] = res_dict.get(f'PRIMER_INTERNAL_{i}')
+                                    mini_res[f'PRIMER_INTERNAL_0_TM'] = res_dict.get(f'PRIMER_INTERNAL_{i}_TM')
+                                
+                                cand_list = parse_primer3_output(mini_res, config)
+                                if cand_list:
+                                    c = cand_list[0]
+                                    qcr = qc_engine.evaluate_pair_extended(c["forward"], c["reverse"], c.get("probe"))
+                                    
+                                    # HARD FILTER CHECK
+                                    if hard_filter:
+                                        # Only accept if Tier 1 (0 warnings)
+                                        if len(qcr.warnings) > 0:
+                                            # Still add to excluded to avoid finding it again
+                                            f_pos, f_len = res_dict.get(f'PRIMER_LEFT_{i}')
+                                            excluded_regions.append([f_pos, f_len])
+                                            continue
+                                    
+                                    seen_hashes.add(pair_hash)
+                                    # Store results in a clean structure
+                                    item = {
+                                        "triplet": c,
+                                        "p3_penalty": res_dict.get(f'PRIMER_PAIR_{i}_PENALTY', 99.0),
+                                        "product_size": res_dict.get(f'PRIMER_PAIR_{i}_PRODUCT_SIZE', 0),
+                                        "qc": qcr
+                                    }
+                                    current_bucket_valid.append(item)
+                                    
+                                    if len(current_bucket_valid) >= bucket_quota: break
+                        
+                    except Exception as e:
+                        logger.debug(f"Iterative window failed: {e}")
+                
+                if not hard_filter: break # No looping if hard filter is off
+                if len(current_bucket_valid) >= bucket_quota: break
+            
+            all_valid_candidates.extend(current_bucket_valid)
+
+    logger.info(f"✅ Search complete. Total valid candidates: {len(all_valid_candidates)}")
     
-    # Advanced: Evaluate target sequence accessibility
-    qc_engine = RAAQC(config)
-    target_qc = qc_engine.evaluate_target_structure(sequence)
-    if target_qc["warnings"]:
-        logger.warning(f"Target Structure Warning: {target_qc['warnings']}")
-
-    # 3. Parse Results (returns List of triplets)
-    candidates = parse_primer3_output(raw_results, config)
-    logger.info(f"Processing {len(candidates)} candidate sets for deep QC...")
-
-    # 4. Evaluate and Score all candidates
-    qc_engine = RAAQC(config)
+    # 4. Final Ranking Logic (Replace the old Stage 1)
     evaluated_results = []
-    probe = None  # Initialize to prevent UnboundLocalError later
-
-    for primers_triplet in candidates:
-        fwd = primers_triplet["forward"]
-        rev = primers_triplet["reverse"]
-        probe = primers_triplet.get("probe")
+    for item in all_valid_candidates:
+        c = item["triplet"]
+        qcr = item["qc"]
+        p3_penalty = item["p3_penalty"]
+        product_size = item["product_size"]
         
-        # Extract original index from fwd ID (e.g. "forward_5" -> 5)
-        orig_i = int(fwd.id.split("_")[1])
-
-        # Extract amplicon sequence for this candidate
+        # Calculate Tier
+        num_warnings = len(qcr.warnings)
+        tier = 1 if num_warnings == 0 else (2 if num_warnings <= 2 else 3)
+        
+        # Calculate Amplicon for the result object
         from primerlab.core.models import Amplicon
-        product_size = raw_results.get(f'PRIMER_PAIR_{orig_i}_PRODUCT_SIZE', 0)
+        fwd = c["forward"]
+        rev = c["reverse"]
         amp_seq = sequence[fwd.start : rev.end + 1]
-        
-        # RAA-specific pair QC
-        qcr = qc_engine.evaluate_pair_extended(fwd, rev, probe)
-        
-        # Probe-specific logic
-        if not probe and config.get("parameters", {}).get("probe", {}).get("enabled"):
-            probe = find_exo_probe(amp_seq, fwd.length, rev.length, config, fwd_start=fwd.start)
-            if probe:
-                logger.debug(f"Manual fallback found probe for triplet {orig_i}")
-                # Add annotation
-                ann = annotate_probe(probe, config)
-                probe.labeled_sequence = ann["annotated_sequence"]
-                primers_triplet["probe"] = probe
-        
-        if probe:
-            probe_qc = qc_engine.evaluate_probe(probe, fwd, rev)
-            qcr.warnings.extend(probe_qc["warnings"])
-            if not probe_qc["probe_tm_ok"]:
-                qcr.tm_balance_ok = False
-            if not probe_qc.get("probe_hairpin_ok", True):
-                qcr.hairpin_ok = False
-            if not probe_qc.get("probe_homodimer_ok", True):
-                qcr.homodimer_ok = False
-            
-            # Incorporate probe ΔG into worst-case triplet metrics
-            if probe_qc.get("probe_dg") is not None and qcr.hairpin_dg is not None:
-                qcr.hairpin_dg = min(qcr.hairpin_dg, probe_qc["probe_dg"])
-            if probe_qc.get("probe_homo_dg") is not None and qcr.homodimer_dg is not None:
-                qcr.homodimer_dg = min(qcr.homodimer_dg, probe_qc["probe_homo_dg"])
-
-        # 6. Ranking Score = Pure Primer3 Penalty (Objective)
-        # Lower penalty = closer to ideal thermodynamic parameters.
-        # QC checks are informational labels only, NOT score deductions.
-        p3_penalty = raw_results.get(f'PRIMER_PAIR_{orig_i}_PENALTY', 100.0)
         
         amplicon = Amplicon(
             start=fwd.start, end=rev.start, length=product_size,
             sequence=amp_seq, gc=0.0, tm_forward=fwd.tm, tm_reverse=rev.tm
         )
         
-        # Calculate Tier based on warnings
-        num_warnings = len(qcr.warnings)
-        tier = 1 if num_warnings == 0 else (2 if num_warnings <= 2 else 3)
-
         evaluated_results.append({
-            "primers": primers_triplet,
+            "primers": c, # triplet
             "amplicon": amplicon,
             "qc": qcr,
             "p3_penalty": p3_penalty,
             "tier": tier,
-            "score": p3_penalty  # Keep 'score' for backward compatibility
+            "score": p3_penalty
         })
     
     # 5. Stage 1: Sort by (tier, p3_penalty) — Clean candidates first, then minor devs, then suboptimal.
@@ -388,7 +446,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             "p3_penalty": round(res["p3_penalty"], 3),
             "vienna_penalty": round(res.get("vienna_penalty", 0.0), 3),
             "final_score": round(res["final_score"], 3),
-            "primers": {k: v.to_dict() for k, v in res["primers"].items()},
+            "primers": {k: v.to_dict() for k, v in res["primers"].items() if v is not None},
             "amplicon": res["amplicon"].to_dict(),
             "qc": res["qc"].to_dict(),
             "visual_map": create_amplicon_map(
@@ -399,6 +457,18 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             )
         }
         alternatives_data.append(alt)
+
+    # 6. Final Result Object
+    if evaluated_results:
+        top_res = evaluated_results[0]
+        primers = top_res["primers"]
+        amplicons = [top_res["amplicon"]]
+        qc_result = top_res["qc"]
+    else:
+        top_res = {}
+        primers = {}
+        amplicons = []
+        qc_result = None
 
     # 7. Metadata & Result
     from primerlab import __version__
@@ -428,7 +498,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         visual_map=metadata.parameters.get("visual_map"),
         alternatives=alternatives_data,
         ranking_details=ranking_details,
-        raw=raw_results
+        raw={}
     )
 
     return result

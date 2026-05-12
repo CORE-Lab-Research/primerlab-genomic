@@ -137,15 +137,24 @@ class Primer3Wrapper:
     def _apply_qc_method_settings(self, p3_settings: dict, params: dict) -> dict:
         """Apply Task 3.8 qc_method (threshold vs any) settings. Mutates and returns dict."""
         qc_method = params.get('qc_method', 'threshold')
+        
+        # Pull from 'qc' block if available, otherwise fallback to 'parameters'
+        qc_cfg = params.get('qc', {})
+        if not qc_cfg:
+            # Try to find it in the root if params is the full config
+            pass 
+
         if qc_method == 'threshold':
+            # Default Tm thresholds for RAA (higher due to high salt/Mg)
             p3_settings.update({
-                'PRIMER_MAX_SELF_ANY_TH':        params.get('max_self_any_th', 47.0),
-                'PRIMER_MAX_SELF_END_TH':        params.get('max_self_end_th', 47.0),
-                'PRIMER_PAIR_MAX_COMPL_ANY_TH':  params.get('max_pair_compl_any_th', 47.0),
-                'PRIMER_PAIR_MAX_COMPL_END_TH':  params.get('max_pair_compl_end_th', 47.0),
-                'PRIMER_MAX_HAIRPIN_TH':         params.get('max_hairpin_th', 47.0),
+                'PRIMER_MAX_SELF_ANY_TH':        params.get('max_self_any_th', 45.0),
+                'PRIMER_MAX_SELF_END_TH':        params.get('max_self_end_th', 45.0),
+                'PRIMER_PAIR_MAX_COMPL_ANY_TH':  params.get('max_pair_compl_any_th', 45.0),
+                'PRIMER_PAIR_MAX_COMPL_END_TH':  params.get('max_pair_compl_end_th', 45.0),
+                'PRIMER_MAX_HAIRPIN_TH':         params.get('max_hairpin_th', 45.0),
             })
         else:
+            # Score-based thresholds
             p3_settings.update({
                 'PRIMER_MAX_SELF_ANY':       params.get('max_self_any', 8.00),
                 'PRIMER_MAX_SELF_END':       params.get('max_self_end', 3.00),

@@ -27,6 +27,9 @@ parameters:
 
   # 2. SEARCH STRATEGY & REGIONS
   num_candidates: 1000       # Jumlah pasang kandidat yang dicari Primer3
+  search_strategy: standard  # Options: standard, diversified (size buckets), probe_centered
+  hard_qc_filter: false      # true: terus mencari sampai kuota terpenuhi dengan hasil Tier 1
+  max_search_iterations: 5   # Batas maksimal looping pencarian
   
   # a. Included Region: Batasi pencarian HANYA di area ini
   included_region: null      # Contoh: {start: 0, length: 150}
