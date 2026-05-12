@@ -103,16 +103,17 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
     min_gap_rev = p_cfg.get("min_gap_rev", 5)
     
     # Initialize ThermocalcWrapper with RAA-specific thermodynamic conditions.
-    # This is critical: default primer3.calc_tm() uses 0mM Mg2+ while RAA
-    # operates at ~14mM Mg2+, which drastically affects Tm of long probes.
-    thermo_cfg = config.get("parameters", {}).get("thermodynamics", {})
+    # Be robust against flattened configs where params are directly under 'parameters'
+    params = config.get("parameters", {})
+    thermo_cfg = params.get("thermodynamics", {})
+    
     thermo = ThermocalcWrapper(
-        mv_conc=thermo_cfg.get("salt_monovalent", 50.0),
-        dv_conc=thermo_cfg.get("salt_divalent", 1.5),
-        dntp_conc=thermo_cfg.get("dntp_conc", 0.6),
-        dna_conc=thermo_cfg.get("dna_conc", 50.0),
-        tm_method=thermo_cfg.get("tm_method", "santalucia"),
-        salt_corrections=thermo_cfg.get("salt_corrections", "santalucia"),
+        mv_conc=thermo_cfg.get("salt_monovalent", params.get("salt_monovalent", 50.0)),
+        dv_conc=thermo_cfg.get("salt_divalent", params.get("salt_divalent", 14.0)),    # RAA typically needs ~14mM Mg2+
+        dntp_conc=thermo_cfg.get("dntp_conc", params.get("dntp_conc", 0.8)),
+        dna_conc=thermo_cfg.get("dna_conc", params.get("dna_conc", 480.0)),            # RAA typically uses 480nM DNA
+        tm_method=thermo_cfg.get("tm_method", params.get("tm_method", "santalucia")),
+        salt_corrections=thermo_cfg.get("salt_corrections", params.get("salt_corrections", "owczarzy")),
     )
     
     amp_len = len(amplicon_seq)
