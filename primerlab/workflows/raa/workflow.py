@@ -188,14 +188,17 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                 cand_list = parse_p3(res_dict, config)
                 for ci, cand in enumerate(cand_list):
                     h = f"{cand['forward'].sequence}_{cand['reverse'].sequence}"
-                    if h in seen_hashes:
+                    # --- STRICT OVERLAP CHECK ---
+                    f_end = cand['forward'].start + cand['forward'].length
+                    r_start = cand['reverse'].start
+                    p_start = prb.start
+                    p_end = prb.start + prb.length
+                    
+                    min_gap = 5 # RAA needs gap for enzyme accessibility
+                    if (p_start < f_end + min_gap) or (p_end > r_start - min_gap):
+                        logger.debug(f"Overlap detected for probe at {prb.start}. Skipping.")
                         continue
-                    cand["probe"] = prb
-                    qcr = qc_engine.evaluate_pair_extended(cand["forward"], cand["reverse"], prb)
-                    probe_qcr = qc_engine.evaluate_probe(prb, cand["forward"], cand["reverse"])
-                    qcr.warnings.extend(probe_qcr.get("warnings", []))
-                    if hard_filter and len(qcr.warnings) > 0:
-                        continue
+
                     seen_hashes.add(h)
                     all_valid_candidates.append({
                         "triplet": cand,
@@ -261,6 +264,19 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                                 cand_list = parse_primer3_output(mini_res, config)
                                 if cand_list:
                                     c = cand_list[0]
+                                    
+                                    # --- STRICT OVERLAP CHECK ---
+                                    if c.get("probe"):
+                                        p = c["probe"]
+                                        f_end = c["forward"].start + c["forward"].length
+                                        r_start = c["reverse"].start
+                                        p_start = p.start
+                                        p_end = p.start + p.length
+                                        
+                                        min_gap = 5
+                                        if (p_start < f_end + min_gap) or (p_end > r_start - min_gap):
+                                            continue
+
                                     qcr = qc_engine.evaluate_pair_extended(c["forward"], c["reverse"], c.get("probe"))
                                     
                                     # HARD FILTER CHECK
