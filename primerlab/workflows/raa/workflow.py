@@ -201,6 +201,8 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                 cand_list = parse_p3(res_dict, config)
                 for ci, cand in enumerate(cand_list):
                     h = f"{cand['forward'].sequence}_{cand['reverse'].sequence}"
+                    if h in seen_hashes:
+                        continue
                     # --- STRICT OVERLAP CHECK ---
                     f_end = cand['forward'].start + cand['forward'].length
                     r_start = cand['reverse'].start
@@ -212,6 +214,12 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                         logger.debug(f"Overlap detected for probe at {prb.start}. Skipping.")
                         continue
 
+                    # Attach probe to the candidate triplet
+                    cand["probe"] = prb
+
+                    # Run QC evaluation
+                    qcr = qc_engine.evaluate_pair_extended(cand["forward"], cand["reverse"], cand.get("probe"))
+
                     seen_hashes.add(h)
                     all_valid_candidates.append({
                         "triplet": cand,
@@ -220,8 +228,9 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                         "qc": qcr
                     })
             except Exception as e:
-                logger.debug(f"Probe-centered search failed for probe at {prb.start}: {e}")
+                logger.warning(f"Probe-centered search failed for probe at {prb.start}: {e}")
                 continue
+
 
 
     # STANDARD / DIVERSIFIED SEARCH with Iterative Loop
