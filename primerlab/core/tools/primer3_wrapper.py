@@ -408,28 +408,41 @@ class Primer3Wrapper:
         if thermo_params:
             self._apply_thermo_settings(p3_settings, thermo_params)
 
-        # Probe Design (qPCR)
+        # Probe Design (RAA/qPCR)
         probe_params = params.get('probe')
         if probe_params and probe_params.get('enabled', True):
-            if 'PRIMER_PICK_INTERNAL_OLIGO' not in p3_settings or p3_settings['PRIMER_PICK_INTERNAL_OLIGO'] != 0:
+            # Enforce internal oligo picking
+            p3_settings['PRIMER_PICK_INTERNAL_OLIGO'] = 1
+            
+            # Map parameters dynamically from config
+            p3_settings.update({
+                'PRIMER_INTERNAL_OPT_SIZE':     probe_params.get('size', {}).get('opt', 20),
+                'PRIMER_INTERNAL_MIN_SIZE':     probe_params.get('size', {}).get('min', 18),
+                'PRIMER_INTERNAL_MAX_SIZE':     probe_params.get('size', {}).get('max', 35 if workflow_type != 'raa' else 60),
+                'PRIMER_INTERNAL_OPT_TM':       probe_params.get('tm', {}).get('opt', 65.0),
+                'PRIMER_INTERNAL_MIN_TM':       probe_params.get('tm', {}).get('min', 54.0),
+                'PRIMER_INTERNAL_MAX_TM':       probe_params.get('tm', {}).get('max', 85.0),
+                'PRIMER_INTERNAL_MIN_GC':       probe_params.get('gc', {}).get('min', 20.0),
+                'PRIMER_INTERNAL_MAX_GC':       probe_params.get('gc', {}).get('max', 80.0),
+                'PRIMER_INTERNAL_MAX_POLY_X':   probe_params.get('max_poly_x', 5),
+            })
+
+            # Loosen constraints for long RAA probes (otherwise P3 will reject them as "too stable")
+            if p3_settings['PRIMER_INTERNAL_MAX_SIZE'] > 35:
                 p3_settings.update({
-                    'PRIMER_PICK_INTERNAL_OLIGO':   1,
-                    'PRIMER_INTERNAL_OPT_SIZE':     probe_params.get('size', {}).get('opt', 20),
-                    'PRIMER_INTERNAL_MIN_SIZE':     probe_params.get('size', {}).get('min', 18),
-                    'PRIMER_INTERNAL_MAX_SIZE':     probe_params.get('size', {}).get('max', 27),
-                    'PRIMER_INTERNAL_OPT_TM':       probe_params.get('tm', {}).get('opt', 70.0),
-                    'PRIMER_INTERNAL_MIN_TM':       probe_params.get('tm', {}).get('min', 68.0),
-                    'PRIMER_INTERNAL_MAX_TM':       probe_params.get('tm', {}).get('max', 72.0),
-                    'PRIMER_INTERNAL_MIN_GC':       probe_params.get('gc', {}).get('min', 30.0),
-                    'PRIMER_INTERNAL_MAX_GC':       probe_params.get('gc', {}).get('max', 80.0),
+                    'PRIMER_INTERNAL_MAX_SELF_ANY': 12.0,
+                    'PRIMER_INTERNAL_MAX_SELF_END': 8.0,
+                    'PRIMER_INTERNAL_MAX_HAIRPIN': 45.0, # Use TH-based or loose score
                 })
-                if thermo_params:
-                    p3_settings.update({
-                        'PRIMER_INTERNAL_SALT_MONOVALENT': thermo_params.get('salt_monovalent', 50.0),
-                        'PRIMER_INTERNAL_SALT_DIVALENT':   thermo_params.get('salt_divalent', 1.5),
-                        'PRIMER_INTERNAL_DNTP_CONC':       thermo_params.get('dntp_conc', 0.6),
-                        'PRIMER_INTERNAL_DNA_CONC':        thermo_params.get('dna_conc', 50.0),
-                    })
+
+            # Ensure probe salt matches primer salt (Critical for RAA)
+            if thermo_params:
+                p3_settings.update({
+                    'PRIMER_INTERNAL_SALT_MONOVALENT': thermo_params.get('salt_monovalent', 50.0),
+                    'PRIMER_INTERNAL_SALT_DIVALENT':   thermo_params.get('salt_divalent', 14.0 if workflow_type == 'raa' else 1.5),
+                    'PRIMER_INTERNAL_DNTP_CONC':       thermo_params.get('dntp_conc', 0.8 if workflow_type == 'raa' else 0.6),
+                    'PRIMER_INTERNAL_DNA_CONC':        thermo_params.get('dna_conc', 480.0 if workflow_type == 'raa' else 50.0),
+                })
                 
                 # Task 4.7 Mishybridization library for probes
                 if 'mishyb_library_path' in probe_params:
