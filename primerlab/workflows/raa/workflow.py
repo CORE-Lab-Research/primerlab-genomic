@@ -254,93 +254,108 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                     
                     try:
                         res_dict = p3_wrapper.design_primers(sub_seq, local_config)
-                        num_returned = res_dict.get('PRIMER_PAIR_NUM_RETURNED', 0)
+                    except Exception as e:
+                        logger.warning(f"Primer3 call failed for size {s_range}: {e}")
+                        continue
+                    
+                    num_returned = res_dict.get('PRIMER_PAIR_NUM_RETURNED', 0)
                         
-                        for i in range(num_returned):
+                    for i in range(num_returned):
+                        try:
                             f_seq = res_dict.get(f'PRIMER_LEFT_{i}_SEQUENCE')
                             r_seq = res_dict.get(f'PRIMER_RIGHT_{i}_SEQUENCE')
                             if not f_seq or not r_seq: continue
                             
                             pair_hash = f"{f_seq}_{r_seq}"
-                            if pair_hash not in seen_hashes:
-                                # Perform RAPID QC check for dimer threshold
-                                # We need to create Primer objects to use QC engine
-                                from primerlab.workflows.raa.probe import parse_primer3_output
-                                # Minimal dict to trick parse_primer3_output
-                                mini_res = {
-                                    'PRIMER_LEFT_NUM_RETURNED': 1,
-                                    f'PRIMER_LEFT_0': res_dict.get(f'PRIMER_LEFT_{i}'),
-                                    f'PRIMER_LEFT_0_SEQUENCE': f_seq,
-                                    f'PRIMER_LEFT_0_TM': res_dict.get(f'PRIMER_LEFT_{i}_TM'),
-                                    f'PRIMER_LEFT_0_GC_PERCENT': res_dict.get(f'PRIMER_LEFT_{i}_GC_PERCENT'),
-                                    f'PRIMER_RIGHT_0': res_dict.get(f'PRIMER_RIGHT_{i}'),
-                                    f'PRIMER_RIGHT_0_SEQUENCE': r_seq,
-                                    f'PRIMER_RIGHT_0_TM': res_dict.get(f'PRIMER_RIGHT_{i}_TM'),
-                                    f'PRIMER_RIGHT_0_GC_PERCENT': res_dict.get(f'PRIMER_RIGHT_{i}_GC_PERCENT'),
-                                }
-                                if f'PRIMER_INTERNAL_{i}_SEQUENCE' in res_dict:
-                                    mini_res[f'PRIMER_INTERNAL_0_SEQUENCE'] = res_dict.get(f'PRIMER_INTERNAL_{i}_SEQUENCE')
-                                    mini_res[f'PRIMER_INTERNAL_0'] = res_dict.get(f'PRIMER_INTERNAL_{i}')
-                                    mini_res[f'PRIMER_INTERNAL_0_TM'] = res_dict.get(f'PRIMER_INTERNAL_{i}_TM')
+                            if pair_hash in seen_hashes:
+                                continue
+                            
+                            # Perform RAPID QC check for dimer threshold
+                            # We need to create Primer objects to use QC engine
+                            from primerlab.workflows.raa.probe import parse_primer3_output
+                            # Minimal dict to trick parse_primer3_output
+                            mini_res = {
+                                'PRIMER_LEFT_NUM_RETURNED': 1,
+                                f'PRIMER_LEFT_0': res_dict.get(f'PRIMER_LEFT_{i}'),
+                                f'PRIMER_LEFT_0_SEQUENCE': f_seq,
+                                f'PRIMER_LEFT_0_TM': res_dict.get(f'PRIMER_LEFT_{i}_TM'),
+                                f'PRIMER_LEFT_0_GC_PERCENT': res_dict.get(f'PRIMER_LEFT_{i}_GC_PERCENT'),
+                                f'PRIMER_RIGHT_0': res_dict.get(f'PRIMER_RIGHT_{i}'),
+                                f'PRIMER_RIGHT_0_SEQUENCE': r_seq,
+                                f'PRIMER_RIGHT_0_TM': res_dict.get(f'PRIMER_RIGHT_{i}_TM'),
+                                f'PRIMER_RIGHT_0_GC_PERCENT': res_dict.get(f'PRIMER_RIGHT_{i}_GC_PERCENT'),
+                            }
+                            if f'PRIMER_INTERNAL_{i}_SEQUENCE' in res_dict:
+                                mini_res[f'PRIMER_INTERNAL_0_SEQUENCE'] = res_dict.get(f'PRIMER_INTERNAL_{i}_SEQUENCE')
+                                mini_res[f'PRIMER_INTERNAL_0'] = res_dict.get(f'PRIMER_INTERNAL_{i}')
+                                mini_res[f'PRIMER_INTERNAL_0_TM'] = res_dict.get(f'PRIMER_INTERNAL_{i}_TM')
+                            
+                            cand_list = parse_primer3_output(mini_res, config)
+                            if not cand_list:
+                                continue
+                            
+                            c = cand_list[0]
+                            
+                            # RAA: Primer3 doesn't pick probes (size limit ~36nt).
+                            # find_exo_probe expects the FULL amplicon (including primers).
+                            # It uses fwd_len and rev_len to enforce the probe-primer gap.
+                            if probe_enabled and not c.get("probe"):
+                                try:
+                                    fwd = c["forward"]
+                                    rev = c["reverse"]
+                                    amp_full = sub_seq[fwd.start : rev.start + rev.length]
+                                    found_probe = find_exo_probe(
+                                        amp_full,
+                                        fwd_len=fwd.length,
+                                        rev_len=rev.length,
+                                        config=config,
+                                        fwd_start=fwd.start + start
+                                    )
+                                    if found_probe:
+                                        c["probe"] = found_probe
+                                except Exception as pe:
+                                    logger.debug(f"Probe search failed for pair {i}: {pe}")
+                                    # Continue without probe — pair is still valid
+                            
+                            # --- STRICT OVERLAP CHECK ---
+                            if c.get("probe"):
+                                p = c["probe"]
+                                f_end = c["forward"].start + c["forward"].length
+                                r_start = c["reverse"].start
+                                p_start = p.start
+                                p_end = p.start + p.length
                                 
-                                cand_list = parse_primer3_output(mini_res, config)
-                                if cand_list:
-                                    c = cand_list[0]
-                                    
-                                    # RAA: Primer3 doesn't pick probes (size limit ~36nt).
-                                    # find_exo_probe expects the FULL amplicon (including primers).
-                                    # It uses fwd_len and rev_len to enforce the probe-primer gap.
-                                    if probe_enabled and not c.get("probe"):
-                                        fwd = c["forward"]
-                                        rev = c["reverse"]
-                                        amp_full = sub_seq[fwd.start : rev.start + rev.length]
-                                        found_probe = find_exo_probe(
-                                            amp_full,
-                                            fwd_len=fwd.length,
-                                            rev_len=rev.length,
-                                            config=config,
-                                            fwd_start=fwd.start + start
-                                        )
-                                        if found_probe:
-                                            c["probe"] = found_probe
-                                    
-                                    # --- STRICT OVERLAP CHECK ---
-                                    if c.get("probe"):
-                                        p = c["probe"]
-                                        f_end = c["forward"].start + c["forward"].length
-                                        r_start = c["reverse"].start
-                                        p_start = p.start
-                                        p_end = p.start + p.length
-                                        
-                                        min_gap = 5
-                                        if (p_start < f_end + min_gap) or (p_end > r_start - min_gap):
-                                            c["probe"] = None  # Drop colliding probe, keep the pair
+                                min_gap = 5
+                                if (p_start < f_end + min_gap) or (p_end > r_start - min_gap):
+                                    c["probe"] = None  # Drop colliding probe, keep the pair
 
-                                    qcr = qc_engine.evaluate_pair_extended(c["forward"], c["reverse"], c.get("probe"))
-                                    
-                                    # HARD FILTER CHECK
-                                    if hard_filter:
-                                        # Only accept if Tier 1 (0 warnings)
-                                        if len(qcr.warnings) > 0:
-                                            # Still add to excluded to avoid finding it again
-                                            f_pos, f_len = res_dict.get(f'PRIMER_LEFT_{i}')
-                                            excluded_regions.append([f_pos, f_len])
-                                            continue
-                                    
-                                    seen_hashes.add(pair_hash)
-                                    # Store results in a clean structure
-                                    item = {
-                                        "triplet": c,
-                                        "p3_penalty": res_dict.get(f'PRIMER_PAIR_{i}_PENALTY', 99.0),
-                                        "product_size": res_dict.get(f'PRIMER_PAIR_{i}_PRODUCT_SIZE', 0),
-                                        "qc": qcr
-                                    }
-                                    current_bucket_valid.append(item)
-                                    
-                                    if len(current_bucket_valid) >= bucket_quota: break
+                            qcr = qc_engine.evaluate_pair_extended(c["forward"], c["reverse"], c.get("probe"))
+                            
+                            # HARD FILTER CHECK
+                            if hard_filter:
+                                # Only accept if Tier 1 (0 warnings)
+                                if len(qcr.warnings) > 0:
+                                    # Still add to excluded to avoid finding it again
+                                    f_pos, f_len = res_dict.get(f'PRIMER_LEFT_{i}')
+                                    excluded_regions.append([f_pos, f_len])
+                                    continue
+                            
+                            seen_hashes.add(pair_hash)
+                            # Store results in a clean structure
+                            item = {
+                                "triplet": c,
+                                "p3_penalty": res_dict.get(f'PRIMER_PAIR_{i}_PENALTY', 99.0),
+                                "product_size": res_dict.get(f'PRIMER_PAIR_{i}_PRODUCT_SIZE', 0),
+                                "qc": qcr
+                            }
+                            current_bucket_valid.append(item)
+                            
+                            if len(current_bucket_valid) >= bucket_quota: break
                         
-                    except Exception as e:
-                        logger.debug(f"Iterative window failed: {e}")
+                        except Exception as e:
+                            logger.warning(f"Pair {i} processing failed: {e}")
+                            continue
+
                 
                 if not hard_filter: break # No looping if hard filter is off
                 if len(current_bucket_valid) >= bucket_quota: break
