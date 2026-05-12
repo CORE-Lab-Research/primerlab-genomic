@@ -327,6 +327,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                                 
                                 min_gap = 5
                                 if (p_start < f_end + min_gap) or (p_end > r_start - min_gap):
+                                    logger.warning(f"Probe dropped due to overlap! f_end={f_end}, p_start={p_start}, p_end={p_end}, r_start={r_start}")
                                     c["probe"] = None  # Drop colliding probe, keep the pair
 
                             qcr = qc_engine.evaluate_pair_extended(c["forward"], c["reverse"], c.get("probe"))
