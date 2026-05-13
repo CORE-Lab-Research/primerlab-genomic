@@ -18,11 +18,16 @@ def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, An
     probe_cfg = config.get("parameters", {}).get("probe", {})
     p_type = probe_cfg.get("type", "exo")
     labels = probe_cfg.get("labels", {})
+    
+    # Helper to get label with fallback to top-level probe_cfg
+    def get_label(key, default):
+        return labels.get(key, probe_cfg.get(key, default))
+    
     seq = probe_primer.sequence
     
     if p_type == "taqman":
-        f = labels.get("fluorophore", "FAM")
-        q = labels.get("quencher", "BHQ1")
+        f = get_label("fluorophore", "FAM")
+        q = get_label("quencher", "BHQ1")
         return {
             "type": "taqman",
             "annotated_sequence": f"[{f}]{seq}[{q}]",
@@ -30,10 +35,10 @@ def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, An
         }
     
     elif p_type == "fpg":
-        f = labels.get("fluorophore", "FAM")
-        q = labels.get("quencher", "BHQ1")
-        a = labels.get("abasic", "dR-Biotin")
-        b = labels.get("blocker", "C3-spacer")
+        f = get_label("fluorophore", "FAM")
+        q = get_label("quencher", "BHQ1")
+        a = get_label("abasic", "dR-Biotin")
+        b = get_label("blocker", "C3-spacer")
         # FPG probes are often shorter, but we use a similar internal site logic
         mid = len(seq) // 2
         left = seq[:mid]
@@ -41,16 +46,16 @@ def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, An
         return {
             "type": "fpg",
             "annotated_sequence": f"{left}[{f}-dT][{a}][{q}-dT]{right}[{b}]",
-            "metadata": {"fluorophore": f, "quencher": q, "abasic": a}
+            "metadata": {"fluorophore": f, "quencher": q, "abasic": a, "blocker": b}
         }
 
     # Default: 'exo'
     thf_up = probe_cfg.get("thf_upstream_min", 30)
     thf_down = probe_cfg.get("thf_downstream_min", 15)
-    f = labels.get("fluorophore", "FAM")
-    q = labels.get("quencher", "BHQ1")
-    b = labels.get("blocker", "C3-spacer")
-    a = labels.get("abasic", "THF")
+    f = get_label("fluorophore", "FAM")
+    q = get_label("quencher", "BHQ1")
+    b = get_label("blocker", "C3-spacer")
+    a = get_label("abasic", "THF")
 
     seq_len = len(seq)
     min_req = thf_up + 1 + thf_down
