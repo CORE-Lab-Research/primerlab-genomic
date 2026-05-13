@@ -149,10 +149,7 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
     if not candidates:
         from primerlab.core.logger import get_logger
         logger = get_logger()
-        logger.warning(f"Probe search failed! p_len_range={p_len_min}-{p_len_max}, p_tm_range={p_tm_min}-{p_tm_max}")
-        if len(amplicon_seq) > 0:
-            p_seq = amplicon_seq[probe_start_min : probe_start_min + 46]
-            logger.warning(f"Test calc_tm for first window: {thermo.calc_tm(p_seq)}")
+        logger.warning(f"No probe candidates found satisfying Tm filters: {p_tm_min}-{p_tm_max}")
         return None
 
     # Two-stage ranking to avoid calling calc_homodimer on thousands of candidates:

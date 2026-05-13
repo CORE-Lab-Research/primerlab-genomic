@@ -166,7 +166,6 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     # Probe-Centered Search (Probe-First) — only when probe is enabled
     if search_strategy == "probe_centered" and config.get("parameters", {}).get("probe", {}).get("enabled"):
         logger.info("Strategy: Probe-Centered Search. Scanning for optimal probes first...")
-        from primerlab.workflows.raa.probe import find_exo_probe, parse_primer3_output as parse_p3
 
         p_cfg = config.get("parameters", {}).get("probe", {})
         p_len = p_cfg.get("size", {}).get("opt", 48)
@@ -198,7 +197,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             local_cfg["parameters"]["target_region"] = {"start": prb.start, "length": prb.length}
             try:
                 res_dict = p3_wrapper.design_primers(sequence, local_cfg)
-                cand_list = parse_p3(res_dict, config)
+                cand_list = parse_primer3_output(res_dict, config)
                 for ci, cand in enumerate(cand_list):
                     h = f"{cand['forward'].sequence}_{cand['reverse'].sequence}"
                     if h in seen_hashes:
@@ -272,7 +271,6 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                             
                             # Perform RAPID QC check for dimer threshold
                             # We need to create Primer objects to use QC engine
-                            from primerlab.workflows.raa.probe import parse_primer3_output
                             # Minimal dict to trick parse_primer3_output
                             mini_res = {
                                 'PRIMER_LEFT_NUM_RETURNED': 1,
@@ -313,8 +311,8 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                                     )
                                     if found_probe:
                                         c["probe"] = found_probe
-                                except Exception as pe:
-                                    logger.debug(f"Probe search failed for pair {i}: {pe}")
+                                except Exception as e:
+                                    logger.debug(f"Probe search failed for pair {i}: {e}")
                                     # Continue without probe — pair is still valid
                             
                             # --- STRICT OVERLAP CHECK ---
