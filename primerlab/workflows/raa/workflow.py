@@ -386,7 +386,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         amp_seq = sequence[fwd.start : rev.end + 1]
         
         amplicon = Amplicon(
-            start=fwd.start, end=rev.start, length=product_size,
+            start=fwd.start, end=rev.end, length=product_size,
             sequence=amp_seq, gc=0.0, tm_forward=fwd.tm, tm_reverse=rev.tm
         )
         
