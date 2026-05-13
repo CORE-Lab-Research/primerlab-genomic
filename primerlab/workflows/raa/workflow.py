@@ -288,7 +288,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                                 mini_res[f'PRIMER_INTERNAL_0'] = res_dict.get(f'PRIMER_INTERNAL_{i}')
                                 mini_res[f'PRIMER_INTERNAL_0_TM'] = res_dict.get(f'PRIMER_INTERNAL_{i}_TM')
                             
-                            cand_list = parse_primer3_output(mini_res, config)
+                            cand_list = parse_primer3_output(mini_res, config, fwd_start=start)
                             if not cand_list:
                                 continue
                             
@@ -301,13 +301,17 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                                 try:
                                     fwd = c["forward"]
                                     rev = c["reverse"]
-                                    amp_full = sub_seq[fwd.start : rev.start + rev.length]
+                                    # coordinates are absolute, localize for extraction
+                                    rel_fwd_start = fwd.start - start
+                                    rel_rev_start = rev.start - start
+                                    amp_full = sub_seq[rel_fwd_start : rel_rev_start + rev.length]
+                                    
                                     found_probe = find_exo_probe(
                                         amp_full,
                                         fwd_len=fwd.length,
                                         rev_len=rev.length,
                                         config=config,
-                                        fwd_start=fwd.start + start
+                                        fwd_start=fwd.start
                                     )
                                     if found_probe:
                                         c["probe"] = found_probe

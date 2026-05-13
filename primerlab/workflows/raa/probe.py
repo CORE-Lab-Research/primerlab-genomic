@@ -195,6 +195,10 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
         end_stability_dg=end_stability
     )
     
+    # Apply annotations (THF site, fluorophores, etc.)
+    anno = annotate_probe(probe, config)
+    probe.labeled_sequence = anno.get("annotated_sequence")
+    
     return probe
 
 def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -267,7 +271,9 @@ def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) ->
             candidate["probe"] = probe
             
             # Apply Probe annotations
-            candidate["probe_annotation"] = annotate_probe(probe, config)
+            anno = annotate_probe(probe, config)
+            candidate["probe_annotation"] = anno
+            probe.labeled_sequence = anno.get("annotated_sequence")
         
         if "forward" in candidate and "reverse" in candidate:
             all_candidates.append(candidate)
