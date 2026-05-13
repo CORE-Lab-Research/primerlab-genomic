@@ -288,7 +288,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                                 mini_res[f'PRIMER_INTERNAL_0'] = res_dict.get(f'PRIMER_INTERNAL_{i}')
                                 mini_res[f'PRIMER_INTERNAL_0_TM'] = res_dict.get(f'PRIMER_INTERNAL_{i}_TM')
                             
-                            cand_list = parse_primer3_output(mini_res, config, fwd_start=start)
+                            cand_list = parse_primer3_output(mini_res, config, abs_offset=start)
                             if not cand_list:
                                 continue
                             

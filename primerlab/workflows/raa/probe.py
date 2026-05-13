@@ -201,7 +201,7 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
     
     return probe
 
-def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) -> List[Dict[str, Any]]:
+def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any], abs_offset: int = 0) -> List[Dict[str, Any]]:
     """
     Parses Primer3 output and extracts multiple primer/probe triplets.
     Applies RAA-specific Probe annotations to each candidate.
@@ -219,15 +219,15 @@ def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) ->
         # Forward Primer
         fwd_key = f'PRIMER_LEFT_{i}'
         if fwd_key in raw_results:
-            fwd_start, fwd_len = raw_results.get(fwd_key)
+            fwd_rel_start, fwd_len = raw_results.get(fwd_key)
             candidate["forward"] = Primer(
                 id=f"forward_{i}",
                 sequence=raw_results.get(f'PRIMER_LEFT_{i}_SEQUENCE'),
                 tm=raw_results.get(f'PRIMER_LEFT_{i}_TM'),
                 gc=raw_results.get(f'PRIMER_LEFT_{i}_GC_PERCENT'),
                 length=fwd_len,
-                start=fwd_start,
-                end=fwd_start + fwd_len - 1,
+                start=fwd_rel_start + abs_offset,
+                end=fwd_rel_start + abs_offset + fwd_len - 1,
                 hairpin_dg=raw_results.get(f'PRIMER_LEFT_{i}_HAIRPIN_TH', 0.0) / 1000.0,
                 homodimer_dg=raw_results.get(f'PRIMER_LEFT_{i}_HOMODIMER_TH', 0.0) / 1000.0,
                 end_stability_dg=raw_results.get(f'PRIMER_LEFT_{i}_END_STABILITY', 0.0) / 1000.0
@@ -236,15 +236,15 @@ def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) ->
         # Reverse Primer
         rev_key = f'PRIMER_RIGHT_{i}'
         if rev_key in raw_results:
-            rev_start, rev_len = raw_results.get(rev_key)
+            rev_rel_start, rev_len = raw_results.get(rev_key)
             candidate["reverse"] = Primer(
                 id=f"reverse_{i}",
                 sequence=raw_results.get(f'PRIMER_RIGHT_{i}_SEQUENCE'),
                 tm=raw_results.get(f'PRIMER_RIGHT_{i}_TM'),
                 gc=raw_results.get(f'PRIMER_RIGHT_{i}_GC_PERCENT'),
                 length=rev_len,
-                start=rev_start - rev_len + 1,
-                end=rev_start,
+                start=rev_rel_start - rev_len + 1 + abs_offset,
+                end=rev_rel_start + abs_offset,
                 hairpin_dg=raw_results.get(f'PRIMER_RIGHT_{i}_HAIRPIN_TH', 0.0) / 1000.0,
                 homodimer_dg=raw_results.get(f'PRIMER_RIGHT_{i}_HOMODIMER_TH', 0.0) / 1000.0,
                 end_stability_dg=raw_results.get(f'PRIMER_RIGHT_{i}_END_STABILITY', 0.0) / 1000.0
