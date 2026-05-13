@@ -34,28 +34,13 @@ def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, An
             "metadata": {"fluorophore": f, "quencher": q}
         }
     
-    elif p_type == "fpg":
-        f = get_label("fluorophore", "FAM")
-        q = get_label("quencher", "BHQ1")
-        a = get_label("abasic", "dR-Biotin")
-        b = get_label("blocker", "C3-spacer")
-        # FPG probes are often shorter, but we use a similar internal site logic
-        mid = len(seq) // 2
-        left = seq[:mid]
-        right = seq[mid+1:]
-        return {
-            "type": "fpg",
-            "annotated_sequence": f"{left}[{f}-dT][{a}][{q}-dT]{right}[{b}]",
-            "metadata": {"fluorophore": f, "quencher": q, "abasic": a, "blocker": b}
-        }
-
-    # Default: 'exo'
+    # Default RAA logic (for exo and fpg)
     thf_up = probe_cfg.get("thf_upstream_min", 30)
     thf_down = probe_cfg.get("thf_downstream_min", 15)
     f = get_label("fluorophore", "FAM")
     q = get_label("quencher", "BHQ1")
     b = get_label("blocker", "C3-spacer")
-    a = get_label("abasic", "THF")
+    a = get_label("abasic", "THF" if p_type == "exo" else "dR-Biotin")
 
     seq_len = len(seq)
     min_req = thf_up + 1 + thf_down
@@ -79,7 +64,7 @@ def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, An
     annotated = f"{left}[{f}-dT][{a}][{q}-dT]{right}[{b}]"
     
     return {
-        "type": "exo",
+        "type": p_type,
         "thf_index": thf_index,
         "annotated_sequence": annotated,
         "metadata": {"fluorophore": f, "quencher": q, "abasic": a, "blocker": b}
