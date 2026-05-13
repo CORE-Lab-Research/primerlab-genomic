@@ -283,32 +283,40 @@ def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any], ab
 def create_amplicon_map(amplicon_seq: str, fwd: Primer, rev: Primer, probe: Optional[Primer] = None) -> str:
     """
     Creates a visual text map of the amplicon.
-    Refined to prevent overwriting and show true relative positions.
+    Uses absolute coordinates to ensure alignment with the provided amplicon_seq.
     """
     amp_len = len(amplicon_seq)
     map_list = ["-"] * amp_len
     
-    f_len = len(fwd.sequence)
-    r_len = len(rev.sequence)
+    # The amplicon_seq provided corresponds to [amp_start, amp_end]
+    # We need to know where it starts in absolute terms to align fwd/rev/probe.
+    # Usually, for RAA, the amplicon_seq starts exactly at fwd.start.
+    # However, let's be robust and use the primer/probe absolute coordinates.
     
-    # 1. Mark FWD (always at start in our extracted amp_seq)
-    for i in range(min(f_len, amp_len)):
-        map_list[i] = ">"
+    amp_start = fwd.start # Default assumption for RAA amplicons
+    
+    f_idx = fwd.start - amp_start
+    f_len = fwd.length
+    
+    r_idx = rev.start - amp_start
+    r_len = rev.length
+    
+    # 1. Mark FWD
+    for i in range(f_idx, min(f_idx + f_len, amp_len)):
+        if i >= 0:
+            map_list[i] = ">"
         
-    # 2. Mark REV (always at end in our extracted amp_seq)
-    # We use rev_len and go from the back
-    for i in range(amp_len - r_len, amp_len):
+    # 2. Mark REV
+    for i in range(r_idx, min(r_idx + r_len, amp_len)):
         if i >= 0:
             map_list[i] = "<"
             
-    # 3. Mark Probe (Overlay with priority)
+    # 3. Mark Probe
     if probe:
-        # Use coordinate offsets instead of .find() to prevent false matches or offset errors
-        p_idx = probe.start - fwd.start
+        p_idx = probe.start - amp_start
+        p_len = probe.length
         if 0 <= p_idx < amp_len:
-            p_len = probe.length
             for i in range(p_idx, min(p_idx + p_len, amp_len)):
-                # If it hits a primer, it's an overlap! We mark it with 'X'
                 if map_list[i] in [">", "<"]:
                     map_list[i] = "X" 
                 else:

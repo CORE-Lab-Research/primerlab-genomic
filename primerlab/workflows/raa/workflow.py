@@ -327,12 +327,8 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                                 p_start = p.start
                                 p_end = p.start + p.length
                                 
-                                # MANDATORY DEBUG PRINT
-                                print(f"DEBUG {i}: F={f_end} | R={r_start} | P_START={p_start} | P_END={p_end}")
-                                
                                 min_gap = 5
                                 if (p_start < f_end + min_gap) or (p_end > r_start - min_gap):
-                                    print(f"!!! DISCARDED {i} !!!")
                                     continue  # DISCARD THE ENTIRE CANDIDATE
 
 
