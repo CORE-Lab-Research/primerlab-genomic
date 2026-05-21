@@ -97,6 +97,9 @@ parameters:
 qc:
   mode: strict               # strict | relaxed
   vienna_ranking_limit: 50   # Jumlah top kandidat yang akan di-crosscheck pakai ViennaRNA
+  blast_offtarget_check: false # [NEW] Cek spesifisitas via BLAST (bisa lambat)
+  blast_ranking_limit: 10      # [NEW] Jumlah top kandidat (setelah Vienna) yang di-BLAST
+  blast_database: "nt"         # [NEW] Target database NCBI
   tm_diff_max: 3.0           # Maksimal selisih Tm antara FWD dan REV
   hairpin_dg_min: -2.0       # Batas minimal dG hairpin (semakin negatif semakin buruk)
   dimer_dg_min: -6.0         # Batas minimal dG homodimer

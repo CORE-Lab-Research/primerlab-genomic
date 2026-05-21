@@ -68,7 +68,7 @@ def test_annotate_probe_taqman(mock_config):
 def test_annotate_probe_fpg(mock_config):
     mock_config["parameters"]["probe"]["type"] = "fpg"
     mock_config["parameters"]["probe"]["labels"]["abasic"] = "dR-Biotin"
-    probe = Primer(id="p1", sequence="A" * 10, tm=60.0, gc=0.0, length=10)
+    probe = Primer(id="p1", sequence="A" * 50, tm=60.0, gc=0.0, length=50)
     ann = annotate_probe(probe, mock_config)
     
     assert ann["type"] == "fpg"

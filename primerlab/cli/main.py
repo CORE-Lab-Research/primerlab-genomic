@@ -193,6 +193,7 @@ def main():
     raa_parser.add_argument("--cores", "-j", type=int, help="Number of CPU cores to use for parallel search")
     raa_parser.add_argument("--window-size", type=int, help="Size of each search window (default: 350)")
     raa_parser.add_argument("--overlap", type=int, help="Overlap between search windows (default: 200)")
+    raa_parser.add_argument("--validate", "-V", action="store_true", help="Run in-silico RAA validation after design")
 
     # --- CHECK-PRIMERS Command (Phase 4) ---
     check_parser = subparsers.add_parser("check-primers", help="Evaluate existing primers against a template (Phase 4)")
@@ -326,6 +327,8 @@ def main():
                                  help="Output results as JSON only")
     insilico_parser.add_argument("--circular", action="store_true",
                                  help="Treat template as circular (v0.2.4)")
+    insilico_parser.add_argument("--mode", choices=["pcr", "raa"], default="pcr",
+                                 help="Simulation mode (pcr: standard PCR, raa: isothermal RAA at 39C with high Mg2+)")
 
     # --- BLAST Command (v0.3.0) ---
     blast_parser = subparsers.add_parser("blast", help="Off-target check for primers (v0.3.0)")
@@ -774,6 +777,19 @@ def main():
             if args.circular:
                 params["circular"] = True
 
+            # v1.2.0: If RAA mode is specified, adjust parameters for isothermal recombinase conditions
+            if getattr(args, "mode", "pcr") == "raa":
+                if not args.json:
+                    logger.info("Applying isothermal RAA parameters for in-silico simulation.")
+                raa_defaults = {
+                    "annealing_temp": 39.0,
+                    "mg_conc": 14.0,
+                    "dntp_conc": 0.8,
+                    "product_size_min": 50,
+                    "product_size_max": 1000
+                }
+                params = {**raa_defaults, **params}
+
             # Run in-silico PCR
             result = run_insilico_pcr(
                 template=template_seq,
@@ -1031,7 +1047,6 @@ def main():
 
     # --- PRESET Command Handler (v0.1.5) ---
     if args.command == "preset":
-        from pathlib import Path
         import yaml
 
         preset_dir = Path(__file__).parent.parent / "config"
@@ -1523,7 +1538,6 @@ def main():
 
                 if seq_path:
                     # Read raw (unprocessed) sequence to detect lowercase
-                    from pathlib import Path
                     raw_seq = Path(seq_path).read_text()
 
                 masker = RegionMasker()
@@ -1847,7 +1861,6 @@ def main():
         logger.info(f"🚀 PrimerLab Batch Run v{__version__}")
 
         try:
-            from pathlib import Path
 
             from primerlab.core.batch_summary import (
                 generate_batch_summary,
@@ -2091,7 +2104,6 @@ def main():
         logger.info(f"🎨 PrimerLab Visualization v{__version__}")
 
         try:
-            from pathlib import Path
 
             from primerlab.core.visualization import plot_gc_profile
             from primerlab.core.sequence import SequenceLoader
@@ -2428,7 +2440,6 @@ qc:
     # --- MELT-CURVE Command Handler (v0.6.0) ---
     if args.command == "melt-curve":
 
-        from pathlib import Path
         from primerlab.core.qpcr.melt_curve import predict_melt_curve
         from primerlab.core.qpcr.melt_plot import generate_melt_svg, generate_melt_png
 
@@ -2503,7 +2514,6 @@ qc:
     # --- AMPLICON-QC Command Handler (v0.6.0) ---
     if args.command == "amplicon-qc":
 
-        from pathlib import Path
         from primerlab.api import validate_qpcr_amplicon_api
 
         # Load amplicon from file or use as sequence
@@ -3169,6 +3179,10 @@ qc:
             if "advanced" not in config: config["advanced"] = {}
             config["advanced"]["overlap"] = args.overlap
 
+        if getattr(args, "validate", False):
+            if "advanced" not in config: config["advanced"] = {}
+            config["advanced"]["auto_validate"] = True
+
         try:
             result = run_raa_workflow(config)
             
@@ -3200,6 +3214,17 @@ qc:
                 
                 if result.qc and result.qc.cross_dimer_dg is not None:
                     print(f"Cross-Dimer dG: {result.qc.cross_dimer_dg:.2f} kcal/mol")
+
+                if hasattr(result, "insilico_validation") and result.insilico_validation:
+                    val = result.insilico_validation
+                    print(f"\n🔬 IN-SILICO VALIDATION: {'PASS' if val.get('success') else 'FAIL'}")
+                    print(f"Products Found: {val.get('products_count')}")
+                    if val.get('warnings'):
+                        for w in val['warnings']:
+                            print(f"  ⚠ {w}")
+                    if val.get("probe_binding"):
+                        pb = val["probe_binding"]
+                        print(f"Probe Binding: Tm={pb.get('tm')}C, Grade={pb.get('grade')}, Quality={pb.get('quality_score')}/100")
                 
                 # Top 5 Table
                 if len(alternatives) > 1:
@@ -3246,13 +3271,21 @@ qc:
                 res_dict = result.to_dict()
                 
                 # Split the JSON into readable components
+                summary_data = {
+                    "workflow": res_dict.get("workflow"),
+                    "status": "success",
+                    "score": res_dict.get("score"),
+                    "created_at": res_dict.get("metadata", {}).get("timestamp")
+                }
+                if hasattr(result, "insilico_validation") and result.insilico_validation:
+                    summary_data["insilico_validation"] = result.insilico_validation
+
                 with open(os.path.join(out_dir, "summary.json"), "w") as f:
-                    json.dump({
-                        "workflow": res_dict.get("workflow"),
-                        "status": "success",
-                        "score": res_dict.get("score"),
-                        "created_at": res_dict.get("metadata", {}).get("timestamp")
-                    }, f, indent=2)
+                    json.dump(summary_data, f, indent=2)
+
+                if hasattr(result, "insilico_validation") and result.insilico_validation:
+                    with open(os.path.join(out_dir, "insilico_validation.json"), "w") as f:
+                        json.dump(result.insilico_validation, f, indent=2)
 
                 with open(os.path.join(out_dir, "metadata.json"), "w") as f:
                     json.dump(res_dict.get("metadata", {}), f, indent=2)
@@ -3286,6 +3319,8 @@ qc:
                 print(f"   ├─ amplicons.json")
                 print(f"   ├─ alternatives.json")
                 print(f"   ├─ qc_metrics.json")
+                if hasattr(result, "insilico_validation") and result.insilico_validation:
+                    print(f"   ├─ insilico_validation.json")
                 if ranking_data:
                     print(f"   └─ ranking_details.csv (Transparency Log)")
             else:

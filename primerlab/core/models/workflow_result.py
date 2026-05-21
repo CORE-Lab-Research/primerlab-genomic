@@ -25,11 +25,14 @@ class WorkflowResult:
     # Transparency logs (v1.2.5)
     ranking_details: List[Dict[str, Any]] = field(default_factory=list)
 
+    # In-silico validation summary
+    insilico_validation: Optional[Dict[str, Any]] = None
+
     # Internal diagnostics
     raw: Dict[str, Any] = field(default_factory=dict, repr=False)
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        res = {
             "workflow": self.workflow,
             "primers": {k: v.to_dict() for k, v in self.primers.items()},
             "amplicons": [a.to_dict() for a in self.amplicons],
@@ -42,3 +45,6 @@ class WorkflowResult:
             "alternatives": self.alternatives,
             "ranking_details": self.ranking_details
         }
+        if self.insilico_validation is not None:
+            res["insilico_validation"] = self.insilico_validation
+        return res

@@ -29,6 +29,9 @@ from .public import (
     # v0.6.0 functions
     score_genotyping_primer_api,
     validate_rtpcr_primers_api,
+
+    # v1.2.0 functions
+    design_raa_assays,
 )
 
 __all__ = [
@@ -47,4 +50,5 @@ __all__ = [
     "validate_qpcr_amplicon_api",
     "score_genotyping_primer_api",
     "validate_rtpcr_primers_api",
+    "design_raa_assays",
 ]

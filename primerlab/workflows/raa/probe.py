@@ -291,15 +291,18 @@ def create_amplicon_map(amplicon_seq: str, fwd: Primer, rev: Primer, probe: Opti
     amp_len = len(amplicon_seq)
     map_list = ["-"] * amp_len
     
+    fwd_start = fwd.start if fwd.start is not None else 0
+    rev_start = rev.start if rev.start is not None else (amp_len - rev.length)
+    
     # The amplicon_seq provided corresponds to [amp_start, amp_end]
     # We use the provided amp_start to align fwd/rev/probe absolute coordinates.
     if amp_start is None:
-        amp_start = fwd.start 
+        amp_start = fwd_start
     
-    f_idx = fwd.start - amp_start
+    f_idx = fwd_start - amp_start
     f_len = fwd.length
     
-    r_idx = rev.start - amp_start
+    r_idx = rev_start - amp_start
     r_len = rev.length
     
     # 1. Mark FWD
@@ -314,7 +317,16 @@ def create_amplicon_map(amplicon_seq: str, fwd: Primer, rev: Primer, probe: Opti
             
     # 3. Mark Probe
     if probe:
-        p_idx = probe.start - amp_start
+        probe_start = probe.start
+        if probe_start is None:
+            # Fallback to finding probe sequence in amplicon_seq
+            probe_start_idx = amplicon_seq.find(probe.sequence)
+            if probe_start_idx != -1:
+                probe_start = amp_start + probe_start_idx
+            else:
+                probe_start = amp_start + f_len + 5
+                
+        p_idx = probe_start - amp_start
         p_len = probe.length
         if 0 <= p_idx < amp_len:
             for i in range(p_idx, min(p_idx + p_len, amp_len)):

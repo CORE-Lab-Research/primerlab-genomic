@@ -930,3 +930,47 @@ def validate_rtpcr_primers_api(
         "grade": grade,
         "recommendations": recommendations,
     }
+
+
+def design_raa_assays(
+    sequence: str, 
+    config: Optional[Dict[str, Any]] = None,
+    validate: bool = False
+) -> WorkflowResult:
+    """
+    Programmatic entry point for RAA assay design (primers + optional probe).
+    
+    Args:
+        sequence: DNA sequence string
+        config: Optional configuration dictionary override.
+                If provided, it merges with/overrides default RAA settings.
+        validate: If True, run in-silico PCR validation after design (v1.2.0)
+        
+    Returns:
+        WorkflowResult object containing primers, optional probe, and QC metrics.
+    """
+    from primerlab.workflows.raa.workflow import run_raa_workflow
+    base_config = {
+        "workflow": "raa",
+        "input": {"sequence": sequence},
+        "parameters": {},
+        "output": {"directory": "primerlab_api_out"} # Default output for API calls
+    }
+
+    # Merge with user config if provided
+    final_config = base_config
+    if config:
+        final_config.update(config)
+        # Ensure input dict exists and sequence is set
+        if "input" not in final_config or not isinstance(final_config["input"], dict):
+            final_config["input"] = {}
+        final_config["input"]["sequence"] = sequence
+
+    # If validate argument is explicitly passed, enable auto_validate in advanced config
+    if validate:
+        if "advanced" not in final_config or not isinstance(final_config["advanced"], dict):
+            final_config["advanced"] = {}
+        final_config["advanced"]["auto_validate"] = True
+
+    result = run_raa_workflow(final_config)
+    return result

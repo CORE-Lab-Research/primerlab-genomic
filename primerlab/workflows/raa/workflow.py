@@ -463,6 +463,112 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         # Re-sort after ViennaRNA penalties
         evaluated_results.sort(key=lambda x: x["final_score"])
 
+        # 5.2 Stage 3: Async Remote BLAST Off-target Checking
+        blast_check = config.get("qc", {}).get("blast_offtarget_check", False)
+        blast_limit = config.get("qc", {}).get("blast_ranking_limit", 10)
+        blast_db = config.get("qc", {}).get("blast_database", "nt")
+        
+        if blast_check and blast_limit > 0:
+            count_blast = min(len(evaluated_results), blast_limit)
+            logger.info(f"Stage 3: Running Async Remote BLAST for Top {count_blast} candidates against '{blast_db}' database...")
+            from primerlab.core.tools.async_blast import AsyncRemoteBlast
+            from primerlab.core.offtarget.finder import OfftargetHit, OfftargetResult, PrimerPairOfftargetResult
+            from primerlab.core.offtarget.scorer import SpecificityScorer
+            import asyncio
+            
+            blast_engine = AsyncRemoteBlast(database=blast_db)
+            
+            queries = {}
+            for res in evaluated_results[:count_blast]:
+                cid = res["stage1_rank"]
+                c = res["primers"]
+                queries[f"cand_{cid}_fwd"] = c["forward"].sequence
+                queries[f"cand_{cid}_rev"] = c["reverse"].sequence
+                if c.get("probe"):
+                    queries[f"cand_{cid}_prb"] = c["probe"].sequence
+                    
+            try:
+                # Handle potential running event loops (like in Jupyter)
+                try:
+                    loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    loop = None
+                    
+                if loop and loop.is_running():
+                    import nest_asyncio
+                    nest_asyncio.apply()
+                
+                blast_results = asyncio.run(blast_engine.batch_blast(queries))
+                scorer = SpecificityScorer()
+                
+                for res in evaluated_results[:count_blast]:
+                    cid = res["stage1_rank"]
+                    c = res["primers"]
+                    fwd_hits_res = blast_results.get(f"cand_{cid}_fwd")
+                    rev_hits_res = blast_results.get(f"cand_{cid}_rev")
+                    
+                    fwd_offtargets = []
+                    if fwd_hits_res and fwd_hits_res.success:
+                        fwd_offtargets = [OfftargetHit.from_blast_hit(hit) for hit in fwd_hits_res.hits]
+                        
+                    rev_offtargets = []
+                    if rev_hits_res and rev_hits_res.success:
+                        rev_offtargets = [OfftargetHit.from_blast_hit(hit) for hit in rev_hits_res.hits]
+                        
+                    fwd_result = OfftargetResult(
+                        primer_id="forward",
+                        primer_seq=c["forward"].sequence,
+                        offtarget_count=len(fwd_offtargets),
+                        offtargets=fwd_offtargets
+                    )
+                    
+                    rev_result = OfftargetResult(
+                        primer_id="reverse",
+                        primer_seq=c["reverse"].sequence,
+                        offtarget_count=len(rev_offtargets),
+                        offtargets=rev_offtargets
+                    )
+                    
+                    # calculate potential products
+                    fwd_seqs = {ot.sequence_id for ot in fwd_offtargets}
+                    rev_seqs = {ot.sequence_id for ot in rev_offtargets}
+                    potential_products = len(fwd_seqs & rev_seqs)
+                    
+                    pair_result = PrimerPairOfftargetResult(
+                        forward_result=fwd_result,
+                        reverse_result=rev_result,
+                        potential_products=potential_products
+                    )
+                    
+                    fwd_score, rev_score, combined = scorer.score_primer_pair(pair_result)
+                    
+                    # Store metrics
+                    res["specificity_grade"] = combined.grade
+                    res["specificity_score"] = combined.overall_score
+                    
+                    # Apply Penalties
+                    if combined.grade in ["D", "F"]:
+                        penalty = 50.0
+                        res["blast_penalty"] = penalty
+                        res["final_score"] += penalty
+                        res["qc"].warnings.append(f"CRITICAL: Specificity Grade {combined.grade} (Score: {combined.overall_score}). {potential_products} potential products found!")
+                    elif combined.grade == "C":
+                        penalty = 10.0
+                        res["blast_penalty"] = penalty
+                        res["final_score"] += penalty
+                        res["qc"].warnings.append(f"WARNING: Specificity Grade C (Score: {combined.overall_score}). High off-target bindings.")
+                    else:
+                        res["blast_penalty"] = 0.0
+                        res["qc"].warnings.append(f"Specificity Grade {combined.grade} (Score: {combined.overall_score}). No significant cross-amplification risks.")
+                        
+            except ImportError:
+                logger.error("Please install nest_asyncio to run BLAST checks inside Jupyter Notebooks.")
+            except Exception as e:
+                logger.error(f"Async BLAST execution failed: {e}")
+                
+        # Final sort after all stages
+        evaluated_results.sort(key=lambda x: x["final_score"])
+
         # Finalize ranks
         for idx, res in enumerate(evaluated_results):
             res["final_rank"] = idx + 1
@@ -575,5 +681,66 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         ranking_details=ranking_details,
         raw={}
     )
+
+    # Auto-validate if enabled
+    advanced = config.get("advanced", {})
+    if advanced.get("auto_validate", False) and primers:
+        try:
+            from primerlab.core.insilico import run_insilico_pcr
+
+            fwd_primer = primers.get("forward")
+            rev_primer = primers.get("reverse")
+
+            if fwd_primer and rev_primer:
+                thermo_params = config.get("parameters", {}).get("thermodynamics", {})
+                raa_params = {
+                    "annealing_temp": advanced.get("reaction_temperature", 39.0),
+                    "mg_conc": thermo_params.get("salt_divalent", 14.0),
+                    "na_conc": thermo_params.get("salt_monovalent", 50.0),
+                    "dntp_conc": thermo_params.get("dntp_conc", 0.8),
+                    "product_size_min": 50,
+                    "product_size_max": 1000
+                }
+                validation_result = run_insilico_pcr(
+                    template=sequence,
+                    forward_primer=fwd_primer.sequence,
+                    reverse_primer=rev_primer.sequence,
+                    template_name="raa_auto_validation",
+                    params=raa_params
+                )
+
+                # Add validation summary to result
+                result.insilico_validation = {
+                    "success": validation_result.success,
+                    "products_count": len(validation_result.products),
+                    "warnings": validation_result.warnings
+                }
+
+                # Probe binding check
+                probe = primers.get("probe")
+                if probe and validation_result.products:
+                    from primerlab.api import simulate_probe_binding_api
+                    prod = validation_result.products[0]
+                    try:
+                        probe_bind = simulate_probe_binding_api(
+                            probe_sequence=probe.sequence,
+                            amplicon_sequence=prod.product_sequence,
+                            min_temp=30.0,
+                            max_temp=75.0,
+                            na_concentration=raa_params["na_conc"]
+                        )
+                        result.insilico_validation["probe_binding"] = {
+                            "tm": probe_bind.get("tm"),
+                            "grade": probe_bind.get("grade"),
+                            "quality_score": probe_bind.get("quality_score"),
+                            "position": probe_bind.get("position"),
+                            "warnings": probe_bind.get("warnings")
+                        }
+                    except Exception as pe:
+                        logger.warning(f"Probe binding simulation failed: {pe}")
+
+                logger.info(f"Auto-validation: {'PASS' if validation_result.success else 'FAIL'} - {len(validation_result.products)} product(s)")
+        except Exception as e:
+            logger.warning(f"Auto-validation failed: {e}")
 
     return result
