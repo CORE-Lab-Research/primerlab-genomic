@@ -497,8 +497,11 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                 if loop and loop.is_running():
                     import nest_asyncio
                     nest_asyncio.apply()
-                
-                blast_results = asyncio.run(blast_engine.batch_blast(queries))
+                    # Execute task within the running event loop
+                    blast_results = loop.run_until_complete(blast_engine.batch_blast(queries))
+                else:
+                    # Run standard asyncio event loop
+                    blast_results = asyncio.run(blast_engine.batch_blast(queries))
                 scorer = SpecificityScorer()
                 
                 for res in evaluated_results[:count_blast]:
