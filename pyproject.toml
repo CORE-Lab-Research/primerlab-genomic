@@ -60,6 +60,9 @@ where = ["."]
 include = ["primerlab*"]
 namespaces = false
 
+[tool.setuptools.package-data]
+primerlab = ["config/*.yaml", "config/*.json"]
+
 [tool.pytest.ini_options]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
