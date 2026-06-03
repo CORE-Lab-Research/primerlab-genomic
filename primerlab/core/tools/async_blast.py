@@ -74,7 +74,9 @@ class AsyncRemoteBlast:
                 if self.api_key:
                     env["NCBI_API_KEY"] = self.api_key
 
-                logger.debug(f"[{query_id}] Starting remote BLAST against {self.database}")
+                import time
+                start_time = time.time()
+                logger.info(f"[{query_id}] Dispatched remote BLAST query to NCBI. Target database: {self.database}")
                 
                 # Spawn process
                 process = await asyncio.create_subprocess_exec(
@@ -84,10 +86,25 @@ class AsyncRemoteBlast:
                     env=env
                 )
                 
-                stdout, stderr = await process.communicate()
+                # Heartbeat logging task to keep the user informed
+                async def heartbeat():
+                    try:
+                        while True:
+                            await asyncio.sleep(10)
+                            elapsed = int(time.time() - start_time)
+                            logger.info(f"[{query_id}] Remote BLAST still running... ({elapsed}s elapsed)")
+                    except asyncio.CancelledError:
+                        pass
                 
+                heartbeat_task = asyncio.create_task(heartbeat())
+                try:
+                    stdout, stderr = await process.communicate()
+                finally:
+                    heartbeat_task.cancel()
+                
+                elapsed = int(time.time() - start_time)
                 if process.returncode != 0:
-                    logger.error(f"[{query_id}] BLAST failed: {stderr.decode()}")
+                    logger.error(f"[{query_id}] BLAST failed in {elapsed}s: {stderr.decode()}")
                     return BlastResult(
                         query_id=query_id,
                         query_seq=query_seq,
@@ -99,6 +116,7 @@ class AsyncRemoteBlast:
                     )
                     
                 hits = self._parse_tabular_output(stdout.decode())
+                logger.info(f"[{query_id}] BLAST completed successfully in {elapsed}s. Found {len(hits)} hits.")
                 
                 return BlastResult(
                     query_id=query_id,

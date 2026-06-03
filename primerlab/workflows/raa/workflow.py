@@ -463,118 +463,198 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         # Re-sort after ViennaRNA penalties
         evaluated_results.sort(key=lambda x: x["final_score"])
 
-        # 5.2 Stage 3: Async Remote BLAST Off-target Checking
+        # 5.2 Stage 3: BLAST Off-target Checking (Local or Remote)
         blast_check = config.get("qc", {}).get("blast_offtarget_check", False)
         blast_limit = config.get("qc", {}).get("blast_ranking_limit", 10)
         blast_db = config.get("qc", {}).get("blast_database", "nt")
+        blast_mode = config.get("qc", {}).get("blast_mode", "remote")
+        local_db_path = config.get("qc", {}).get("blast_local_db_path")
         
         if blast_check and blast_limit > 0:
             count_blast = min(len(evaluated_results), blast_limit)
-            logger.info(f"Stage 3: Running Async Remote BLAST for Top {count_blast} candidates against '{blast_db}' database...")
-            from primerlab.core.tools.async_blast import AsyncRemoteBlast
             from primerlab.core.offtarget.finder import OfftargetHit, OfftargetResult, PrimerPairOfftargetResult
             from primerlab.core.offtarget.scorer import SpecificityScorer
-            import asyncio
             
-            blast_engine = AsyncRemoteBlast(database=blast_db)
+            blast_results = {}
             
-            queries = {}
-            for res in evaluated_results[:count_blast]:
-                cid = res["stage1_rank"]
-                c = res["primers"]
-                queries[f"cand_{cid}_fwd"] = c["forward"].sequence
-                queries[f"cand_{cid}_rev"] = c["reverse"].sequence
-                if c.get("probe"):
-                    queries[f"cand_{cid}_prb"] = c["probe"].sequence
-                    
-            try:
-                # Handle potential running event loops (like in Jupyter)
-                try:
-                    loop = asyncio.get_running_loop()
-                except RuntimeError:
-                    loop = None
-                    
-                if loop and loop.is_running():
-                    import nest_asyncio
-                    nest_asyncio.apply()
-                    # Execute task within the running event loop
-                    blast_results = loop.run_until_complete(blast_engine.batch_blast(queries))
-                else:
-                    # Run standard asyncio event loop
-                    blast_results = asyncio.run(blast_engine.batch_blast(queries))
-                scorer = SpecificityScorer()
+            if blast_mode == "local":
+                db_target = local_db_path or blast_db
+                logger.info(f"Stage 3: Running Local BLAST for Top {count_blast} candidates against database '{db_target}'...")
+                from primerlab.core.tools.blast_wrapper import BlastWrapper
+                blast_wrapper = BlastWrapper()
                 
                 for res in evaluated_results[:count_blast]:
                     cid = res["stage1_rank"]
                     c = res["primers"]
-                    fwd_hits_res = blast_results.get(f"cand_{cid}_fwd")
-                    rev_hits_res = blast_results.get(f"cand_{cid}_rev")
                     
-                    fwd_offtargets = []
-                    if fwd_hits_res and fwd_hits_res.success:
-                        fwd_offtargets = [OfftargetHit.from_blast_hit(hit) for hit in fwd_hits_res.hits]
-                        
-                    rev_offtargets = []
-                    if rev_hits_res and rev_hits_res.success:
-                        rev_offtargets = [OfftargetHit.from_blast_hit(hit) for hit in rev_hits_res.hits]
-                        
-                    fwd_result = OfftargetResult(
-                        primer_id="forward",
-                        primer_seq=c["forward"].sequence,
-                        offtarget_count=len(fwd_offtargets),
-                        offtargets=fwd_offtargets
-                    )
+                    fwd_res = blast_wrapper.run_blastn(c["forward"].sequence, db_target, query_id=f"cand_{cid}_fwd")
+                    rev_res = blast_wrapper.run_blastn(c["reverse"].sequence, db_target, query_id=f"cand_{cid}_rev")
                     
-                    rev_result = OfftargetResult(
-                        primer_id="reverse",
-                        primer_seq=c["reverse"].sequence,
-                        offtarget_count=len(rev_offtargets),
-                        offtargets=rev_offtargets
-                    )
-                    
-                    # calculate potential products
-                    fwd_seqs = {ot.sequence_id for ot in fwd_offtargets}
-                    rev_seqs = {ot.sequence_id for ot in rev_offtargets}
-                    potential_products = len(fwd_seqs & rev_seqs)
-                    
-                    pair_result = PrimerPairOfftargetResult(
-                        forward_result=fwd_result,
-                        reverse_result=rev_result,
-                        potential_products=potential_products
-                    )
-                    
-                    fwd_score, rev_score, combined = scorer.score_primer_pair(pair_result)
-                    
-                    # Store metrics
-                    res["specificity_grade"] = combined.grade
-                    res["specificity_score"] = combined.overall_score
-                    
-                    # Apply Penalties
-                    if combined.grade in ["D", "F"]:
-                        penalty = 50.0
-                        res["blast_penalty"] = penalty
-                        res["final_score"] += penalty
-                        res["qc"].warnings.append(f"CRITICAL: Specificity Grade {combined.grade} (Score: {combined.overall_score}). {potential_products} potential products found!")
-                    elif combined.grade == "C":
-                        penalty = 10.0
-                        res["blast_penalty"] = penalty
-                        res["final_score"] += penalty
-                        res["qc"].warnings.append(f"WARNING: Specificity Grade C (Score: {combined.overall_score}). High off-target bindings.")
-                    else:
-                        res["blast_penalty"] = 0.0
-                        res["qc"].warnings.append(f"Specificity Grade {combined.grade} (Score: {combined.overall_score}). No significant cross-amplification risks.")
-                        
-            except ImportError:
-                logger.error("Please install nest_asyncio to run BLAST checks inside Jupyter Notebooks.")
-            except Exception as e:
-                logger.error(f"Async BLAST execution failed: {e}")
+                    blast_results[f"cand_{cid}_fwd"] = fwd_res
+                    blast_results[f"cand_{cid}_rev"] = rev_res
+                    if c.get("probe"):
+                        prb_res = blast_wrapper.run_blastn(c["probe"].sequence, db_target, query_id=f"cand_{cid}_prb")
+                        blast_results[f"cand_{cid}_prb"] = prb_res
+            else:
+                logger.info(f"Stage 3: Running Async Remote BLAST for Top {count_blast} candidates against '{blast_db}' database...")
+                from primerlab.core.tools.async_blast import AsyncRemoteBlast
+                import asyncio
                 
+                blast_engine = AsyncRemoteBlast(database=blast_db)
+                queries = {}
+                for res in evaluated_results[:count_blast]:
+                    cid = res["stage1_rank"]
+                    c = res["primers"]
+                    queries[f"cand_{cid}_fwd"] = c["forward"].sequence
+                    queries[f"cand_{cid}_rev"] = c["reverse"].sequence
+                    if c.get("probe"):
+                        queries[f"cand_{cid}_prb"] = c["probe"].sequence
+                        
+                try:
+                    # Handle potential running event loops (like in Jupyter)
+                    try:
+                        loop = asyncio.get_running_loop()
+                    except RuntimeError:
+                        loop = None
+                        
+                    if loop and loop.is_running():
+                        import nest_asyncio
+                        nest_asyncio.apply()
+                        blast_results = loop.run_until_complete(blast_engine.batch_blast(queries))
+                    else:
+                        blast_results = asyncio.run(blast_engine.batch_blast(queries))
+                except Exception as e:
+                    logger.error(f"Async BLAST execution failed: {e}")
+                    blast_results = {}
+            
+            if blast_results:
+                try:
+                    scorer = SpecificityScorer()
+                    for res in evaluated_results[:count_blast]:
+                        cid = res["stage1_rank"]
+                        c = res["primers"]
+                        fwd_hits_res = blast_results.get(f"cand_{cid}_fwd")
+                        rev_hits_res = blast_results.get(f"cand_{cid}_rev")
+                        
+                        fwd_offtargets = []
+                        if fwd_hits_res and fwd_hits_res.success:
+                            fwd_offtargets = [OfftargetHit.from_blast_hit(hit) for hit in fwd_hits_res.hits]
+                            
+                        rev_offtargets = []
+                        if rev_hits_res and rev_hits_res.success:
+                            rev_offtargets = [OfftargetHit.from_blast_hit(hit) for hit in rev_hits_res.hits]
+                            
+                        fwd_result = OfftargetResult(
+                            primer_id="forward",
+                            primer_seq=c["forward"].sequence,
+                            offtarget_count=len(fwd_offtargets),
+                            offtargets=fwd_offtargets
+                        )
+                        
+                        rev_result = OfftargetResult(
+                            primer_id="reverse",
+                            primer_seq=c["reverse"].sequence,
+                            offtarget_count=len(rev_offtargets),
+                            offtargets=rev_offtargets
+                        )
+                        
+                        # calculate potential products
+                        fwd_seqs = {ot.sequence_id for ot in fwd_offtargets}
+                        rev_seqs = {ot.sequence_id for ot in rev_offtargets}
+                        potential_products = len(fwd_seqs & rev_seqs)
+                        
+                        pair_result = PrimerPairOfftargetResult(
+                            forward_result=fwd_result,
+                            reverse_result=rev_result,
+                            potential_products=potential_products
+                        )
+                        
+                        fwd_score, rev_score, combined = scorer.score_primer_pair(pair_result)
+                        
+                        # Store metrics
+                        res["specificity_grade"] = combined.grade
+                        res["specificity_score"] = combined.overall_score
+                        
+                        # Apply Penalties
+                        if combined.grade in ["D", "F"]:
+                            penalty = 50.0
+                            res["blast_penalty"] = penalty
+                            res["final_score"] += penalty
+                            res["qc"].warnings.append(f"CRITICAL: Specificity Grade {combined.grade} (Score: {combined.overall_score}). {potential_products} potential products found!")
+                        elif combined.grade == "C":
+                            penalty = 10.0
+                            res["blast_penalty"] = penalty
+                            res["final_score"] += penalty
+                            res["qc"].warnings.append(f"WARNING: Specificity Grade C (Score: {combined.overall_score}). High off-target bindings.")
+                        else:
+                            res["blast_penalty"] = 0.0
+                            res["qc"].warnings.append(f"Specificity Grade {combined.grade} (Score: {combined.overall_score}). No significant cross-amplification risks.")
+                            
+                except Exception as e:
+                    logger.error(f"BLAST scoring/processing failed: {e}")
+                    
         # Final sort after all stages
         evaluated_results.sort(key=lambda x: x["final_score"])
 
         # Finalize ranks
         for idx, res in enumerate(evaluated_results):
             res["final_rank"] = idx + 1
+
+        # 5.3 Stage 4: Targeted BLAST Coverage Check (optional verification)
+        targeted_check = config.get("qc", {}).get("blast_targeted_check", False)
+        targeted_db = config.get("qc", {}).get("blast_targeted_db_path")
+        if targeted_check and targeted_db and evaluated_results:
+            logger.info(f"Stage 4: Calculating target database coverage using '{targeted_db}'...")
+            try:
+                # Count total sequences in fasta
+                total_seqs = 0
+                if os.path.exists(targeted_db):
+                    with open(targeted_db, "r") as f:
+                        for line in f:
+                            if line.startswith(">"):
+                                total_seqs += 1
+                
+                # Check top candidate
+                top_res = evaluated_results[0]
+                from primerlab.core.tools.blast_wrapper import BlastWrapper
+                blast_wrapper = BlastWrapper()
+                
+                fwd_res = blast_wrapper.run_blastn(top_res["primers"]["forward"].sequence, targeted_db, query_id="fwd_targeted")
+                rev_res = blast_wrapper.run_blastn(top_res["primers"]["reverse"].sequence, targeted_db, query_id="rev_targeted")
+                
+                fwd_hits = fwd_res.hits if fwd_res.success else []
+                rev_hits = rev_res.hits if rev_res.success else []
+                
+                fwd_map = {}
+                for h in fwd_hits:
+                    fwd_map.setdefault(h.subject_id, []).append(h)
+                    
+                rev_map = {}
+                for h in rev_hits:
+                    rev_map.setdefault(h.subject_id, []).append(h)
+                    
+                covered_subjects = set()
+                for sub_id in fwd_map.keys() & rev_map.keys():
+                    for f_hit in fwd_map[sub_id]:
+                        for r_hit in rev_map[sub_id]:
+                            f_start = min(f_hit.subject_start, f_hit.subject_end)
+                            r_start = min(r_hit.subject_start, r_hit.subject_end)
+                            dist = abs(r_start - f_start)
+                            if 100 <= dist <= 1500:
+                                covered_subjects.add(sub_id)
+                                break
+                
+                coverage_pct = (len(covered_subjects) / total_seqs * 100) if total_seqs > 0 else 0.0
+                logger.info(f"Targeted BLAST Coverage: {len(covered_subjects)} / {total_seqs} sequences covered ({coverage_pct:.2f}%)")
+                
+                # Store in metrics
+                if top_res.get("qc"):
+                    top_res["qc"].additional_metrics["targeted_coverage_pct"] = round(coverage_pct, 2)
+                    top_res["qc"].additional_metrics["targeted_covered_count"] = len(covered_subjects)
+                    top_res["qc"].additional_metrics["targeted_total_count"] = total_seqs
+                    top_res["qc"].warnings.append(f"Targeted Database Coverage: {coverage_pct:.1f}% ({len(covered_subjects)}/{total_seqs})")
+            except Exception as e:
+                logger.error(f"Targeted BLAST coverage check failed: {e}")
 
     # 6. Select Top Result and prepare Output
     if evaluated_results:
