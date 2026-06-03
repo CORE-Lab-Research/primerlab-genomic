@@ -130,12 +130,16 @@ def _add_primer_section(lines: list, result: OfftargetResult):
     if result.offtargets:
         lines.append("### Off-target Sites")
         lines.append("")
-        lines.append("| Sequence | Position | Identity | Risk |")
-        lines.append("|----------|----------|----------|------|")
+        lines.append("| Sequence ID | Description / Species | Position | Identity | Risk |")
+        lines.append("|-------------|-----------------------|----------|----------|------|")
 
         for ot in result.offtargets[:10]:  # Limit to 10
             risk_icon = "🔴" if ot.risk_level == "high" else "🟡" if ot.risk_level == "medium" else "🟢"
-            lines.append(f"| {ot.sequence_id[:20]} | {ot.position} | {ot.identity:.1f}% | {risk_icon} {ot.risk_level} |")
+            # Get clean title/species name
+            title = ot.sequence_title if ot.sequence_title else "Unknown Species"
+            if len(title) > 40:
+                title = title[:37] + "..."
+            lines.append(f"| {ot.sequence_id} | {title} | {ot.position} | {ot.identity:.1f}% | {risk_icon} {ot.risk_level} |")
 
         if len(result.offtargets) > 10:
             lines.append(f"| ... | *{len(result.offtargets) - 10} more* | | |")
