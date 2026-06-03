@@ -1060,7 +1060,6 @@ def main():
                 print(f"   • blast_result.json")
                 print(f"   • specificity_report.md")
 
-            import os
             os._exit(0 if combined.is_acceptable else 1)
 
         except Exception as e:
