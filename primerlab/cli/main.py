@@ -3136,6 +3136,8 @@ qc:
         from primerlab.workflows.raa.workflow import run_raa_workflow
         import yaml
         from primerlab.core.sequence import SequenceLoader
+        from primerlab.core.logger import get_logger
+        logger = get_logger()
         
         # Safe attribute access
         is_debug = getattr(args, "debug", False)
