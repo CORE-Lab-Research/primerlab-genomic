@@ -1060,7 +1060,8 @@ def main():
                 print(f"   • blast_result.json")
                 print(f"   • specificity_report.md")
 
-            sys.exit(0 if combined.is_acceptable else 1)
+            import os
+            os._exit(0 if combined.is_acceptable else 1)
 
         except Exception as e:
             print(f"\n❌ Error: {e}")
