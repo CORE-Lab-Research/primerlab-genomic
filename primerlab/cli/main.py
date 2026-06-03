@@ -3302,6 +3302,52 @@ qc:
                 with open(os.path.join(out_dir, "qc_metrics.json"), "w") as f:
                     json.dump(res_dict.get("qc", {}), f, indent=2)
 
+                # Export primers.csv and order_idt.csv
+                try:
+                    import csv
+                    primers_data = res_dict.get("primers", {})
+                    if primers_data:
+                        # Write primers.csv
+                        with open(os.path.join(out_dir, "primers.csv"), "w", newline="") as f:
+                            writer = csv.writer(f)
+                            writer.writerow(["Name", "Sequence", "Length", "Tm", "GC%", "Start", "End"])
+                            for role, p in primers_data.items():
+                                if p:
+                                    writer.writerow([
+                                        p.get("id") or role,
+                                        p.get("sequence", ""),
+                                        p.get("length", ""),
+                                        round(p.get("tm", 0), 2) if p.get("tm") else "",
+                                        round(p.get("gc", 0), 2) if p.get("gc") else "",
+                                        p.get("start", ""),
+                                        p.get("end", "")
+                                    ])
+
+                        # Write order_idt.csv
+                        with open(os.path.join(out_dir, "order_idt.csv"), "w", newline="") as f:
+                            writer = csv.writer(f)
+                            writer.writerow(["Name", "Sequence", "Scale", "Purification"])
+                            for role, p in primers_data.items():
+                                if p:
+                                    writer.writerow([
+                                        p.get("id") or f"{project_name}_{role}",
+                                        p.get("sequence", ""),
+                                        "25nm",
+                                        "STD"
+                                    ])
+                except Exception as e:
+                    logger.warning(f"Failed to save CSV primer exports: {e}")
+
+                # Export report.md
+                try:
+                    from primerlab.workflows.pcr.report import ReportGenerator
+                    report_gen = ReportGenerator()
+                    report_content = report_gen.generate_report(result)
+                    with open(os.path.join(out_dir, "report.md"), "w") as f:
+                        f.write(report_content)
+                except Exception as e:
+                    logger.warning(f"Failed to generate report.md: {e}")
+
                 # g. Ranking Details (CSV Export for Transparency)
                 ranking_data = res_dict.get("ranking_details", [])
                 if ranking_data:
@@ -3319,6 +3365,12 @@ qc:
                 print(f"   ├─ amplicons.json")
                 print(f"   ├─ alternatives.json")
                 print(f"   ├─ qc_metrics.json")
+                if os.path.exists(os.path.join(out_dir, "primers.csv")):
+                    print(f"   ├─ primers.csv")
+                if os.path.exists(os.path.join(out_dir, "order_idt.csv")):
+                    print(f"   ├─ order_idt.csv")
+                if os.path.exists(os.path.join(out_dir, "report.md")):
+                    print(f"   ├─ report.md")
                 if hasattr(result, "insilico_validation") and result.insilico_validation:
                     print(f"   ├─ insilico_validation.json")
                 if ranking_data:
