@@ -66,6 +66,11 @@ def generate_specificity_report(
         lines.append("")
         _add_primer_section(lines, result.reverse_result)
 
+        if result.probe_result:
+            lines.append("## Probe")
+            lines.append("")
+            _add_primer_section(lines, result.probe_result)
+
         if result.potential_products > 0:
             lines.append("## ⚠️ Potential Off-target Products")
             lines.append("")

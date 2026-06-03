@@ -125,7 +125,8 @@ class BlastWrapper:
         query_seq: str,
         database: str,
         query_id: str = "primer",
-        params: Optional[Dict[str, Any]] = None
+        params: Optional[Dict[str, Any]] = None,
+        remote: bool = False
     ) -> BlastResult:
         """
         Run blastn search for a primer sequence.
@@ -135,6 +136,7 @@ class BlastWrapper:
             database: Path to BLAST database
             query_id: Identifier for the query
             params: Override default parameters
+            remote: Force NCBI remote search (NCBI web)
             
         Returns:
             BlastResult with hits
@@ -165,13 +167,18 @@ class BlastWrapper:
                 self.installation.blastn_path,
                 "-query", query_file,
                 "-db", database,
+            ]
+            if remote:
+                cmd.append("-remote")
+                
+            cmd.extend([
                 "-evalue", str(search_params["evalue"]),
                 "-word_size", str(search_params["word_size"]),
                 "-dust", search_params["dust"],
                 "-max_target_seqs", str(search_params["max_target_seqs"]),
                 "-outfmt", "6 sseqid stitle qstart qend sstart send pident length mismatch gaps evalue bitscore qseq sseq",
                 "-task", search_params["task"]
-            ]
+            ])
 
             logger.debug(f"Running: {' '.join(cmd)}")
 

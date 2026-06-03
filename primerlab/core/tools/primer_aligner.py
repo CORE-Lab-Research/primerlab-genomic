@@ -100,7 +100,8 @@ class PrimerAligner:
         self,
         primer_seq: str,
         database: str,
-        primer_id: str = "primer"
+        primer_id: str = "primer",
+        remote: bool = False
     ) -> BlastResult:
         """
         Search a primer against a database.
@@ -109,6 +110,7 @@ class PrimerAligner:
             primer_seq: Primer sequence
             database: Path to database (FASTA or BLAST DB)
             primer_id: Identifier for the primer
+            remote: Force NCBI remote search
             
         Returns:
             BlastResult with hits
@@ -117,7 +119,8 @@ class PrimerAligner:
             return self.blast_wrapper.run_blastn(
                 query_seq=primer_seq,
                 database=database,
-                query_id=primer_id
+                query_id=primer_id,
+                remote=remote
             )
         else:
             return self.biopython_aligner.search_database(

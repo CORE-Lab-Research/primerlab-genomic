@@ -905,6 +905,7 @@ def main():
             primers_input = args.primers
             forward_primer = None
             reverse_primer = None
+            probe_primer = None
 
             if os.path.exists(primers_input):
                 if primers_input.endswith('.json'):
@@ -912,10 +913,13 @@ def main():
                         primer_data = json.load(f)
                     fwd_raw = primer_data.get("forward") or primer_data.get("fwd")
                     rev_raw = primer_data.get("reverse") or primer_data.get("rev")
+                    probe_raw = primer_data.get("probe") or primer_data.get("prb")
                     
                     # Handle nested dict (v0.3.3 fix)
                     forward_primer = fwd_raw.get("sequence", fwd_raw) if isinstance(fwd_raw, dict) else fwd_raw
                     reverse_primer = rev_raw.get("sequence", rev_raw) if isinstance(rev_raw, dict) else rev_raw
+                    if probe_raw:
+                        probe_primer = probe_raw.get("sequence", probe_raw) if isinstance(probe_raw, dict) else probe_raw
                 else:  # FASTA
                     seqs = []
                     with open(primers_input) as f:
@@ -932,6 +936,8 @@ def main():
                             seqs.append(current_seq)
                     if len(seqs) >= 2:
                         forward_primer, reverse_primer = seqs[0], seqs[1]
+                        if len(seqs) >= 3:
+                            probe_primer = seqs[2]
                     elif len(seqs) == 1:
                         forward_primer = seqs[0]
             else:
@@ -940,6 +946,8 @@ def main():
                 forward_primer = parts[0].strip()
                 if len(parts) > 1:
                     reverse_primer = parts[1].strip()
+                if len(parts) > 2:
+                    probe_primer = parts[2].strip()
 
             if not forward_primer:
                 print("❌ No primers found in input")
@@ -958,19 +966,23 @@ def main():
             print(f"   Forward:  {forward_primer[:30]}..." if len(forward_primer) > 30 else f"   Forward:  {forward_primer}")
             if reverse_primer:
                 print(f"   Reverse:  {reverse_primer[:30]}..." if len(reverse_primer) > 30 else f"   Reverse:  {reverse_primer}")
+            if probe_primer:
+                print(f"   Probe:    {probe_primer[:30]}..." if len(probe_primer) > 30 else f"   Probe:    {probe_primer}")
             print()
 
             # Run off-target check
             finder = OfftargetFinder(
                 database=args.database,
                 target_id=args.target,
-                mode=args.mode
+                mode=args.mode,
+                remote=getattr(args, 'online', False)
             )
 
             if reverse_primer:
                 result = finder.find_primer_pair_offtargets(
                     forward_primer=forward_primer,
                     reverse_primer=reverse_primer,
+                    probe_primer=probe_primer,
                     target_id=args.target
                 )
                 scorer = SpecificityScorer()
@@ -1001,11 +1013,18 @@ def main():
                     "reverse": {
                         "offtargets": result.reverse_result.offtarget_count,
                         "score": result.reverse_result.specificity_score
-                    },
+                    }
+                }
+                if result.probe_result:
+                    result_dict["probe"] = {
+                        "offtargets": result.probe_result.offtarget_count,
+                        "score": result.probe_result.specificity_score
+                    }
+                result_dict.update({
                     "combined_score": combined.overall_score,
                     "grade": combined.grade,
                     "is_specific": combined.is_acceptable
-                }
+                })
             else:
                 result_dict = {
                     "offtargets": result.offtarget_count,
@@ -1025,6 +1044,8 @@ def main():
                 if hasattr(result, 'forward_result'):
                     print(f"   Forward: {result.forward_result.offtarget_count} off-targets")
                     print(f"   Reverse: {result.reverse_result.offtarget_count} off-targets")
+                    if result.probe_result:
+                        print(f"   Probe:   {result.probe_result.offtarget_count} off-targets")
                 else:
                     print(f"   Off-targets: {result.offtarget_count}")
 

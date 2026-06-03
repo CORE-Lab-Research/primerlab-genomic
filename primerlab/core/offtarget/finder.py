@@ -132,6 +132,7 @@ class PrimerPairOfftargetResult:
     Attributes:
         forward_result: Off-target result for forward primer
         reverse_result: Off-target result for reverse primer
+        probe_result: Off-target result for probe primer (optional)
         combined_score: Combined specificity score
         is_specific: True if both primers are specific
         potential_products: Number of potential off-target products
@@ -139,6 +140,7 @@ class PrimerPairOfftargetResult:
     """
     forward_result: OfftargetResult
     reverse_result: OfftargetResult
+    probe_result: Optional[OfftargetResult] = None
     combined_score: float = 0.0
     is_specific: bool = True
     potential_products: int = 0
@@ -146,15 +148,17 @@ class PrimerPairOfftargetResult:
 
     def __post_init__(self):
         """Calculate combined metrics."""
-        self.combined_score = (
-            self.forward_result.specificity_score  +
-            self.reverse_result.specificity_score
-        ) / 2
+        scores = [self.forward_result.specificity_score, self.reverse_result.specificity_score]
+        if self.probe_result:
+            scores.append(self.probe_result.specificity_score)
+        self.combined_score = sum(scores) / len(scores)
 
         # Check specificity
         if self.forward_result.specificity_score < 80:
             self.is_specific = False
         if self.reverse_result.specificity_score < 80:
+            self.is_specific = False
+        if self.probe_result and self.probe_result.specificity_score < 80:
             self.is_specific = False
 
         # Combine warnings
@@ -162,10 +166,12 @@ class PrimerPairOfftargetResult:
             self.forward_result.warnings  +
             self.reverse_result.warnings
         )
+        if self.probe_result:
+            self.warnings.extend(self.probe_result.warnings)
 
     def to_dict(self) -> Dict[str, Any]:
         """Export to dictionary for JSON serialization."""
-        return {
+        data = {
             "forward_result": self.forward_result.to_dict(),
             "reverse_result": self.reverse_result.to_dict(),
             "combined_score": self.combined_score,
@@ -173,6 +179,9 @@ class PrimerPairOfftargetResult:
             "potential_products": self.potential_products,
             "warnings": self.warnings
         }
+        if self.probe_result:
+            data["probe_result"] = self.probe_result.to_dict()
+        return data
 
 
 class OfftargetFinder:
@@ -200,7 +209,8 @@ class OfftargetFinder:
         database: str,
         target_id: Optional[str] = None,
         mode: str = "auto",
-        params: Optional[Dict[str, Any]] = None
+        params: Optional[Dict[str, Any]] = None,
+        remote: bool = False
     ):
         """
         Initialize off-target finder.
@@ -210,12 +220,14 @@ class OfftargetFinder:
             target_id: Expected target sequence ID (to distinguish on-target)
             mode: Alignment mode ('auto', 'blast', 'biopython')
             params: Custom parameters
+            remote: Force NCBI remote search
         """
         self.database = database
         self.target_id = target_id
         self.params = {**self.DEFAULT_PARAMS}
         if params:
             self.params.update(params)
+        self.remote = remote
 
         # Initialize aligner
         mode_enum = AlignmentMode(mode.lower())
@@ -244,7 +256,8 @@ class OfftargetFinder:
         blast_result = self.aligner.search_primer(
             primer_seq=primer_seq,
             database=self.database,
-            primer_id=primer_id
+            primer_id=primer_id,
+            remote=self.remote
         )
 
         if not blast_result.success:
@@ -314,14 +327,16 @@ class OfftargetFinder:
         self,
         forward_primer: str,
         reverse_primer: str,
+        probe_primer: Optional[str] = None,
         target_id: Optional[str] = None
     ) -> PrimerPairOfftargetResult:
         """
-        Find off-targets for both primers in a pair.
+        Find off-targets for both primers (and optional probe) in a pair.
         
         Args:
             forward_primer: Forward primer sequence
             reverse_primer: Reverse primer sequence
+            probe_primer: Probe primer sequence (optional)
             target_id: Target sequence ID
             
         Returns:
@@ -339,6 +354,14 @@ class OfftargetFinder:
             target_id=target_id
         )
 
+        probe_result = None
+        if probe_primer:
+            probe_result = self.find_offtargets(
+                primer_seq=probe_primer,
+                primer_id="probe",
+                target_id=target_id
+            )
+
         # Calculate potential off-target products
         # (where both primers could bind to same sequence)
         potential_products = self._count_potential_products(fwd_result, rev_result)
@@ -346,6 +369,7 @@ class OfftargetFinder:
         result = PrimerPairOfftargetResult(
             forward_result=fwd_result,
             reverse_result=rev_result,
+            probe_result=probe_result,
             potential_products=potential_products
         )
 

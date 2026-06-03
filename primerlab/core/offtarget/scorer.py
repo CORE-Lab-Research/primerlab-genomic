@@ -134,10 +134,10 @@ class SpecificityScorer:
         pair_result: PrimerPairOfftargetResult
     ) -> Tuple[SpecificityScore, SpecificityScore, SpecificityScore]:
         """
-        Score a primer pair's specificity.
+        Score a primer pair's specificity (and optional probe).
         
         Args:
-            pair_result: Primer pair off-target result
+            pair_result: Primer pair off-target result (potentially containing probe_result)
             
         Returns:
             Tuple of (forward_score, reverse_score, combined_score)
@@ -145,25 +145,42 @@ class SpecificityScorer:
         # Score individual primers
         fwd_score = self.score_primer(pair_result.forward_result)
         rev_score = self.score_primer(pair_result.reverse_result)
+        
+        probe_score = None
+        if pair_result.probe_result:
+            probe_score = self.score_primer(pair_result.probe_result)
 
         # Calculate combined with product penalty
         product_score = self._calculate_product_score(pair_result.potential_products)
 
-        combined_overall = (
-            fwd_score.overall_score * 0.4 +
-            rev_score.overall_score * 0.4 +
-            product_score * 0.2
-        )
+        if probe_score:
+            combined_overall = (
+                fwd_score.overall_score * 0.3 +
+                rev_score.overall_score * 0.3 +
+                probe_score.overall_score * 0.2 +
+                product_score * 0.2
+            )
+            binding_score = (fwd_score.binding_score + rev_score.binding_score + probe_score.binding_score) / 3
+            mismatch_score = (fwd_score.mismatch_score + rev_score.mismatch_score + probe_score.mismatch_score) / 3
+        else:
+            combined_overall = (
+                fwd_score.overall_score * 0.4 +
+                rev_score.overall_score * 0.4 +
+                product_score * 0.2
+            )
+            binding_score = (fwd_score.binding_score + rev_score.binding_score) / 2
+            mismatch_score = (fwd_score.mismatch_score + rev_score.mismatch_score) / 2
 
         combined = SpecificityScore(
             overall_score=round(combined_overall, 1),
-            binding_score=round((fwd_score.binding_score + rev_score.binding_score) / 2, 1),
-            mismatch_score=round((fwd_score.mismatch_score + rev_score.mismatch_score) / 2, 1),
+            binding_score=round(binding_score, 1),
+            mismatch_score=round(mismatch_score, 1),
             product_score=round(product_score, 1),
             is_acceptable=combined_overall >= self.threshold,
             details={
                 "forward_score": fwd_score.overall_score,
                 "reverse_score": rev_score.overall_score,
+                "probe_score": probe_score.overall_score if probe_score else None,
                 "potential_products": pair_result.potential_products,
             }
         )
