@@ -144,7 +144,7 @@ class BaseReportTemplate:
             "Sequence",
             f"`{fwd.sequence}`" if fwd else "N/A",
             f"`{rev.sequence}`" if rev else "N/A",
-            f"`{probe.sequence}`" if probe else None
+            f"`{getattr(probe, 'labeled_sequence', None) or probe.sequence}`" if probe else None
         ))
         
         # Length
@@ -158,25 +158,25 @@ class BaseReportTemplate:
         # Tm
         self.lines.append(row(
             "Tm",
-            f"{fwd.tm:.2f}°C" if fwd and fwd.tm else "N/A",
-            f"{rev.tm:.2f}°C" if rev and rev.tm else "N/A",
-            f"{probe.tm:.2f}°C" if probe and probe.tm else None
+            f"{fwd.tm:.2f}°C" if fwd and fwd.tm is not None else "N/A",
+            f"{rev.tm:.2f}°C" if rev and rev.tm is not None else "N/A",
+            f"{probe.tm:.2f}°C" if probe and probe.tm is not None else None
         ))
         
         # GC%
         self.lines.append(row(
             "GC%",
-            f"{fwd.gc:.1f}%" if fwd and fwd.gc else "N/A",
-            f"{rev.gc:.1f}%" if rev and rev.gc else "N/A",
-            f"{probe.gc:.1f}%" if probe and probe.gc else None
+            f"{fwd.gc:.1f}%" if fwd and fwd.gc is not None else "N/A",
+            f"{rev.gc:.1f}%" if rev and rev.gc is not None else "N/A",
+            f"{probe.gc:.1f}%" if probe and probe.gc is not None else None
         ))
         
         # Position
         self.lines.append(row(
             "Position",
-            f"{fwd.start}" if fwd and fwd.start else "N/A",
-            f"{rev.start}" if rev and rev.start else "N/A",
-            f"{probe.start}" if probe and probe.start else None
+            f"{fwd.start}" if fwd and fwd.start is not None else "N/A",
+            f"{rev.start}" if rev and rev.start is not None else "N/A",
+            f"{probe.start}" if probe and probe.start is not None else None
         ))
         
         self.lines.append("")
@@ -215,8 +215,8 @@ class BaseReportTemplate:
         self.lines.append(line1)
         
         # Position markers
-        fwd_pos = f"↑ {fwd.start}" if fwd.start else "↑ ?"
-        rev_end = rev.end if hasattr(rev, 'end') and rev.end else "?"
+        fwd_pos = f"↑ {fwd.start}" if fwd.start is not None else "↑ ?"
+        rev_end = rev.end if hasattr(rev, 'end') and rev.end is not None else "?"
         rev_pos = f"↑ {rev_end}"
         
         marker_line = " " * 8 + fwd_pos + " " * (len(line1) - 16 - len(fwd_pos) - len(rev_pos)) + rev_pos
@@ -299,14 +299,20 @@ class BaseReportTemplate:
         self.lines.append("|:----:|:--------|:--------|------:|:------:|")
         
         for i, alt in enumerate(self.result.alternatives, start=2):
-            fwd_seq = alt.get("fwd_seq", "")
+            fwd_seq = alt.get("fwd_seq") or alt.get("primers", {}).get("forward", {}).get("sequence", "")
             fwd_disp = fwd_seq[:12] + "..." if len(fwd_seq) > 12 else fwd_seq
             
-            rev_seq = alt.get("rev_seq", "")
+            rev_seq = alt.get("rev_seq") or alt.get("primers", {}).get("reverse", {}).get("sequence", "")
             rev_disp = rev_seq[:12] + "..." if len(rev_seq) > 12 else rev_seq
             
-            penalty = alt.get("primer3_penalty", 0.0)
-            qc_ok = alt.get("passes_qc", False)
+            penalty = alt.get("primer3_penalty") or alt.get("p3_penalty") or alt.get("final_score", 0.0)
+            
+            if "passes_qc" in alt:
+                qc_ok = alt["passes_qc"]
+            else:
+                qc = alt.get("qc", {})
+                qc_ok = not (qc.get("errors") or qc.get("warnings"))
+            
             status = "✅" if qc_ok else "⚠️"
             
             self.lines.append(f"| #{i} | `{fwd_disp}` | `{rev_disp}` | {penalty:.2f} | {status} |")

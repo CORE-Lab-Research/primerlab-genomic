@@ -88,8 +88,9 @@ class PCRReportTemplate(BaseReportTemplate):
         self.lines.append("")
         
         for i, alt in enumerate(self.result.alternatives, start=2):
-            reasons = alt.get("qc_details", {}).get("rejection_reasons", [])
-            penalty = alt.get("primer3_penalty", 0.0)
+            qc = alt.get("qc", {})
+            reasons = alt.get("qc_details", {}).get("rejection_reasons", []) or qc.get("warnings", [])
+            penalty = alt.get("primer3_penalty") or alt.get("p3_penalty") or 0.0
             
             if reasons:
                 self.lines.append(f"- **#{i}:** {', '.join(reasons)}")
