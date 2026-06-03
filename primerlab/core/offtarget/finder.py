@@ -96,6 +96,8 @@ class OfftargetResult:
         offtarget_count: Number of off-target hits
         significant_offtargets: Number of significant off-targets
         offtargets: List of off-target hits
+        on_target_hits: List of hits matching the exact target ID
+        pathogen_hits: List of hits matching the pathogen family
         specificity_score: Overall specificity score (0-100)
         warnings: List of warning messages
     """
@@ -106,6 +108,8 @@ class OfftargetResult:
     offtarget_count: int = 0
     significant_offtargets: int = 0
     offtargets: List[OfftargetHit] = field(default_factory=list)
+    on_target_hits: List[OfftargetHit] = field(default_factory=list)
+    pathogen_hits: List[OfftargetHit] = field(default_factory=list)
     specificity_score: float = 100.0
     warnings: List[str] = field(default_factory=list)
 
@@ -119,6 +123,8 @@ class OfftargetResult:
             "offtarget_count": self.offtarget_count,
             "significant_offtargets": self.significant_offtargets,
             "offtargets": [ot.to_dict() for ot in self.offtargets],
+            "on_target_hits": [ot.to_dict() for ot in self.on_target_hits],
+            "pathogen_hits": [ot.to_dict() for ot in self.pathogen_hits],
             "specificity_score": self.specificity_score,
             "warnings": self.warnings
         }
@@ -210,7 +216,8 @@ class OfftargetFinder:
         target_id: Optional[str] = None,
         mode: str = "auto",
         params: Optional[Dict[str, Any]] = None,
-        remote: bool = False
+        remote: bool = False,
+        pathogen: Optional[str] = None
     ):
         """
         Initialize off-target finder.
@@ -221,6 +228,7 @@ class OfftargetFinder:
             mode: Alignment mode ('auto', 'blast', 'biopython')
             params: Custom parameters
             remote: Force NCBI remote search
+            pathogen: Pathogen name keyword (e.g. 'Influenza') to group family hits
         """
         self.database = database
         self.target_id = target_id
@@ -228,6 +236,7 @@ class OfftargetFinder:
         if params:
             self.params.update(params)
         self.remote = remote
+        self.pathogen = pathogen
 
         # Initialize aligner
         mode_enum = AlignmentMode(mode.lower())
@@ -270,6 +279,8 @@ class OfftargetFinder:
 
         # Process hits
         offtargets = []
+        on_target_hits = []
+        pathogen_hits = []
         on_target_found = False
 
         for hit in blast_result.hits:
@@ -281,17 +292,22 @@ class OfftargetFinder:
                     on_target_found = True
                     hit.is_on_target = True
 
-            # Skip on-target hits
+            ot_hit = OfftargetHit.from_blast_hit(hit)
+
             if is_on_target:
+                on_target_hits.append(ot_hit)
                 continue
 
-            # Filter by identity
+            # Check if it belongs to target pathogen family (on-target family hit)
+            if self.pathogen and (self.pathogen.lower() in hit.subject_title.lower() or self.pathogen.lower() in hit.subject_id.lower()):
+                pathogen_hits.append(ot_hit)
+                continue
+
+            # Filter off-target by identity
             if hit.identity_percent < self.params["identity_threshold"]:
                 continue
 
-            # Create off-target hit
-            offtarget = OfftargetHit.from_blast_hit(hit)
-            offtargets.append(offtarget)
+            offtargets.append(ot_hit)
 
         # Limit results
         offtargets = offtargets[:self.params["max_offtargets"]]
@@ -299,7 +315,7 @@ class OfftargetFinder:
         # Count significant off-targets
         significant = sum(1 for ot in offtargets if ot.is_significant)
 
-        # Calculate specificity score
+        # Calculate specificity score (excluding pathogen family hits)
         specificity = self._calculate_specificity(offtargets)
 
         # Generate warnings
@@ -319,6 +335,8 @@ class OfftargetFinder:
             offtarget_count=len(offtargets),
             significant_offtargets=significant,
             offtargets=offtargets,
+            on_target_hits=on_target_hits,
+            pathogen_hits=pathogen_hits,
             specificity_score=specificity,
             warnings=warnings
         )

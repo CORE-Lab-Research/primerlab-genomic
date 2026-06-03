@@ -126,6 +126,34 @@ def _add_primer_section(lines: list, result: OfftargetResult):
     lines.append(f"| Score | {result.specificity_score:.1f} |")
     lines.append("")
 
+    # On-target hits
+    if hasattr(result, "on_target_hits") and result.on_target_hits:
+        lines.append("### On-target Reference Hits")
+        lines.append("")
+        lines.append("| Accession ID | Description / Species | Position | Identity | E-value |")
+        lines.append("|--------------|-----------------------|----------|----------|---------|")
+        for ot in result.on_target_hits[:5]:
+            title = ot.sequence_title if ot.sequence_title else "Target Reference"
+            if len(title) > 40:
+                title = title[:37] + "..."
+            lines.append(f"| {ot.sequence_id} | {title} | {ot.position} | {ot.identity:.1f}% | {ot.evalue:.2e} |")
+        lines.append("")
+
+    # Pathogen family hits (On-target variants / strains)
+    if hasattr(result, "pathogen_hits") and result.pathogen_hits:
+        lines.append("### Target Pathogen Family Hits (Universal Strains)")
+        lines.append("")
+        lines.append("| Accession ID | Description / Species | Position | Identity | E-value |")
+        lines.append("|--------------|-----------------------|----------|----------|---------|")
+        for ot in result.pathogen_hits[:10]:
+            title = ot.sequence_title if ot.sequence_title else "Target Strains"
+            if len(title) > 40:
+                title = title[:37] + "..."
+            lines.append(f"| {ot.sequence_id} | {title} | {ot.position} | {ot.identity:.1f}% | {ot.evalue:.2e} |")
+        if len(result.pathogen_hits) > 10:
+            lines.append(f"| ... | *{len(result.pathogen_hits) - 10} more* | | | |")
+        lines.append("")
+
     # Off-target details
     if result.offtargets:
         lines.append("### Off-target Sites")

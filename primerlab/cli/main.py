@@ -366,6 +366,8 @@ def main():
                              help="Number of parallel threads (v0.3.2)")
     blast_parser.add_argument("--timeout", type=int, default=300,
                              help="Timeout per query in seconds (v0.3.2)")
+    blast_parser.add_argument("--pathogen", type=str, default=None,
+                             help="Target pathogen name to group on-target family hits (e.g. 'Influenza')")
 
     # --- CHECK-COMPAT Command (v0.4.0) ---
     compat_parser = subparsers.add_parser("check-compat", help="Check primer set compatibility (v0.4.0)")
@@ -977,7 +979,8 @@ def main():
                 target_id=args.target,
                 mode=args.mode,
                 params=blast_params,
-                remote=getattr(args, 'online', False)
+                remote=getattr(args, 'online', False),
+                pathogen=getattr(args, 'pathogen', None)
             )
 
             if reverse_primer:
@@ -1010,16 +1013,22 @@ def main():
                 result_dict = {
                     "forward": {
                         "offtargets": result.forward_result.offtarget_count,
+                        "ontargets": len(result.forward_result.on_target_hits),
+                        "pathogen_family_hits": len(result.forward_result.pathogen_hits),
                         "score": result.forward_result.specificity_score
                     },
                     "reverse": {
                         "offtargets": result.reverse_result.offtarget_count,
+                        "ontargets": len(result.reverse_result.on_target_hits),
+                        "pathogen_family_hits": len(result.reverse_result.pathogen_hits),
                         "score": result.reverse_result.specificity_score
                     }
                 }
                 if result.probe_result:
                     result_dict["probe"] = {
                         "offtargets": result.probe_result.offtarget_count,
+                        "ontargets": len(result.probe_result.on_target_hits),
+                        "pathogen_family_hits": len(result.probe_result.pathogen_hits),
                         "score": result.probe_result.specificity_score
                     }
                 result_dict.update({
@@ -1030,6 +1039,8 @@ def main():
             else:
                 result_dict = {
                     "offtargets": result.offtarget_count,
+                    "ontargets": len(result.on_target_hits),
+                    "pathogen_family_hits": len(result.pathogen_hits),
                     "score": combined.overall_score,
                     "grade": combined.grade,
                     "is_specific": combined.is_acceptable
@@ -1044,12 +1055,12 @@ def main():
             else:
                 print(f"✅ Specificity Score: {combined.overall_score:.1f} (Grade: {combined.grade})")
                 if hasattr(result, 'forward_result'):
-                    print(f"   Forward: {result.forward_result.offtarget_count} off-targets")
-                    print(f"   Reverse: {result.reverse_result.offtarget_count} off-targets")
+                    print(f"   Forward: {result.forward_result.offtarget_count} off-targets | {len(result.forward_result.on_target_hits)} on-target | {len(result.forward_result.pathogen_hits)} family hits")
+                    print(f"   Reverse: {result.reverse_result.offtarget_count} off-targets | {len(result.reverse_result.on_target_hits)} on-target | {len(result.reverse_result.pathogen_hits)} family hits")
                     if result.probe_result:
-                        print(f"   Probe:   {result.probe_result.offtarget_count} off-targets")
+                        print(f"   Probe:   {result.probe_result.offtarget_count} off-targets | {len(result.probe_result.on_target_hits)} on-target | {len(result.probe_result.pathogen_hits)} family hits")
                 else:
-                    print(f"   Off-targets: {result.offtarget_count}")
+                    print(f"   Off-targets: {result.offtarget_count} | {len(result.on_target_hits)} on-target | {len(result.pathogen_hits)} family hits")
 
                 if combined.is_acceptable:
                     print("\n✅ Primers are specific!")
