@@ -231,7 +231,7 @@ class OfftargetFinder:
 
         # Initialize aligner
         mode_enum = AlignmentMode(mode.lower())
-        self.aligner = PrimerAligner(mode=mode_enum)
+        self.aligner = PrimerAligner(mode=mode_enum, blast_params=self.params)
 
     def find_offtargets(
         self,

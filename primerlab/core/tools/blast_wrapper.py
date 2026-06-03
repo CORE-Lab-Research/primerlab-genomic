@@ -27,6 +27,7 @@ DEFAULT_BLAST_PARAMS = {
     "max_target_seqs": 100, # Max number of hits
     "outfmt": 6,            # Tabular output format
     "task": "blastn-short", # Optimized for short queries
+    "timeout": 300,         # Timeout in seconds
 }
 
 
@@ -187,7 +188,7 @@ class BlastWrapper:
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=search_params.get("timeout", 300)
             )
 
             if result.returncode != 0:

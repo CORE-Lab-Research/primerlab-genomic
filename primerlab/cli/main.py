@@ -971,10 +971,12 @@ def main():
             print()
 
             # Run off-target check
+            blast_params = {"timeout": args.timeout} if hasattr(args, "timeout") and args.timeout else {}
             finder = OfftargetFinder(
                 database=args.database,
                 target_id=args.target,
                 mode=args.mode,
+                params=blast_params,
                 remote=getattr(args, 'online', False)
             )
 
