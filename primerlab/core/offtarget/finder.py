@@ -98,6 +98,7 @@ class OfftargetResult:
         offtargets: List of off-target hits
         on_target_hits: List of hits matching the exact target ID
         pathogen_hits: List of hits matching the pathogen family
+        raw_hits: Complete list of all raw BLAST hits unfiltered
         specificity_score: Overall specificity score (0-100)
         warnings: List of warning messages
     """
@@ -110,6 +111,7 @@ class OfftargetResult:
     offtargets: List[OfftargetHit] = field(default_factory=list)
     on_target_hits: List[OfftargetHit] = field(default_factory=list)
     pathogen_hits: List[OfftargetHit] = field(default_factory=list)
+    raw_hits: List[OfftargetHit] = field(default_factory=list)
     specificity_score: float = 100.0
     warnings: List[str] = field(default_factory=list)
 
@@ -125,6 +127,7 @@ class OfftargetResult:
             "offtargets": [ot.to_dict() for ot in self.offtargets],
             "on_target_hits": [ot.to_dict() for ot in self.on_target_hits],
             "pathogen_hits": [ot.to_dict() for ot in self.pathogen_hits],
+            "raw_hits": [ot.to_dict() for ot in self.raw_hits],
             "specificity_score": self.specificity_score,
             "warnings": self.warnings
         }
@@ -281,6 +284,7 @@ class OfftargetFinder:
         offtargets = []
         on_target_hits = []
         pathogen_hits = []
+        raw_hits = []
         on_target_found = False
 
         for hit in blast_result.hits:
@@ -293,6 +297,7 @@ class OfftargetFinder:
                     hit.is_on_target = True
 
             ot_hit = OfftargetHit.from_blast_hit(hit)
+            raw_hits.append(ot_hit)
 
             if is_on_target:
                 on_target_hits.append(ot_hit)
@@ -337,6 +342,7 @@ class OfftargetFinder:
             offtargets=offtargets,
             on_target_hits=on_target_hits,
             pathogen_hits=pathogen_hits,
+            raw_hits=raw_hits,
             specificity_score=specificity,
             warnings=warnings
         )
