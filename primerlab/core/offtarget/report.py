@@ -4,6 +4,7 @@ Specificity Report Generator (v0.3.0)
 Generates human-readable reports for off-target analysis.
 """
 
+import csv
 from pathlib import Path
 from typing import Union
 from datetime import datetime
@@ -106,7 +107,64 @@ def generate_specificity_report(
     with open(output_path, "w") as f:
         f.write("\n".join(lines))
 
+    # Export hits to CSV for downstream keputusan
+    try:
+        _export_hits_to_csv(result, output_dir)
+    except Exception as e:
+        # Don't fail the whole report if CSV export fails
+        import sys
+        print(f"Warning: Failed to export hits to CSV: {e}", file=sys.stderr)
+
     return output_path
+
+
+def _write_csv(hits, file_path: Path):
+    """Helper to write OfftargetHit list to CSV."""
+    headers = [
+        "sequence_id", "sequence_title", "position", "strand", 
+        "identity", "mismatches", "gaps", "evalue", "is_significant", 
+        "risk_level", "coverage_percent", "three_prime_involved", "three_prime_overhang"
+    ]
+    with open(file_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(headers)
+        for h in hits:
+            writer.writerow([
+                h.sequence_id,
+                h.sequence_title or "",
+                h.position,
+                h.strand,
+                h.identity,
+                h.mismatches,
+                h.gaps,
+                h.evalue,
+                h.is_significant,
+                h.risk_level,
+                h.coverage_percent,
+                h.three_prime_involved,
+                h.three_prime_overhang
+            ])
+
+
+def _export_hits_to_csv(result: Union[OfftargetResult, PrimerPairOfftargetResult], output_dir: Path):
+    """Export all categorized hits to CSV files."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if isinstance(result, PrimerPairOfftargetResult):
+        # Forward primer
+        _write_csv(result.forward_result.offtargets, output_dir / "forward_offtargets.csv")
+        _write_csv(result.forward_result.pathogen_hits, output_dir / "forward_pathogen_hits.csv")
+        
+        # Reverse primer
+        _write_csv(result.reverse_result.offtargets, output_dir / "reverse_offtargets.csv")
+        _write_csv(result.reverse_result.pathogen_hits, output_dir / "reverse_pathogen_hits.csv")
+        
+        # Probe
+        if result.probe_result:
+            _write_csv(result.probe_result.offtargets, output_dir / "probe_offtargets.csv")
+            _write_csv(result.probe_result.pathogen_hits, output_dir / "probe_pathogen_hits.csv")
+    else:
+        _write_csv(result.offtargets, output_dir / "offtargets.csv")
+        _write_csv(result.pathogen_hits, output_dir / "pathogen_hits.csv")
 
 
 def _add_primer_section(lines: list, result: OfftargetResult):
