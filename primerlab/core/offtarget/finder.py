@@ -42,6 +42,9 @@ class OfftargetHit:
     evalue: float
     is_significant: bool = True
     risk_level: str = "medium"
+    coverage_percent: float = 0.0   # % of primer length covered by alignment
+    three_prime_involved: bool = False  # True if 3' end of primer is in this alignment
+    three_prime_overhang: int = 0   # bp at 3' end NOT covered (0 = 3' tip reached)
 
     def to_dict(self) -> Dict[str, Any]:
         """Export to dictionary for JSON serialization."""
@@ -55,19 +58,58 @@ class OfftargetHit:
             "gaps": self.gaps,
             "evalue": self.evalue,
             "is_significant": self.is_significant,
-            "risk_level": self.risk_level
+            "risk_level": self.risk_level,
+            "coverage_percent": self.coverage_percent,
+            "three_prime_involved": self.three_prime_involved,
+            "three_prime_overhang": self.three_prime_overhang,
         }
 
     @classmethod
-    def from_blast_hit(cls, hit: BlastHit) -> "OfftargetHit":
-        """Create OfftargetHit from BlastHit."""
-        # Determine risk level
-        if hit.identity_percent >= 95 and hit.mismatches <= 1:
-            risk = "high"
-        elif hit.identity_percent >= 85:
-            risk = "medium"
+    def from_blast_hit(
+        cls,
+        hit: BlastHit,
+        min_coverage: float = 30.0,
+        critical_bp: int = 8,
+    ) -> Optional["OfftargetHit"]:
+        """
+        Create OfftargetHit from BlastHit with 3'-end-aware risk classification.
+
+        Args:
+            hit: BlastHit from BLAST search.
+            min_coverage: Minimum query coverage % to consider as a real hit.
+                          Hits below this are statistical noise (default 30%).
+            critical_bp: Number of bp from the 3' tip considered critical for
+                         extension initiation (default 8 bp).
+
+        Returns:
+            OfftargetHit if hit passes noise filter, None if it should be discarded.
+        """
+        coverage = round(hit.coverage_percent, 1)
+        three_prime_ovhg = hit.three_prime_overhang
+        three_p = hit.three_prime_involved(critical_bp)
+
+        # ── Noise gate ────────────────────────────────────────────────────────
+        # Partial matches below 30% coverage cannot initiate extension — discard.
+        if coverage < min_coverage:
+            return None
+
+        # ── Risk classification (3' end is the priority axis) ─────────────────
+        #
+        # A hit is only truly dangerous when the 3' end is involved AND coverage
+        # is high, because:
+        #   • Polymerase requires 3' OH anchoring to extend.
+        #   • 5'-only mismatches are well-tolerated in PCR/RAA kinetics.
+        #
+        if coverage >= 70 and three_p and hit.identity_percent >= 90:
+            risk = "high"      # Full overlap, 3' covered, near-perfect identity
+        elif coverage >= 70 and three_p and hit.identity_percent >= 80:
+            risk = "medium"    # Good coverage, 3' covered, moderate identity
+        elif coverage >= 70 and not three_p:
+            risk = "medium"    # Good coverage but 3' end safe — medium concern
+        elif three_p and hit.identity_percent >= 90:
+            risk = "medium"    # Partial coverage but 3' end is hit — worth noting
         else:
-            risk = "low"
+            risk = "low"       # Low coverage OR 3' end not involved
 
         return cls(
             sequence_id=hit.subject_id,
@@ -79,7 +121,10 @@ class OfftargetHit:
             gaps=hit.gaps,
             evalue=hit.evalue,
             is_significant=hit.is_significant(),
-            risk_level=risk
+            risk_level=risk,
+            coverage_percent=coverage,
+            three_prime_involved=three_p,
+            three_prime_overhang=three_prime_ovhg,
         )
 
 
@@ -206,11 +251,15 @@ class OfftargetFinder:
 
     # Default parameters for off-target detection
     DEFAULT_PARAMS = {
-        "evalue_threshold": 10.0,       # E-value cutoff
-        "identity_threshold": 70.0,     # Min identity % to report
-        "max_offtargets": 50,           # Max off-targets to report
-        "significant_identity": 85.0,   # Identity for "significant" hit
-        "significant_evalue": 1e-3,     # E-value for "significant" hit
+        "evalue_threshold": 10.0,         # E-value cutoff
+        "identity_threshold": 70.0,       # Min identity % to report
+        "max_offtargets": 50,             # Max off-targets to report
+        "significant_identity": 85.0,     # Identity for "significant" hit
+        "significant_evalue": 1e-3,       # E-value for "significant" hit
+        "min_coverage_percent": 30.0,     # Coverage < this → noise, not counted
+                                          # (30% of 30bp = 9bp, can't prime at 60°C)
+        "three_prime_critical_bp": 8,     # Last N bp of primer considered critical
+                                          # for extension initiation (PCR/RAA)
     }
 
     def __init__(
@@ -286,8 +335,16 @@ class OfftargetFinder:
         pathogen_hits = []
         raw_hits = []
         on_target_found = False
+        noise_count = 0
+
+        min_coverage = self.params.get("min_coverage_percent", 30.0)
+        critical_bp = self.params.get("three_prime_critical_bp", 8)
 
         for hit in blast_result.hits:
+            # Propagate full primer length into each hit for accurate 3' analysis
+            if blast_result.query_length > 0:
+                hit.query_length = blast_result.query_length
+
             # Check if this is the on-target hit
             is_on_target = False
             if target:
@@ -296,7 +353,17 @@ class OfftargetFinder:
                     on_target_found = True
                     hit.is_on_target = True
 
-            ot_hit = OfftargetHit.from_blast_hit(hit)
+            # Build OfftargetHit (returns None if below noise threshold)
+            ot_hit = OfftargetHit.from_blast_hit(
+                hit,
+                min_coverage=min_coverage,
+                critical_bp=critical_bp,
+            )
+
+            if ot_hit is None:
+                noise_count += 1
+                continue  # Statistical noise — too short to prime
+
             raw_hits.append(ot_hit)
 
             if is_on_target:
@@ -327,6 +394,11 @@ class OfftargetFinder:
         warnings = []
         if not on_target_found and target:
             warnings.append(f"Expected target '{target}' not found in database")
+        if noise_count > 0:
+            warnings.append(
+                f"{noise_count} partial-match hit(s) discarded as statistical noise "
+                f"(coverage < {min_coverage:.0f}% — too short for primer extension)"
+            )
         if significant > 5:
             warnings.append(f"High off-target risk: {significant} significant off-targets")
         elif significant > 0:

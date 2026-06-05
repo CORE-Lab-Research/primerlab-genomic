@@ -112,6 +112,8 @@ def generate_specificity_report(
 def _add_primer_section(lines: list, result: OfftargetResult):
     """Add primer-specific section to report."""
     lines.append(f"**Sequence:** `{result.primer_seq}`")
+    primer_len = len(result.primer_seq)
+    lines.append(f"**Length:** {primer_len} bp")
     lines.append("")
 
     if result.target_id:
@@ -119,57 +121,107 @@ def _add_primer_section(lines: list, result: OfftargetResult):
         lines.append(f"**On-target found:** {'✅ Yes' if result.on_target_found else '❌ No'}")
         lines.append("")
 
-    lines.append(f"| Metric | Value |")
+    lines.append("| Metric | Value |")
     lines.append("|--------|-------|")
-    lines.append(f"| Off-targets | {result.offtarget_count} |")
+    lines.append(f"| Off-targets (genuine) | {result.offtarget_count} |")
     lines.append(f"| Significant | {result.significant_offtargets} |")
     lines.append(f"| Score | {result.specificity_score:.1f} |")
+    lines.append("")
+
+    # ── 3' End Analysis block ─────────────────────────────────────────────────
+    genuine_dangerous = [h for h in result.offtargets if h.three_prime_involved]
+    safe_5prime_only = [h for h in result.offtargets if not h.three_prime_involved]
+
+    lines.append("### 🔬 3' End Analysis")
+    lines.append("")
+    lines.append("| Metric | Value |")
+    lines.append("|--------|-------|")
+    lines.append(f"| Off-targets covering 3' end ⚠️ | {len(genuine_dangerous)} |")
+    lines.append(f"| Off-targets (5' only, low extension risk) | {len(safe_5prime_only)} |")
+    lines.append(f"| 3' critical region threshold | last 8 bp of primer |")
+    lines.append(f"| Coverage noise gate | < 30% of primer length |")
+    if genuine_dangerous:
+        min_ovhg = min(h.three_prime_overhang for h in genuine_dangerous)
+        lines.append(f"| Min 3' overhang in dangerous hits | {min_ovhg} bp |")
+    lines.append("")
+
+    # Interpretive summary
+    if len(genuine_dangerous) == 0 and result.offtarget_count == 0:
+        lines.append("> ✅ **No genuine off-target concern.** No hit covers the 3' end of this primer.")
+    elif len(genuine_dangerous) == 0 and result.offtarget_count > 0:
+        lines.append(
+            f"> ℹ️ **Low real-world risk.** {result.offtarget_count} hit(s) found but none reach "
+            f"the 3' end. Polymerase cannot anchor without 3' OH — extension unlikely."
+        )
+    else:
+        lines.append(
+            f"> ⚠️ **{len(genuine_dangerous)} hit(s) cover the 3' end — review carefully.** "
+            f"These hits may support off-target extension."
+        )
     lines.append("")
 
     # On-target hits
     if hasattr(result, "on_target_hits") and result.on_target_hits:
         lines.append("### On-target Reference Hits")
         lines.append("")
-        lines.append("| Accession ID | Description / Species | Position | Identity | E-value |")
-        lines.append("|--------------|-----------------------|----------|----------|---------|")
+        lines.append("| Accession ID | Description / Species | Position | Coverage | Identity | E-value |")
+        lines.append("|--------------|-----------------------|----------|----------|----------|---------|")
         for ot in result.on_target_hits[:5]:
-            title = ot.sequence_title if ot.sequence_title else "Target Reference"
-            if len(title) > 40:
-                title = title[:37] + "..."
-            lines.append(f"| {ot.sequence_id} | {title} | {ot.position} | {ot.identity:.1f}% | {ot.evalue:.2e} |")
+            title = (ot.sequence_title or "Target Reference")[:37] + ("..." if len(ot.sequence_title or "") > 40 else "")
+            lines.append(f"| {ot.sequence_id} | {title} | {ot.position} | {ot.coverage_percent:.1f}% | {ot.identity:.1f}% | {ot.evalue:.2e} |")
         lines.append("")
 
-    # Pathogen family hits (On-target variants / strains)
+    # Pathogen family hits
     if hasattr(result, "pathogen_hits") and result.pathogen_hits:
         lines.append("### Target Pathogen Family Hits (Universal Strains)")
         lines.append("")
-        lines.append("| Accession ID | Description / Species | Position | Identity | E-value |")
-        lines.append("|--------------|-----------------------|----------|----------|---------|")
+        lines.append("| Accession ID | Description / Species | Position | Coverage | Identity | E-value |")
+        lines.append("|--------------|-----------------------|----------|----------|----------|---------|")
         for ot in result.pathogen_hits[:10]:
-            title = ot.sequence_title if ot.sequence_title else "Target Strains"
-            if len(title) > 40:
-                title = title[:37] + "..."
-            lines.append(f"| {ot.sequence_id} | {title} | {ot.position} | {ot.identity:.1f}% | {ot.evalue:.2e} |")
+            title = (ot.sequence_title or "Target Strains")[:37] + ("..." if len(ot.sequence_title or "") > 40 else "")
+            lines.append(f"| {ot.sequence_id} | {title} | {ot.position} | {ot.coverage_percent:.1f}% | {ot.identity:.1f}% | {ot.evalue:.2e} |")
         if len(result.pathogen_hits) > 10:
-            lines.append(f"| ... | *{len(result.pathogen_hits) - 10} more* | | | |")
+            lines.append(f"| ... | *{len(result.pathogen_hits) - 10} more* | | | | |")
         lines.append("")
 
-    # Off-target details
-    if result.offtargets:
-        lines.append("### Off-target Sites")
+    # Off-target genuine concern (3' involved)
+    if genuine_dangerous:
+        lines.append("### ⚠️ Off-target Sites — 3' End Involved (Genuine Concern)")
         lines.append("")
-        lines.append("| Sequence ID | Description / Species | Position | Identity | Risk |")
-        lines.append("|-------------|-----------------------|----------|----------|------|")
-
-        for ot in result.offtargets[:10]:  # Limit to 10
-            risk_icon = "🔴" if ot.risk_level == "high" else "🟡" if ot.risk_level == "medium" else "🟢"
-            # Get clean title/species name
-            title = ot.sequence_title if ot.sequence_title else "Unknown Species"
-            if len(title) > 40:
-                title = title[:37] + "..."
-            lines.append(f"| {ot.sequence_id} | {title} | {ot.position} | {ot.identity:.1f}% | {risk_icon} {ot.risk_level} |")
-
-        if len(result.offtargets) > 10:
-            lines.append(f"| ... | *{len(result.offtargets) - 10} more* | | |")
-
+        lines.append("| Sequence ID | Description / Species | Coverage | Identity | 3' Overhang | Risk |")
+        lines.append("|-------------|-----------------------|----------|----------|-------------|------|")
+        for ot in genuine_dangerous[:10]:
+            risk_icon = "🔴" if ot.risk_level == "high" else "🟡"
+            title = (ot.sequence_title or "Unknown")[:37] + ("..." if len(ot.sequence_title or "") > 40 else "")
+            lines.append(
+                f"| {ot.sequence_id} | {title} | {ot.coverage_percent:.1f}% | "
+                f"{ot.identity:.1f}% | {ot.three_prime_overhang} bp | {risk_icon} {ot.risk_level} |"
+            )
+        if len(genuine_dangerous) > 10:
+            lines.append(f"| ... | *{len(genuine_dangerous) - 10} more* | | | | |")
         lines.append("")
+
+    # Off-target 5'-only (low real-world risk)
+    if safe_5prime_only:
+        lines.append("### ℹ️ Off-target Sites — 5' Only (Low Extension Risk)")
+        lines.append("")
+        lines.append(
+            "> These hits match the **5' portion of the primer only**. "
+            "The 3' end is free — polymerase cannot anchor and extend from these sites under "
+            "standard PCR/RAA conditions."
+        )
+        lines.append("")
+        lines.append("| Sequence ID | Description / Species | Coverage | Identity | 3' Overhang | Risk |")
+        lines.append("|-------------|-----------------------|----------|----------|-------------|------|")
+        for ot in safe_5prime_only[:10]:
+            risk_icon = "🟡" if ot.risk_level == "medium" else "🟢"
+            title = (ot.sequence_title or "Unknown")[:37] + ("..." if len(ot.sequence_title or "") > 40 else "")
+            lines.append(
+                f"| {ot.sequence_id} | {title} | {ot.coverage_percent:.1f}% | "
+                f"{ot.identity:.1f}% | {ot.three_prime_overhang} bp | {risk_icon} {ot.risk_level} |"
+            )
+        if len(safe_5prime_only) > 10:
+            lines.append(f"| ... | *{len(safe_5prime_only) - 10} more* | | | | |")
+        lines.append("")
+
+

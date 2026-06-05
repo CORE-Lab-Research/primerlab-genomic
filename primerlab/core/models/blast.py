@@ -53,12 +53,43 @@ class BlastHit:
     query_seq: str = ""
     subject_seq: str = ""
     is_on_target: bool = False
+    query_length: int = 0  # Full length of the query primer (set after parsing)
 
     @property
     def coverage_percent(self) -> float:
-        """Calculate query coverage percentage."""
-        query_len = self.query_end - self.query_start + 1
-        return (self.alignment_length / query_len) * 100 if query_len > 0 else 0.0
+        """
+        Calculate query coverage percentage.
+
+        Uses query_length (full primer length) if available for accurate coverage.
+        Falls back to alignment span (query_end - query_start + 1) otherwise.
+        """
+        denom = self.query_length if self.query_length > 0 else (self.query_end - self.query_start + 1)
+        return (self.alignment_length / denom) * 100 if denom > 0 else 0.0
+
+    @property
+    def three_prime_overhang(self) -> int:
+        """
+        Number of bases at the primer 3' end NOT covered by this alignment.
+
+        0 means the alignment extends to the very 3' tip of the primer.
+        A large value means only the 5' region matched — extension is unlikely.
+        """
+        if self.query_length <= 0:
+            return 0
+        return max(0, self.query_length - self.query_end)
+
+    def three_prime_involved(self, critical_bp: int = 8) -> bool:
+        """
+        True if the 3' end of the primer is covered by this alignment.
+
+        Args:
+            critical_bp: Number of bases from the 3' tip considered critical.
+                         Default 8 bp (scientifically defensible minimum for extension).
+
+        Returns:
+            True if three_prime_overhang <= critical_bp
+        """
+        return self.three_prime_overhang <= critical_bp
 
     def is_significant(self, evalue_threshold: float = 1e-5, identity_threshold: float = 80.0) -> bool:
         """Check if hit is significant based on e-value and identity."""

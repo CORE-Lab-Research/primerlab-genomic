@@ -78,6 +78,10 @@ class SpecificityScorer:
         "low": 3.0,
     }
 
+    # Modifier when 3' end of primer is NOT involved in the off-target alignment.
+    # Extension cannot start without 3' anchoring — reduce penalty significantly.
+    THREE_PRIME_SAFE_MODIFIER = 0.3  # 70% reduction if 3' end is safe
+
     def __init__(self, threshold: float = 70.0):
         """
         Initialize scorer.
@@ -194,31 +198,41 @@ class SpecificityScorer:
 
         penalty = 0.0
         for ot in offtargets:
-            penalty += self.PENALTIES.get(ot.risk_level, 5.0)
+            base = self.PENALTIES.get(ot.risk_level, 5.0)
+            # If 3' end is NOT involved, extension is unlikely — reduce penalty
+            modifier = 1.0 if ot.three_prime_involved else self.THREE_PRIME_SAFE_MODIFIER
+            penalty += base * modifier
 
         return max(0.0, 100.0 - penalty)
 
     def _calculate_mismatch_score(self, offtargets: List[OfftargetHit]) -> float:
         """
         Calculate score based on 3' mismatch patterns.
-        
-        Off-targets with mismatches at 3' end are less likely to extend.
+
+        Off-targets with the 3' end NOT involved are penalised much less —
+        a mismatch at the 3' tip blocks extension regardless of identity.
+        Off-targets where the 3' end IS involved AND mismatches == 0 are
+        the most dangerous (perfect 3'-anchored priming).
         """
         if not offtargets:
             return 100.0
 
-        # Penalize more for off-targets with few mismatches
-        # (meaning they could still extend)
         penalty = 0.0
         for ot in offtargets:
-            if ot.mismatches == 0:
-                penalty += 15.0  # Perfect match = high risk
-            elif ot.mismatches == 1:
-                penalty += 8.0
-            elif ot.mismatches == 2:
-                penalty += 4.0
-            else:
+            if not ot.three_prime_involved:
+                # 3' end not in alignment — minimal mismatch concern
                 penalty += 1.0
+                continue
+
+            # 3' end IS involved — apply full penalty based on mismatch count
+            if ot.mismatches == 0:
+                penalty += 20.0   # Perfect 3' match = maximum extension risk
+            elif ot.mismatches == 1:
+                penalty += 10.0
+            elif ot.mismatches == 2:
+                penalty += 5.0
+            else:
+                penalty += 2.0
 
         return max(0.0, 100.0 - penalty)
 

@@ -28,6 +28,9 @@ DEFAULT_BLAST_PARAMS = {
     "outfmt": 6,            # Tabular output format
     "task": "blastn-short", # Optimized for short queries
     "timeout": 300,         # Timeout in seconds
+    "qcov_hsp_perc": 60,    # Min query coverage % — hits < 60% are statistical noise
+                            # (60% of ~30 bp primer = 18 bp minimum alignment, below Tm
+                            # threshold for stable extension at PCR/RAA temperatures)
 }
 
 
@@ -178,7 +181,8 @@ class BlastWrapper:
                 "-dust", search_params["dust"],
                 "-max_target_seqs", str(search_params["max_target_seqs"]),
                 "-outfmt", "6 sseqid stitle qstart qend sstart send pident length mismatch gaps evalue bitscore qseq sseq",
-                "-task", search_params["task"]
+                "-task", search_params["task"],
+                "-qcov_hsp_perc", str(search_params.get("qcov_hsp_perc", 60)),
             ])
 
             logger.debug(f"Running: {' '.join(cmd)}")
