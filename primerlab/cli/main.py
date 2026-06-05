@@ -1010,22 +1010,26 @@ def main():
 
             # Result dict
             if hasattr(result, 'forward_result'):
-                result_dict = {
+                result_dict = result.to_dict()
+                result_dict.update({
                     "forward": {
+                        "primer_seq": result.forward_result.primer_seq,
                         "offtargets": result.forward_result.offtarget_count,
                         "ontargets": len(result.forward_result.on_target_hits),
                         "pathogen_family_hits": len(result.forward_result.pathogen_hits),
                         "score": result.forward_result.specificity_score
                     },
                     "reverse": {
+                        "primer_seq": result.reverse_result.primer_seq,
                         "offtargets": result.reverse_result.offtarget_count,
                         "ontargets": len(result.reverse_result.on_target_hits),
                         "pathogen_family_hits": len(result.reverse_result.pathogen_hits),
                         "score": result.reverse_result.specificity_score
                     }
-                }
+                })
                 if result.probe_result:
                     result_dict["probe"] = {
+                        "primer_seq": result.probe_result.primer_seq,
                         "offtargets": result.probe_result.offtarget_count,
                         "ontargets": len(result.probe_result.on_target_hits),
                         "pathogen_family_hits": len(result.probe_result.pathogen_hits),
@@ -1038,6 +1042,7 @@ def main():
                 })
             else:
                 result_dict = {
+                    "primer_seq": result.primer_seq,
                     "offtargets": result.offtarget_count,
                     "ontargets": len(result.on_target_hits),
                     "pathogen_family_hits": len(result.pathogen_hits),
