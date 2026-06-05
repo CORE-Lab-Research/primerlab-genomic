@@ -95,21 +95,23 @@ class OfftargetHit:
 
         # ── Risk classification (3' end is the priority axis) ─────────────────
         #
-        # A hit is only truly dangerous when the 3' end is involved AND coverage
-        # is high, because:
-        #   • Polymerase requires 3' OH anchoring to extend.
-        #   • 5'-only mismatches are well-tolerated in PCR/RAA kinetics.
+        # A hit is only truly dangerous when the 3' end is anchored (overhang < 3 bp)
+        # AND coverage is high, because:
+        #   • Polymerase requires 3' OH anchoring (no more than 2 mismatches at the tip) to extend.
+        #   • 3' overhang >= 3 bp blocks extension, rendering the hit low risk.
         #
-        if coverage >= 70 and three_p and hit.identity_percent >= 90:
-            risk = "high"      # Full overlap, 3' covered, near-perfect identity
-        elif coverage >= 70 and three_p and hit.identity_percent >= 80:
-            risk = "medium"    # Good coverage, 3' covered, moderate identity
-        elif coverage >= 70 and not three_p:
-            risk = "medium"    # Good coverage but 3' end safe — medium concern
-        elif three_p and hit.identity_percent >= 90:
-            risk = "medium"    # Partial coverage but 3' end is hit — worth noting
+        is_anchored = (three_prime_ovhg < 3)
+
+        if coverage >= 70 and is_anchored and hit.identity_percent >= 90:
+            risk = "high"      # Full overlap, 3' anchored, near-perfect identity
+        elif coverage >= 70 and is_anchored and hit.identity_percent >= 80:
+            risk = "medium"    # Good coverage, 3' anchored, moderate identity
+        elif coverage >= 70 and not is_anchored:
+            risk = "low"       # Good coverage but 3' end not anchored — very safe
+        elif is_anchored and hit.identity_percent >= 90:
+            risk = "medium"    # Partial coverage but 3' end is anchored — worth noting
         else:
-            risk = "low"       # Low coverage OR 3' end not involved
+            risk = "low"       # Low coverage OR 3' end not anchored
 
         return cls(
             sequence_id=hit.subject_id,

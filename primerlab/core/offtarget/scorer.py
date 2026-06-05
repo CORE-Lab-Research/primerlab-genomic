@@ -209,9 +209,9 @@ class SpecificityScorer:
         """
         Calculate score based on 3' mismatch patterns.
 
-        Off-targets with the 3' end NOT involved are penalised much less —
+        Off-targets with the 3' end NOT anchored (overhang >= 3 bp) are penalised much less —
         a mismatch at the 3' tip blocks extension regardless of identity.
-        Off-targets where the 3' end IS involved AND mismatches == 0 are
+        Off-targets where the 3' end IS anchored (overhang < 3 bp) and mismatches == 0 are
         the most dangerous (perfect 3'-anchored priming).
         """
         if not offtargets:
@@ -219,18 +219,23 @@ class SpecificityScorer:
 
         penalty = 0.0
         for ot in offtargets:
-            if not ot.three_prime_involved:
-                # 3' end not in alignment — minimal mismatch concern
+            if ot.three_prime_overhang >= 3:
+                # 3' end not anchored (>= 3 bp overhang) — minimal concern
                 penalty += 1.0
                 continue
 
-            # 3' end IS involved — apply full penalty based on mismatch count
-            if ot.mismatches == 0:
-                penalty += 20.0   # Perfect 3' match = maximum extension risk
-            elif ot.mismatches == 1:
-                penalty += 10.0
-            elif ot.mismatches == 2:
-                penalty += 5.0
+            # 3' end IS anchored (< 3 bp overhang) — apply penalty based on tip pairing
+            if ot.three_prime_overhang == 0:
+                if ot.mismatches == 0:
+                    penalty += 20.0   # Perfect 3' match = maximum extension risk
+                elif ot.mismatches == 1:
+                    penalty += 10.0
+                else:
+                    penalty += 5.0
+            elif ot.three_prime_overhang == 1:
+                penalty += 10.0       # 1 bp mismatch at the very tip
+            elif ot.three_prime_overhang == 2:
+                penalty += 5.0        # 2 bp mismatch at the very tip
             else:
                 penalty += 2.0
 
