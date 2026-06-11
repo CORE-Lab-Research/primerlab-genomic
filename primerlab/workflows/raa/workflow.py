@@ -69,49 +69,6 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
 
     windows = []
     slice_start = 0  # Global offset; updated if Smart Slicing is active
-    params = config.get("parameters", {})
-    target = params.get("target_region")
-
-    # Explicit window_size from user → opt-in windowing mode
-    user_window_size = config.get("advanced", {}).get("window_size")
-    
-    if target:
-        # Smart Slicing: Crop sequence around the target to speed up Primer3
-        t_start = target.get("start", 0)
-        t_len = target.get("length", 150)
-        
-        buffer = 300  # Sufficient for flanking primers
-        slice_start = max(0, t_start - buffer)
-        slice_end = min(input_len, t_start + t_len + buffer)
-        
-        logger.info(f"Target detected. Slicing sequence: {slice_start}-{slice_end} (Buffer: {buffer}bp)")
-        sequence = sequence[slice_start:slice_end]
-        
-        # Translate target to relative coordinates for the slice
-        params["target_region"]["start"] = t_start - slice_start
-        
-        # Single window for the slice
-        windows = [(0, len(sequence))]
-
-    elif user_window_size is not None:
-        # User explicitly requested windowed search
-        window_size = int(user_window_size)
-        overlap = config.get("advanced", {}).get("overlap", 200)
-        logger.info(f"Windowed search enabled (window={window_size}bp, overlap={overlap}bp)")
-
-        # Auto-balance overlap if needed
-        if temp_max > 1 and config.get("advanced", {}).get("overlap") is None:
-            step = max(1, (input_len - window_size) // (temp_max - 1))
-            overlap = max(150, window_size - step)
-
-        for i in range(0, input_len - window_size + 1, window_size - overlap):
-            start = i
-            end = min(i + window_size, input_len)
-            windows.append((start, end))
-            if end == input_len: break
-            
-        if windows and windows[-1][1] < input_len:
-            windows.append((input_len - window_size, input_len))
 
     # 2. Run Search
     params = config.get("parameters", {})
@@ -146,6 +103,25 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         logger.info(f"Target detected. Slicing: {slice_start}-{slice_end}")
         sequence = sequence[slice_start:slice_end]
         params["target_region"]["start"] = t_start - slice_start
+
+        # Translate excluded_regions to be relative to the sliced sequence
+        excluded_regions = params.get("excluded_regions", [])
+        translated_excluded = []
+        for r in excluded_regions:
+            if isinstance(r, dict):
+                r_start = r.get("start", 0)
+                r_len = r.get("length", 0)
+            else:
+                r_start, r_len = r[0], r[1]
+            overlap_start = max(slice_start, r_start)
+            overlap_end = min(slice_end, r_start + r_len)
+            if overlap_end > overlap_start:
+                translated_excluded.append({
+                    "start": overlap_start - slice_start,
+                    "length": overlap_end - overlap_start
+                })
+        params["excluded_regions"] = translated_excluded
+
         windows = [(0, len(sequence))]
     elif user_window_size:
         window_size = int(user_window_size)
