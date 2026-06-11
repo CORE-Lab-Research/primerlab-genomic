@@ -632,6 +632,22 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             except Exception as e:
                 logger.error(f"Targeted BLAST coverage check failed: {e}")
 
+    # Translate coordinates back to original sequence space if Smart Slicing was active
+    if slice_start > 0:
+        logger.info(f"Translating coordinates back to original sequence space (offset: +{slice_start} bp)")
+        for res in evaluated_results:
+            # Primers (forward, reverse, probe)
+            for key in ["forward", "reverse", "probe"]:
+                p = res["primers"].get(key)
+                if p:
+                    p.start += slice_start
+                    p.end += slice_start
+            # Amplicon
+            amp = res.get("amplicon")
+            if amp:
+                amp.start += slice_start
+                amp.end += slice_start
+
     # 6. Select Top Result and prepare Output
     if evaluated_results:
         top_res = evaluated_results[0]

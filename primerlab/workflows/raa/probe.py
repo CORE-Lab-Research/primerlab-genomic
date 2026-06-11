@@ -265,8 +265,8 @@ def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any], ab
                 tm=raw_results.get(f'PRIMER_INTERNAL_{i}_TM'),
                 gc=raw_results.get(f'PRIMER_INTERNAL_{i}_GC_PERCENT'),
                 length=probe_len,
-                start=probe_start,
-                end=probe_start + probe_len - 1,
+                start=probe_start + abs_offset,
+                end=probe_start + abs_offset + probe_len - 1,
                 hairpin_dg=raw_results.get(f'PRIMER_INTERNAL_{i}_HAIRPIN_TH', 0.0) / 1000.0,
                 homodimer_dg=raw_results.get(f'PRIMER_INTERNAL_{i}_HOMODIMER_TH', 0.0) / 1000.0,
                 end_stability_dg=raw_results.get(f'PRIMER_INTERNAL_{i}_END_STABILITY', 0.0) / 1000.0
