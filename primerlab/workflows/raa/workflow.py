@@ -94,35 +94,47 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     # Windowing Logic (Opt-in)
     user_window_size = config.get("advanced", {}).get("window_size")
     windows = []
+
+    # Smart Slicing is optional. It is bypassed if explicitly disabled in config,
+    # or if the input sequence is relatively short (e.g., < 2500 bp) where slicing
+    # provides no performance benefit.
+    disable_slicing = config.get("advanced", {}).get("disable_smart_slicing", False)
+    if input_len < 2500:
+        disable_slicing = True
+
     if target:
-        t_start = target.get("start", 0)
-        t_len = target.get("length", 150)
-        buffer = 300
-        slice_start = max(0, t_start - buffer)
-        slice_end = min(input_len, t_start + t_len + buffer)
-        logger.info(f"Target detected. Slicing: {slice_start}-{slice_end}")
-        sequence = sequence[slice_start:slice_end]
-        params["target_region"]["start"] = t_start - slice_start
+        if disable_slicing:
+            logger.info("Target detected. Smart Slicing is bypassed (sequence is short or disabled in config). Using full sequence.")
+            windows = [(0, len(sequence))]
+        else:
+            t_start = target.get("start", 0)
+            t_len = target.get("length", 150)
+            buffer = 300
+            slice_start = max(0, t_start - buffer)
+            slice_end = min(input_len, t_start + t_len + buffer)
+            logger.info(f"Target detected. Slicing: {slice_start}-{slice_end}")
+            sequence = sequence[slice_start:slice_end]
+            params["target_region"]["start"] = t_start - slice_start
 
-        # Translate excluded_regions to be relative to the sliced sequence
-        excluded_regions = params.get("excluded_regions", [])
-        translated_excluded = []
-        for r in excluded_regions:
-            if isinstance(r, dict):
-                r_start = r.get("start", 0)
-                r_len = r.get("length", 0)
-            else:
-                r_start, r_len = r[0], r[1]
-            overlap_start = max(slice_start, r_start)
-            overlap_end = min(slice_end, r_start + r_len)
-            if overlap_end > overlap_start:
-                translated_excluded.append({
-                    "start": overlap_start - slice_start,
-                    "length": overlap_end - overlap_start
-                })
-        params["excluded_regions"] = translated_excluded
+            # Translate excluded_regions to be relative to the sliced sequence
+            excluded_regions = params.get("excluded_regions", [])
+            translated_excluded = []
+            for r in excluded_regions:
+                if isinstance(r, dict):
+                    r_start = r.get("start", 0)
+                    r_len = r.get("length", 0)
+                else:
+                    r_start, r_len = r[0], r[1]
+                overlap_start = max(slice_start, r_start)
+                overlap_end = min(slice_end, r_start + r_len)
+                if overlap_end > overlap_start:
+                    translated_excluded.append({
+                        "start": overlap_start - slice_start,
+                        "length": overlap_end - overlap_start
+                    })
+            params["excluded_regions"] = translated_excluded
 
-        windows = [(0, len(sequence))]
+            windows = [(0, len(sequence))]
     elif user_window_size:
         window_size = int(user_window_size)
         overlap = config.get("advanced", {}).get("overlap", 200)
