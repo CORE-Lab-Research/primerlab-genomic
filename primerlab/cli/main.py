@@ -3229,18 +3229,18 @@ qc:
             
             # Print minimal summary
             print("\n" + "="*50)
-            print(f"🚀 RAA DESIGN COMPLETE (v{__version__})")
+            print(f"RAA DESIGN COMPLETE (v{__version__})")
             print("="*50)
             
             alternatives = result.alternatives or []
-            print(f"🔍 Candidates Found: {len(alternatives)}")
+            print(f"Candidates Found: {len(alternatives)}")
             
             if result.primers:
                 fwd = result.primers.get("forward")
                 rev = result.primers.get("reverse")
                 prb = result.primers.get("probe")
                 
-                print(f"\n🏆 BEST CANDIDATE (Score: {result.score:.2f})")
+                print(f"\nBEST CANDIDATE (Score: {result.score:.2f})")
                 print(f"FWD: {fwd.sequence} (Tm: {fwd.tm:.1f}C)")
                 print(f"REV: {rev.sequence} (Tm: {rev.tm:.1f}C)")
                 if prb:
@@ -3258,18 +3258,18 @@ qc:
 
                 if hasattr(result, "insilico_validation") and result.insilico_validation:
                     val = result.insilico_validation
-                    print(f"\n🔬 IN-SILICO VALIDATION: {'PASS' if val.get('success') else 'FAIL'}")
+                    print(f"\nIN-SILICO VALIDATION: {'PASS' if val.get('success') else 'FAIL'}")
                     print(f"Products Found: {val.get('products_count')}")
                     if val.get('warnings'):
                         for w in val['warnings']:
-                            print(f"  ⚠ {w}")
+                            print(f"  [WARNING] {w}")
                     if val.get("probe_binding"):
                         pb = val["probe_binding"]
                         print(f"Probe Binding: Tm={pb.get('tm')}C, Grade={pb.get('grade')}, Quality={pb.get('quality_score')}/100")
                 
                 # Top 5 Table
                 if len(alternatives) > 1:
-                    print("\n📊 TOP CANDIDATES SUMMARY (Ranked by Primer3 Penalty, lower = better):")
+                    print("\nTOP CANDIDATES SUMMARY (Ranked by Primer3 Penalty, lower = better):")
                     print(f"{'Rank':<5} {'P3 Penalty':<12} {'dG (Dim)':<12} {'Tm (F/R)':<14} {'Probe':<6} {'Size':<6} {'Deviations'}")
                     print("-" * 75)
                     for i, alt in enumerate(alternatives[:5]):
@@ -3293,7 +3293,7 @@ qc:
 
                         prb_found = "Yes" if "probe" in primers else "No"
                         sz = alt.get("amplicon", {}).get("length", 0)
-                        flag_str = f"{warnings_count} deviation(s)" if warnings_count > 0 else "✅ Perfect Match"
+                        flag_str = f"{warnings_count} deviation(s)" if warnings_count > 0 else "Perfect Match"
 
                         print(f"{rank:<5} {p3:<12.3f} {dg:<12.2f} {tm_f:>5.1f}/{tm_r:<6.1f} {prb_found:<6} {sz:<6} {flag_str}")
                 
@@ -3399,28 +3399,28 @@ qc:
                         writer.writeheader()
                         writer.writerows(ranking_data)
 
-                print(f"\n📂 Project results saved to: {out_dir}")
-                print(f"   ├─ summary.json")
-                print(f"   ├─ metadata.json")
-                print(f"   ├─ best_primers.json")
-                print(f"   ├─ amplicons.json")
-                print(f"   ├─ alternatives.json")
-                print(f"   ├─ qc_metrics.json")
+                print(f"\nProject results saved to: {out_dir}")
+                print(f"   |-- summary.json")
+                print(f"   |-- metadata.json")
+                print(f"   |-- best_primers.json")
+                print(f"   |-- amplicons.json")
+                print(f"   |-- alternatives.json")
+                print(f"   |-- qc_metrics.json")
                 if os.path.exists(os.path.join(out_dir, "primers.csv")):
-                    print(f"   ├─ primers.csv")
+                    print(f"   |-- primers.csv")
                 if os.path.exists(os.path.join(out_dir, "order_idt.csv")):
-                    print(f"   ├─ order_idt.csv")
+                    print(f"   |-- order_idt.csv")
                 if os.path.exists(os.path.join(out_dir, "report.md")):
-                    print(f"   ├─ report.md")
+                    print(f"   |-- report.md")
                 if hasattr(result, "insilico_validation") and result.insilico_validation:
-                    print(f"   ├─ insilico_validation.json")
+                    print(f"   |-- insilico_validation.json")
                 if ranking_data:
-                    print(f"   └─ ranking_details.csv (Transparency Log)")
+                    print(f"   +-- ranking_details.csv (Transparency Log)")
             else:
-                print("\n❌ No valid primer/probe candidates found.")
+                print("\nNo valid primer/probe candidates found.")
             sys.exit(0)
         except Exception as e:
-            print(f"❌ Error running RAA workflow: {e}")
+            print(f"Error running RAA workflow: {e}")
             sys.exit(1)
 
 if __name__ == "__main__":
