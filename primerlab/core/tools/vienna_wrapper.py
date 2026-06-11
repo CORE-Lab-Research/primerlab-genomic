@@ -55,7 +55,7 @@ class ViennaWrapper:
         # but standard RNAfold uses RNA parameters. For relative stability it's often acceptable,
         # or we can add a parameter to load DNA params if available.
 
-        cmd = [self.rnafold_path, "--noPS", f"-T {temp}"]
+        cmd = [self.rnafold_path, "--noPS", "-T", f"{temp}"]
 
         try:
             process = subprocess.Popen(
@@ -106,7 +106,7 @@ class ViennaWrapper:
             return {"mfe": 0.0, "structure": "", "error": "RNAcofold not found"}
 
         input_seq = f"{seq1}&{seq2}"
-        cmd = [self.rnacofold_path, "--noPS", f"-T {temp}"]
+        cmd = [self.rnacofold_path, "--noPS", "-T", f"{temp}"]
 
         try:
             process = subprocess.Popen(
