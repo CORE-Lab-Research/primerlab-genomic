@@ -1,0 +1,44 @@
+Bootstrap: docker
+From: python:3.12-slim-bookworm
+
+%labels
+    Maintainer Engki Nandatama <engkinandatama@outlook.com>
+    Description PrimerLab Genomic - Automated Primer and Probe Design (Singularity/Apptainer Container)
+    Version 1.2.0
+
+%setup
+    # Copy the workspace files into the container build context
+    mkdir -p ${SINGULARITY_ROOTFS}/src
+    cp -r ${SINGULARITY_BUILD_CONTEXT}/primerlab ${SINGULARITY_ROOTFS}/src/
+    cp ${SINGULARITY_BUILD_CONTEXT}/pyproject.toml ${SINGULARITY_ROOTFS}/src/
+    cp ${SINGULARITY_BUILD_CONTEXT}/README.md ${SINGULARITY_ROOTFS}/src/
+
+%post
+    apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        ncbi-blast+ \
+        wget \
+        && rm -rf /var/lib/apt/lists/*
+
+    # Install Python dependencies and the package
+    cd /src
+    pip install --no-cache-dir . viennarna
+    
+    # Clean up build artifacts
+    rm -rf /src
+
+%environment
+    export PYTHONUNBUFFERED=1
+    export PRIMERLAB_HOME=/app
+
+%runscript
+    exec primerlab "$@"
+
+%help
+    PrimerLab Genomic - Automated Primer and Probe Design Container.
+    
+    To run PCR design:
+        singularity run primerlab.sif run pcr --config config.yaml
+    
+    To run RAA design:
+        singularity run primerlab.sif raa -sp sequence.fasta -o output_dir --validate
