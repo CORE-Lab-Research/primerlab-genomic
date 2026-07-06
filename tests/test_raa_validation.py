@@ -85,10 +85,11 @@ def test_cli_raa_validate(gapdh_sequence, tmp_path):
     assert "IN-SILICO VALIDATION" in result.stdout
     
     # Check that output files exist
-    assert (out_dir / "summary.json").exists()
-    assert (out_dir / "insilico_validation.json").exists()
+    project_dir = out_dir / "primerlab_project"
+    assert (project_dir / "summary.json").exists()
+    assert (project_dir / "insilico_validation.json").exists()
     
-    with open(out_dir / "summary.json") as f:
+    with open(project_dir / "summary.json") as f:
         summary = json.load(f)
     assert "insilico_validation" in summary
 

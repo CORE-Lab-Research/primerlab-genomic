@@ -113,13 +113,18 @@ def test_two_stage_ranking_logic():
          mock_p3_class.return_value = mock_p3_inst
          
          # Mock parse_primer3_output
-         mock_candidates = [
-             {"forward": fwd_a, "reverse": rev_a},
-             {"forward": fwd_b, "reverse": rev_b},
-             {"forward": fwd_c, "reverse": rev_c},
-             {"forward": fwd_d, "reverse": rev_d},
-         ]
-         with patch("primerlab.workflows.raa.workflow.parse_primer3_output", return_value=mock_candidates):
+         def mock_parse_p3(mini_res, *args, **kwargs):
+             fwd_seq = mini_res.get("PRIMER_LEFT_0_SEQUENCE")
+             if fwd_seq == "A"*30:
+                 return [{"forward": fwd_a, "reverse": rev_a}]
+             elif fwd_seq == "G"*30:
+                 return [{"forward": fwd_b, "reverse": rev_b}]
+             elif fwd_seq == "AT"*15:
+                 return [{"forward": fwd_c, "reverse": rev_c}]
+             elif fwd_seq == "TA"*15:
+                 return [{"forward": fwd_d, "reverse": rev_d}]
+             return []
+         with patch("primerlab.workflows.raa.workflow.parse_primer3_output", side_effect=mock_parse_p3):
              
              # Mock RAAQC instance methods
              mock_qc_inst = MagicMock()
@@ -141,7 +146,7 @@ def test_two_stage_ranking_logic():
              def mock_evaluate_target_structure(amp_seq):
                   if amp_seq == mock_seq:
                       return {"dg": -1.0, "normalized_dg": -0.3, "accessible": True, "warnings": []}
-                  if len(amp_seq) == 101 and amp_seq.startswith("G"):
+                  if len(amp_seq) == 130 and amp_seq.startswith("G"):
                       # Candidate B starts with 'G' (index 10 in mock_seq)
                       return {"dg": -12.0, "normalized_dg": -4.0, "accessible": False, "warnings": ["Stable structure"]}
                   return {"dg": -1.0, "normalized_dg": -0.3, "accessible": True, "warnings": []}

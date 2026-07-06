@@ -147,11 +147,11 @@ class Primer3Wrapper:
         if qc_method == 'threshold':
             # Default Tm thresholds for RAA (higher due to high salt/Mg)
             p3_settings.update({
-                'PRIMER_MAX_SELF_ANY_TH':        params.get('max_self_any_th', 45.0),
-                'PRIMER_MAX_SELF_END_TH':        params.get('max_self_end_th', 45.0),
-                'PRIMER_PAIR_MAX_COMPL_ANY_TH':  params.get('max_pair_compl_any_th', 45.0),
-                'PRIMER_PAIR_MAX_COMPL_END_TH':  params.get('max_pair_compl_end_th', 45.0),
-                'PRIMER_MAX_HAIRPIN_TH':         params.get('max_hairpin_th', 45.0),
+                'PRIMER_MAX_SELF_ANY_TH':        params.get('max_self_any_th', 47.0),
+                'PRIMER_MAX_SELF_END_TH':        params.get('max_self_end_th', 47.0),
+                'PRIMER_PAIR_MAX_COMPL_ANY_TH':  params.get('max_pair_compl_any_th', 47.0),
+                'PRIMER_PAIR_MAX_COMPL_END_TH':  params.get('max_pair_compl_end_th', 47.0),
+                'PRIMER_MAX_HAIRPIN_TH':         params.get('max_hairpin_th', 47.0),
             })
         else:
             # Score-based thresholds
