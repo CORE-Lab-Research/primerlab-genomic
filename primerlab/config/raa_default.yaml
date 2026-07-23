@@ -81,7 +81,22 @@ parameters:
       min: 54.0
       opt: 65.0
       max: 85.0
+    # --- Abasic (THF) site placement ---
+    # Per the TwistAmp Assay Design Manual. The same geometry applies to exo
+    # (Exonuclease III) and nfo/fpg (Endonuclease IV) probes; the probe type
+    # changes how the signal is read, not where the abasic residue goes.
+    #
+    #   >=30 bases 5' of the abasic residue, so the cleaved 5' fragment can still
+    #        act as a primer (30-38 is the documented working range)
+    #   >=15 bases 3' of it, or the exonuclease does not cut efficiently
+    #
+    # The dT-fluorophore and dT-quencher must land on real T's — those reagents
+    # exist only as dT couplings — while the base replaced by the abasic residue
+    # has no sequence requirement. Where no suitable pair of thymines exists,
+    # placement falls back in the order the manual prescribes (one label mismatch
+    # before two) and reports every relaxation in the probe's warnings.
     thf_upstream_min: 30
+    thf_upstream_max: 38
     thf_downstream_min: 15
     # Labels library
     labels:
