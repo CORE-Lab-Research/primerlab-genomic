@@ -135,3 +135,6 @@ paper/
 
 .venv-wsl/
 *.ps
+
+# graphify knowledge graph artifacts
+graphify-out/
