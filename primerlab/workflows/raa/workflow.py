@@ -712,7 +712,11 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             "p3_penalty": round(res["p3_penalty"], 3),
             "vienna_penalty": round(res.get("vienna_penalty", 0.0), 3),
             "final_score": round(res["final_score"], 3),
-            "primers": {k: v.to_dict() for k, v in res["primers"].items() if v is not None},
+            # The candidate dict carries `probe_annotation`, a plain dict, alongside
+            # the Primer objects. Calling .to_dict() on it raises AttributeError and
+            # takes down the whole run, so pass through anything already serialisable.
+            "primers": {k: (v.to_dict() if hasattr(v, "to_dict") else v)
+                        for k, v in res["primers"].items() if v is not None},
             "amplicon": res["amplicon"].to_dict(),
             "qc": res["qc"].to_dict(),
             "visual_map": create_amplicon_map(

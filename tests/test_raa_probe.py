@@ -212,3 +212,73 @@ def test_amplicon_map():
     # Map should look like: >>>---===---<<<
     viz = create_amplicon_map(amp_seq, fwd, rev, probe)
     assert viz == ">>>---===---<<<"
+
+
+def test_candidate_with_a_primer3_probe_is_serialisable(mock_config):
+    """parse_primer3_output puts `probe_annotation` — a plain dict — into the same
+    candidate mapping as the Primer objects, and both the workflow's
+    ranking_details and WorkflowResult.to_dict() serialise that mapping with
+    `v.to_dict()`. When Primer3 does return an internal oligo, that raised
+    AttributeError and took down the whole run.
+
+    Latent for RAA because Primer3's probe size limit (~36 nt) usually leaves the
+    internal oligo unset and the probe comes from find_exo_probe instead — but it
+    is reachable whenever Primer3 can satisfy the probe constraints.
+    """
+    from primerlab.workflows.raa.probe import parse_primer3_output
+
+    probe_seq = MANUAL_EXAMPLE
+    raw = {
+        "PRIMER_LEFT_NUM_RETURNED": 1,
+        "PRIMER_LEFT_0": (0, 31), "PRIMER_LEFT_0_SEQUENCE": "A" * 31,
+        "PRIMER_LEFT_0_TM": 60.0, "PRIMER_LEFT_0_GC_PERCENT": 50.0,
+        "PRIMER_RIGHT_0": (200, 31), "PRIMER_RIGHT_0_SEQUENCE": "T" * 31,
+        "PRIMER_RIGHT_0_TM": 60.0, "PRIMER_RIGHT_0_GC_PERCENT": 50.0,
+        "PRIMER_INTERNAL_0": (100, len(probe_seq)),
+        "PRIMER_INTERNAL_0_SEQUENCE": probe_seq,
+        "PRIMER_INTERNAL_0_TM": 65.0, "PRIMER_INTERNAL_0_GC_PERCENT": 45.0,
+    }
+    cand = parse_primer3_output(raw, mock_config)[0]
+    assert isinstance(cand["probe_annotation"], dict)
+
+    serialised = {k: (v.to_dict() if hasattr(v, "to_dict") else v)
+                  for k, v in cand.items() if v is not None}
+    assert serialised["probe"]["thf_index"] == cand["probe"].thf_index
+
+    # And through the real object, which is where it actually crashed.
+    from primerlab.core.models.workflow_result import WorkflowResult
+    import json
+    src = open("primerlab/core/models/workflow_result.py").read()
+    assert 'hasattr(v, "to_dict")' in src, "WorkflowResult.to_dict is still unguarded"
+    wf_src = open("primerlab/workflows/raa/workflow.py").read()
+    assert 'hasattr(v, "to_dict")' in wf_src, "ranking_details is still unguarded"
+
+
+def test_non_compliant_warning_path_does_not_crash(mock_config):
+    """find_exo_probe warns when no candidate offers a dT-flanked abasic site. A
+    later `logger = get_logger()` inside the same function made `logger` local for
+    the whole body, so that warning raised UnboundLocalError — turning a graceful
+    degradation into a crash."""
+    mock_config["parameters"]["probe"]["tm"] = {"min": 0.0, "max": 200.0}
+    amp = "A" * 30 + "GC" * 40 + "T" * 30      # no usable thymine pair anywhere
+    probe = find_exo_probe(amp, 30, 30, mock_config)
+    assert probe is not None, "a usable amplicon must not be discarded"
+    assert probe.probe_compliant is False
+    assert probe.probe_label_mismatches == 2
+
+    # Guard the shape of the bug, not its wording: `logger` may be assigned only
+    # at module level. A commented mention must not trip this.
+    assignments = [n for n, line in enumerate(
+        open("primerlab/workflows/raa/probe.py"), 1)
+        if line.rstrip().endswith("logger = get_logger()")
+        and not line.lstrip().startswith("#")]
+    assert assignments == [11] or all(
+        not line.startswith(" ") for line in
+        [open("primerlab/workflows/raa/probe.py").readlines()[n - 1] for n in assignments]
+    ), f"logger is rebound inside a function at line(s) {assignments}"
+
+
+def test_no_candidate_path_still_returns_none(mock_config):
+    """The other fail-soft branch must keep working after the logger fix."""
+    mock_config["parameters"]["probe"]["tm"] = {"min": 500.0, "max": 600.0}
+    assert find_exo_probe("A" * 30 + "GC" * 40 + "T" * 30, 30, 30, mock_config) is None

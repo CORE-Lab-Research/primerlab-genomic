@@ -276,8 +276,10 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
                 })
                 
     if not candidates:
-        from primerlab.core.logger import get_logger
-        logger = get_logger()
+        # NOTE: no local `logger = get_logger()` here. Rebinding the name inside
+        # this function makes it local for the WHOLE function body, so the
+        # module-level logger used earlier (the non-compliant-probe warning) would
+        # raise UnboundLocalError before ever reaching this line.
         logger.warning(f"No probe candidates found satisfying Tm filters: {p_tm_min}-{p_tm_max}")
         return None
 

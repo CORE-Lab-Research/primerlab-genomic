@@ -34,7 +34,8 @@ class WorkflowResult:
     def to_dict(self) -> Dict[str, Any]:
         res = {
             "workflow": self.workflow,
-            "primers": {k: v.to_dict() for k, v in self.primers.items()},
+            "primers": {k: (v.to_dict() if hasattr(v, "to_dict") else v)
+                        for k, v in self.primers.items()},
             "amplicons": [a.to_dict() for a in self.amplicons],
             "qc": self.qc.to_dict() if self.qc else None,
             "score": self.score,
