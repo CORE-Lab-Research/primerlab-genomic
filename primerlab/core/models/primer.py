@@ -37,6 +37,11 @@ class Primer:
     # it as a first-class field so the position never has to be reconstructed.
     probe_type: Optional[str] = None
     thf_index: Optional[int] = None
+    # Number of dT labels that had to replace a non-T base — each one is a
+    # deliberate probe-target mismatch, so downstream mismatch checks must not
+    # count them as target variation.
+    probe_label_mismatches: int = 0
+    probe_compliant: Optional[bool] = None
 
     # Internal use only (Primer3 raw output)
     raw: Optional[Dict[str, Any]] = field(default=None, repr=False)
@@ -73,6 +78,8 @@ class Primer:
             "labeled_sequence": self.labeled_sequence,
             "probe_type": self.probe_type,
             "thf_index": self.thf_index,
+            "probe_label_mismatches": self.probe_label_mismatches,
+            "probe_compliant": self.probe_compliant,
             "tm": f"{round(self.tm, 2)} °C",
             "gc": f"{round(self.gc, 2)} %",
             "length": self.length,

@@ -2,6 +2,7 @@ import pytest
 from typing import Dict, Any
 from primerlab.workflows.raa.probe import (
     find_exo_probe, annotate_probe, create_amplicon_map, apply_annotation,
+    find_thf_site,
 )
 from primerlab.core.models import Primer
 
@@ -117,6 +118,89 @@ def test_taqman_has_no_thf_index(mock_config):
     apply_annotation(probe, annotate_probe(probe, mock_config))
     assert probe.thf_index is None
     assert probe.probe_type == "taqman"
+
+
+# --- THF placement rules (TwistAmp Assay Design Manual §3.1.1-3.1.2) ----------
+
+# The manual's own worked example. Target has T at index 28 and 32; the abasic
+# residue replaces the A at index 30, giving exactly 30 bases 5' and 15 bases 3'.
+MANUAL_EXAMPLE = "GAATTTCAGAGGCTATAGCGATCTCAGGTCAATCGATAGATCGCTA"
+
+
+def test_reproduces_manual_worked_example(mock_config):
+    probe = Primer(id="p", sequence=MANUAL_EXAMPLE, tm=60.0, gc=45.0,
+                   length=len(MANUAL_EXAMPLE))
+    ann = annotate_probe(probe, mock_config)
+
+    assert ann["bases_upstream"] == 30      # manual: ">=30 bases 5' of THF"
+    assert ann["bases_downstream"] == 15    # manual: ">=15 bases 3' of THF"
+    assert ann["fluor_index"] == 28
+    assert ann["quencher_index"] == 32
+    assert ann["mismatched_labels"] == 0
+    assert ann["compliant"] is True
+
+
+def test_labels_land_on_thymines_not_the_abasic_site(mock_config):
+    """The dT-fluorophore and dT-quencher reagents only exist as T couplings, so
+    the FLANKS must be T. The abasic residue has no sequence requirement.
+
+    The previous implementation had this inverted: it anchored the abasic residue
+    onto the nearest T and let the two labels fall on whatever bases happened to
+    be adjacent, so every probe could carry two unnecessary mismatches.
+    """
+    seq = MANUAL_EXAMPLE
+    ann = annotate_probe(
+        Primer(id="p", sequence=seq, tm=60.0, gc=45.0, length=len(seq)), mock_config)
+    assert seq[ann["fluor_index"]] == "T"
+    assert seq[ann["quencher_index"]] == "T"
+
+
+def test_abasic_never_placed_closer_than_30_bases_from_the_5_prime_end(mock_config):
+    """A lone T just before the target position used to drag the abasic residue to
+    index 28, which the manual lists verbatim as a "Poor probe design"."""
+    seq = "GC" * 14 + "T" + "GC" * 11          # single T at index 28, 51 nt total
+    ann = annotate_probe(
+        Primer(id="p", sequence=seq, tm=60.0, gc=70.0, length=len(seq)), mock_config)
+    assert ann["bases_upstream"] >= 30
+    assert ann["bases_downstream"] >= 15
+
+
+def test_single_label_mismatch_preferred_over_two(mock_config):
+    """The manual sanctions ignoring "the mismatch of ONE of the thymines"; a site
+    needing one mismatch must therefore beat one needing two."""
+    seq = "GC" * 14 + "T" + "GC" * 11          # exactly one usable T
+    ann = annotate_probe(
+        Primer(id="p", sequence=seq, tm=60.0, gc=70.0, length=len(seq)), mock_config)
+    assert ann["mismatched_labels"] == 1
+    assert ann["compliant"] is False
+    assert ann["warnings"], "a deliberate label mismatch must be reported, not silent"
+
+
+def test_label_mismatches_are_reported_so_downstream_can_discount_them(mock_config):
+    """Nothing validating the probe against target variants may count a label
+    mismatch as target variation — it is a property of the design."""
+    seq = "GC" * 25                             # no T anywhere
+    probe = Primer(id="p", sequence=seq, tm=60.0, gc=100.0, length=len(seq))
+    apply_annotation(probe, annotate_probe(probe, mock_config))
+    assert probe.probe_label_mismatches == 2
+    assert probe.probe_compliant is False
+    assert probe.to_dict()["probe_label_mismatches"] == 2
+    assert any("mismatch" in w for w in probe.warnings)
+
+
+def test_find_thf_site_rejects_when_geometry_impossible():
+    assert find_thf_site("ACGT" * 10) is None   # 40 nt: cannot fit 30 + 1 + 15
+
+
+def test_gap_between_label_and_abasic_never_exceeds_two(mock_config):
+    """Manual: the number of nucleotides between a dT label and the THF "can be
+    0, 1 or 2" — which also keeps fluorophore/quencher separation within 5."""
+    seq = "GAATTTCAGAGGCTATAGCGATCTCAGGTCAATCGATAGATCGCTAGGCC"
+    ann = annotate_probe(
+        Primer(id="p", sequence=seq, tm=60.0, gc=45.0, length=len(seq)), mock_config)
+    assert 0 <= ann["thf_index"] - ann["fluor_index"] - 1 <= 2
+    assert 0 <= ann["quencher_index"] - ann["thf_index"] - 1 <= 2
+    assert ann["quencher_index"] - ann["fluor_index"] <= 5
 
 
 def test_amplicon_map():
