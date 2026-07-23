@@ -45,7 +45,10 @@ def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, An
     seq_len = len(seq)
     min_req = thf_up + 1 + thf_down
     if seq_len < min_req:
-        return {"valid": False, "reason": "too_short", "annotated_sequence": seq}
+        # No THF could be placed — leave thf_index unset so consumers can tell
+        # "not applicable" apart from "at position 0".
+        return {"valid": False, "reason": "too_short", "type": p_type,
+                "annotated_sequence": seq}
 
     target_idx = thf_up
     search_window = seq[target_idx - 2 : target_idx + 3]
@@ -82,6 +85,19 @@ def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, An
         "annotated_sequence": annotated,
         "metadata": {"fluorophore": f, "quencher": q, "abasic": a, "blocker": b}
     }
+
+def apply_annotation(probe: Primer, anno: Dict[str, Any]) -> None:
+    """Copy an annotate_probe() result onto the Primer so it survives to_dict().
+
+    Both probe construction paths (find_exo_probe and parse_primer3_output) must
+    transfer the SAME set of fields; doing it in one place stops them drifting.
+    `thf_index` in particular used to be computed and then discarded here, which
+    left downstream validation unable to locate the cleavage site.
+    """
+    probe.labeled_sequence = anno.get("annotated_sequence")
+    probe.probe_type = anno.get("type")
+    probe.thf_index = anno.get("thf_index")
+
 
 def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[str, Any], fwd_start: int = 0) -> Optional[Primer]:
     """
@@ -200,8 +216,8 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
     
     # Apply annotations (THF site, fluorophores, etc.)
     anno = annotate_probe(probe, config)
-    probe.labeled_sequence = anno.get("annotated_sequence")
-    
+    apply_annotation(probe, anno)
+
     return probe
 
 def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any], abs_offset: int = 0) -> List[Dict[str, Any]]:
@@ -276,7 +292,7 @@ def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any], ab
             # Apply Probe annotations
             anno = annotate_probe(probe, config)
             candidate["probe_annotation"] = anno
-            probe.labeled_sequence = anno.get("annotated_sequence")
+            apply_annotation(probe, anno)
         
         if "forward" in candidate and "reverse" in candidate:
             all_candidates.append(candidate)
