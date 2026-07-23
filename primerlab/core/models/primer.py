@@ -27,6 +27,22 @@ class Primer:
     # Optional field for special labeling (e.g., RAA exo-probes)
     labeled_sequence: Optional[str] = None
 
+    # Probe-only: chemistry type ("exo" / "fpg" / "taqman") and the 0-based index
+    # of the abasic (THF / dR-biotin) residue WITHIN `sequence`.
+    #
+    # annotate_probe() computes this position but it used to be dropped before
+    # serialisation, so downstream consumers (in-silico PCR, off-target checks)
+    # had no way to know where the cleavage site sits — the only trace was the
+    # bracket markup inside `labeled_sequence`, which had to be re-parsed. Keep
+    # it as a first-class field so the position never has to be reconstructed.
+    probe_type: Optional[str] = None
+    thf_index: Optional[int] = None
+    # Number of dT labels that had to replace a non-T base — each one is a
+    # deliberate probe-target mismatch, so downstream mismatch checks must not
+    # count them as target variation.
+    probe_label_mismatches: int = 0
+    probe_compliant: Optional[bool] = None
+
     # Internal use only (Primer3 raw output)
     raw: Optional[Dict[str, Any]] = field(default=None, repr=False)
 
@@ -60,6 +76,10 @@ class Primer:
             "id": self.id,
             "sequence": self.sequence,
             "labeled_sequence": self.labeled_sequence,
+            "probe_type": self.probe_type,
+            "thf_index": self.thf_index,
+            "probe_label_mismatches": self.probe_label_mismatches,
+            "probe_compliant": self.probe_compliant,
             "tm": f"{round(self.tm, 2)} °C",
             "gc": f"{round(self.gc, 2)} %",
             "length": self.length,

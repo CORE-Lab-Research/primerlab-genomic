@@ -10,6 +10,70 @@ from primerlab.core.tools.thermocalc_wrapper import ThermocalcWrapper
 
 logger = get_logger()
 
+# Maximum nucleotides permitted between a dT-label and the abasic residue.
+# TwistAmp Assay Design Manual §3.1.2: "The number of nucleotides between the
+# dT-fluorophore, or the dT-quencher, and the THF can be 0, 1 or 2". This also
+# satisfies the "<=5 bases between fluorophore and quencher" rule, since the
+# widest legal sandwich is 2 + THF + 2 = 5.
+FQ_GAP_MAX = 2
+
+# Default THF placement window, measured as the number of probe bases lying 5' of
+# the abasic residue. The manual states ">=30 bases 5' of THF" as a hard rule and
+# illustrates "30-38" as the working range (the probe must still function as a
+# primer once cleaved), and ">=15 bases 3' of THF ... if the exonuclease is going
+# to cut it efficiently".
+THF_UPSTREAM_MIN = 30
+THF_UPSTREAM_MAX = 38
+THF_DOWNSTREAM_MIN = 15
+
+
+def find_thf_site(seq: str,
+                  up_min: int = THF_UPSTREAM_MIN,
+                  up_max: int = THF_UPSTREAM_MAX,
+                  down_min: int = THF_DOWNSTREAM_MIN,
+                  max_label_mismatches: int = 0):
+    """Locate the best [dT-F][abasic][dT-Q] sandwich in `seq`.
+
+    Returns (fluor_idx, thf_idx, quencher_idx, label_mismatches) or None if no
+    position satisfies the rules. All indices are 0-based into `seq`.
+
+    The constraint that actually drives the search is that the fluorophore and
+    quencher reagents exist only as dT couplings, so both flanking positions
+    should already be a T in the target sequence. There is no sequence requirement
+    on the base replaced by the abasic residue itself — placing the abasic residue
+    on a T (as this function's predecessor did) wastes the one base that could
+    have carried a label.
+
+    `max_label_mismatches` permits a label to sit on a non-T base, which the
+    TwistAmp manual sanctions as a fallback; sites needing fewer such mismatches
+    always win. Ties break toward the closest fluorophore/quencher pair, since
+    greater separation degrades quenching, and then toward the smallest upstream
+    distance.
+    """
+    n = len(seq)
+    seq = seq.upper()
+    hi = min(up_max, n - down_min - 1)
+    lo = max(up_min, 1)
+    best = None
+    for t in range(lo, hi + 1):
+        for f in range(t - 1, t - 2 - FQ_GAP_MAX, -1):
+            if f < 0:
+                continue
+            for q in range(t + 1, t + 2 + FQ_GAP_MAX):
+                if q >= n:
+                    continue
+                mismatches = (seq[f] != 'T') + (seq[q] != 'T')
+                if mismatches > max_label_mismatches:
+                    continue
+                cand = (mismatches, q - f, t, f, q)
+                if best is None or cand < best:
+                    best = cand
+    if best is None:
+        return None
+    mismatches, _, t, f, q = best
+    return (f, t, q, mismatches)
+
+
 def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, Any]:
     """
     Annotates a probe based on the type specified in the config.
@@ -35,8 +99,9 @@ def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, An
         }
     
     # Default RAA logic (for exo and fpg)
-    thf_up = probe_cfg.get("thf_upstream_min", 30)
-    thf_down = probe_cfg.get("thf_downstream_min", 15)
+    thf_up = probe_cfg.get("thf_upstream_min", THF_UPSTREAM_MIN)
+    thf_up_max = probe_cfg.get("thf_upstream_max", THF_UPSTREAM_MAX)
+    thf_down = probe_cfg.get("thf_downstream_min", THF_DOWNSTREAM_MIN)
     f = get_label("fluorophore", "FAM")
     q = get_label("quencher", "BHQ1")
     b = get_label("blocker", "C3-spacer")
@@ -45,43 +110,104 @@ def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, An
     seq_len = len(seq)
     min_req = thf_up + 1 + thf_down
     if seq_len < min_req:
-        return {"valid": False, "reason": "too_short", "annotated_sequence": seq}
+        # No THF could be placed — leave thf_index unset so consumers can tell
+        # "not applicable" apart from "at position 0".
+        return {"valid": False, "reason": "too_short", "type": p_type,
+                "compliant": False,
+                "warnings": [f"probe is {seq_len} nt; needs at least {min_req} nt "
+                             f"({thf_up} 5' + abasic + {thf_down} 3')"],
+                "annotated_sequence": seq}
 
-    target_idx = thf_up
-    search_window = seq[target_idx - 2 : target_idx + 3]
-    if 'T' in search_window:
-        offset = search_window.find('T') - 2
-        thf_index = target_idx + offset
-    else:
-        thf_index = target_idx
+    warnings: List[str] = []
 
-    # Boundary check
-    if (seq_len - thf_index - 1) < thf_down:
-        thf_index = seq_len - thf_down - 1
+    # Preferred: a site inside the 30-38 working window with real T's to carry the
+    # dT-fluorophore and dT-quencher, so the labels introduce no mismatch at all.
+    site = find_thf_site(seq, thf_up, thf_up_max, thf_down)
+    if site is None:
+        # Relax only the soft upper bound; ">=30 bases 5'" and ">=15 bases 3'"
+        # remain hard rules that the manual lists as design errors when broken.
+        site = find_thf_site(seq, thf_up, seq_len - thf_down - 1, thf_down)
+        if site is not None:
+            warnings.append(
+                f"abasic site sits beyond the preferred {thf_up}-{thf_up_max} nt "
+                f"upstream window; the cleaved probe is still primer-length but "
+                f"further from the documented optimum")
 
-    # Boundary check to ensure we have space for the 3-base sandwich [F][A][Q]
-    if thf_index < 1:
-        thf_index = 1
-    if thf_index > seq_len - 2:
-        thf_index = seq_len - 2
+    if site is None:
+        # No pair of thymines is positioned legally. TwistAmp Assay Design Manual
+        # §3.1.1 explicitly sanctions this case: "if two conveniently separated
+        # thymines cannot be located one can simply ignore the mismatch of one of
+        # the thymines in the probe with the target sequence. There may be a
+        # reduction in the efficiency of the probe, the extent to which cannot be
+        # predicted". Do it — but report it, because the resulting probe carries
+        # deliberate mismatches that anything validating it against target
+        # variants would otherwise misread as a design defect.
+        #
+        # Note the manual's wording: ONE of the thymines. Accepting a single
+        # mismatch before falling back to two keeps the better design whenever the
+        # sequence offers one.
+        for allowed in (1, 2):
+            site = find_thf_site(seq, thf_up, seq_len - thf_down - 1, thf_down,
+                                 max_label_mismatches=allowed)
+            if site is not None:
+                break
 
-    # In RAA, the label complex [F-dT][Abasic][Q-dT] typically replaces 3 bases
-    # We've anchored thf_index to the Abasic site.
-    # So we take:
-    #   left = everything before the sandwich
-    #   sandwich = replaces seq[thf_index-1], seq[thf_index], seq[thf_index+1]
-    #   right = everything after the sandwich
-    
-    left = seq[:thf_index-1]
-    right = seq[thf_index+2:]
-    annotated = f"{left}[{f}-dT][{a}][{q}-dT]{right}[{b}]"
-    
+    if site is None:
+        return {"valid": False, "reason": "no_placeable_abasic_site",
+                "type": p_type, "compliant": False,
+                "warnings": [f"no position in this {seq_len} nt probe satisfies "
+                             f">={thf_up} bases 5' and >={thf_down} bases 3' of the "
+                             f"abasic residue"],
+                "annotated_sequence": seq}
+
+    fluor_index, thf_index, quencher_index, mismatched_labels = site
+    if mismatched_labels:
+        warnings.append(
+            f"no legally spaced pair of thymines available; {mismatched_labels} "
+            f"dT label(s) replace a non-T base and are therefore deliberate "
+            f"probe-target mismatches (tolerated per TwistAmp manual §3.1.1, "
+            f"but efficiency may drop)")
+
+    # Assemble the annotation. Anything between a label and the abasic residue is
+    # an ordinary base and is carried through unchanged.
+    annotated = (
+        f"{seq[:fluor_index]}[{f}-dT]{seq[fluor_index + 1:thf_index]}"
+        f"[{a}]{seq[thf_index + 1:quencher_index]}[{q}-dT]"
+        f"{seq[quencher_index + 1:]}[{b}]"
+    )
+
     return {
         "type": p_type,
+        "valid": True,
+        "compliant": not warnings,
+        "warnings": warnings,
         "thf_index": thf_index,
+        "fluor_index": fluor_index,
+        "quencher_index": quencher_index,
+        "mismatched_labels": mismatched_labels,
+        "bases_upstream": thf_index,
+        "bases_downstream": seq_len - thf_index - 1,
         "annotated_sequence": annotated,
         "metadata": {"fluorophore": f, "quencher": q, "abasic": a, "blocker": b}
     }
+
+def apply_annotation(probe: Primer, anno: Dict[str, Any]) -> None:
+    """Copy an annotate_probe() result onto the Primer so it survives to_dict().
+
+    Both probe construction paths (find_exo_probe and parse_primer3_output) must
+    transfer the SAME set of fields; doing it in one place stops them drifting.
+    `thf_index` in particular used to be computed and then discarded here, which
+    left downstream validation unable to locate the cleavage site.
+    """
+    probe.labeled_sequence = anno.get("annotated_sequence")
+    probe.probe_type = anno.get("type")
+    probe.thf_index = anno.get("thf_index")
+    probe.probe_label_mismatches = anno.get("mismatched_labels", 0)
+    probe.probe_compliant = anno.get("compliant")
+    for w in anno.get("warnings", []):
+        if w not in probe.warnings:
+            probe.warnings.append(w)
+
 
 def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[str, Any], fwd_start: int = 0) -> Optional[Primer]:
     """
@@ -150,10 +276,30 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
                 })
                 
     if not candidates:
-        from primerlab.core.logger import get_logger
-        logger = get_logger()
+        # NOTE: no local `logger = get_logger()` here. Rebinding the name inside
+        # this function makes it local for the WHOLE function body, so the
+        # module-level logger used earlier (the non-compliant-probe warning) would
+        # raise UnboundLocalError before ever reaching this line.
         logger.warning(f"No probe candidates found satisfying Tm filters: {p_tm_min}-{p_tm_max}")
         return None
+
+    # A probe that has no legally placeable abasic site cannot be cleaved
+    # efficiently, so screen for one BEFORE spending thermodynamics on ranking.
+    # Doing it afterwards meant the best-Tm window was chosen first and the THF
+    # was then forced into it wherever it happened to land.
+    if p_cfg.get("type", "exo") != "taqman":
+        thf_up = p_cfg.get("thf_upstream_min", THF_UPSTREAM_MIN)
+        thf_up_max = p_cfg.get("thf_upstream_max", THF_UPSTREAM_MAX)
+        thf_down = p_cfg.get("thf_downstream_min", THF_DOWNSTREAM_MIN)
+        compliant = [c for c in candidates
+                     if find_thf_site(c["sequence"], thf_up, thf_up_max, thf_down)]
+        if compliant:
+            candidates = compliant
+        else:
+            logger.warning(
+                f"No probe candidate offers a dT-flanked abasic site within "
+                f"{thf_up}-{thf_up_max} nt of its 5' end; the selected probe will "
+                f"carry deliberate label mismatches (see probe warnings)")
 
     # Two-stage ranking to avoid calling calc_homodimer on thousands of candidates:
     # Stage A: Pre-filter by Tm descending → keep top 20 candidates
@@ -200,8 +346,8 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
     
     # Apply annotations (THF site, fluorophores, etc.)
     anno = annotate_probe(probe, config)
-    probe.labeled_sequence = anno.get("annotated_sequence")
-    
+    apply_annotation(probe, anno)
+
     return probe
 
 def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any], abs_offset: int = 0) -> List[Dict[str, Any]]:
@@ -276,7 +422,7 @@ def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any], ab
             # Apply Probe annotations
             anno = annotate_probe(probe, config)
             candidate["probe_annotation"] = anno
-            probe.labeled_sequence = anno.get("annotated_sequence")
+            apply_annotation(probe, anno)
         
         if "forward" in candidate and "reverse" in candidate:
             all_candidates.append(candidate)

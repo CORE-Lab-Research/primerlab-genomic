@@ -1,6 +1,9 @@
 import pytest
 from typing import Dict, Any
-from primerlab.workflows.raa.probe import find_exo_probe, annotate_probe, create_amplicon_map
+from primerlab.workflows.raa.probe import (
+    find_exo_probe, annotate_probe, create_amplicon_map, apply_annotation,
+    find_thf_site,
+)
 from primerlab.core.models import Primer
 
 @pytest.fixture
@@ -74,6 +77,132 @@ def test_annotate_probe_fpg(mock_config):
     assert ann["type"] == "fpg"
     assert "[dR-Biotin]" in ann["annotated_sequence"]
 
+def test_thf_index_survives_to_dict(mock_config):
+    """The cleavage-site position must reach the exported JSON.
+
+    annotate_probe() has always computed thf_index, but it was dropped when the
+    annotation was copied onto the Primer, so every downstream consumer saw only
+    the bracket markup in labeled_sequence. Anything validating the probe against
+    real target variants needs the numeric position.
+    """
+    probe = Primer(id="p1", sequence="T" * 50, tm=60.0, gc=0.0, length=50)
+    ann = annotate_probe(probe, mock_config)
+    apply_annotation(probe, ann)
+
+    assert probe.thf_index == ann["thf_index"]
+    d = probe.to_dict()
+    assert d["thf_index"] == ann["thf_index"]
+    assert d["probe_type"] == "exo"
+
+    # The index must actually point at the residue the markup replaced, i.e. the
+    # sandwich occupies sequence[thf_index-1 : thf_index+2].
+    left = probe.sequence[: probe.thf_index - 1]
+    assert d["labeled_sequence"].startswith(left + "[FAM-dT][THF][BHQ1-dT]")
+
+
+def test_find_exo_probe_exports_thf_index(mock_config):
+    """The manual-probe path must populate the same fields as the primer3 path."""
+    amp_seq = "A" * 30 + ("GATC" * 22 + "GG") + "T" * 30
+    probe = find_exo_probe(amp_seq, 30, 30, mock_config)
+    assert probe is not None
+    assert probe.probe_type == "exo"
+    assert probe.thf_index is not None
+    assert 0 < probe.thf_index < len(probe.sequence) - 1
+
+
+def test_taqman_has_no_thf_index(mock_config):
+    """A hydrolysis probe has no abasic site; the field must stay None rather
+    than defaulting to 0, which would read as 'THF at the first base'."""
+    mock_config["parameters"]["probe"]["type"] = "taqman"
+    probe = Primer(id="p1", sequence="ATGCT", tm=60.0, gc=0.0, length=5)
+    apply_annotation(probe, annotate_probe(probe, mock_config))
+    assert probe.thf_index is None
+    assert probe.probe_type == "taqman"
+
+
+# --- THF placement rules (TwistAmp Assay Design Manual §3.1.1-3.1.2) ----------
+
+# The manual's own worked example. Target has T at index 28 and 32; the abasic
+# residue replaces the A at index 30, giving exactly 30 bases 5' and 15 bases 3'.
+MANUAL_EXAMPLE = "GAATTTCAGAGGCTATAGCGATCTCAGGTCAATCGATAGATCGCTA"
+
+
+def test_reproduces_manual_worked_example(mock_config):
+    probe = Primer(id="p", sequence=MANUAL_EXAMPLE, tm=60.0, gc=45.0,
+                   length=len(MANUAL_EXAMPLE))
+    ann = annotate_probe(probe, mock_config)
+
+    assert ann["bases_upstream"] == 30      # manual: ">=30 bases 5' of THF"
+    assert ann["bases_downstream"] == 15    # manual: ">=15 bases 3' of THF"
+    assert ann["fluor_index"] == 28
+    assert ann["quencher_index"] == 32
+    assert ann["mismatched_labels"] == 0
+    assert ann["compliant"] is True
+
+
+def test_labels_land_on_thymines_not_the_abasic_site(mock_config):
+    """The dT-fluorophore and dT-quencher reagents only exist as T couplings, so
+    the FLANKS must be T. The abasic residue has no sequence requirement.
+
+    The previous implementation had this inverted: it anchored the abasic residue
+    onto the nearest T and let the two labels fall on whatever bases happened to
+    be adjacent, so every probe could carry two unnecessary mismatches.
+    """
+    seq = MANUAL_EXAMPLE
+    ann = annotate_probe(
+        Primer(id="p", sequence=seq, tm=60.0, gc=45.0, length=len(seq)), mock_config)
+    assert seq[ann["fluor_index"]] == "T"
+    assert seq[ann["quencher_index"]] == "T"
+
+
+def test_abasic_never_placed_closer_than_30_bases_from_the_5_prime_end(mock_config):
+    """A lone T just before the target position used to drag the abasic residue to
+    index 28, which the manual lists verbatim as a "Poor probe design"."""
+    seq = "GC" * 14 + "T" + "GC" * 11          # single T at index 28, 51 nt total
+    ann = annotate_probe(
+        Primer(id="p", sequence=seq, tm=60.0, gc=70.0, length=len(seq)), mock_config)
+    assert ann["bases_upstream"] >= 30
+    assert ann["bases_downstream"] >= 15
+
+
+def test_single_label_mismatch_preferred_over_two(mock_config):
+    """The manual sanctions ignoring "the mismatch of ONE of the thymines"; a site
+    needing one mismatch must therefore beat one needing two."""
+    seq = "GC" * 14 + "T" + "GC" * 11          # exactly one usable T
+    ann = annotate_probe(
+        Primer(id="p", sequence=seq, tm=60.0, gc=70.0, length=len(seq)), mock_config)
+    assert ann["mismatched_labels"] == 1
+    assert ann["compliant"] is False
+    assert ann["warnings"], "a deliberate label mismatch must be reported, not silent"
+
+
+def test_label_mismatches_are_reported_so_downstream_can_discount_them(mock_config):
+    """Nothing validating the probe against target variants may count a label
+    mismatch as target variation — it is a property of the design."""
+    seq = "GC" * 25                             # no T anywhere
+    probe = Primer(id="p", sequence=seq, tm=60.0, gc=100.0, length=len(seq))
+    apply_annotation(probe, annotate_probe(probe, mock_config))
+    assert probe.probe_label_mismatches == 2
+    assert probe.probe_compliant is False
+    assert probe.to_dict()["probe_label_mismatches"] == 2
+    assert any("mismatch" in w for w in probe.warnings)
+
+
+def test_find_thf_site_rejects_when_geometry_impossible():
+    assert find_thf_site("ACGT" * 10) is None   # 40 nt: cannot fit 30 + 1 + 15
+
+
+def test_gap_between_label_and_abasic_never_exceeds_two(mock_config):
+    """Manual: the number of nucleotides between a dT label and the THF "can be
+    0, 1 or 2" — which also keeps fluorophore/quencher separation within 5."""
+    seq = "GAATTTCAGAGGCTATAGCGATCTCAGGTCAATCGATAGATCGCTAGGCC"
+    ann = annotate_probe(
+        Primer(id="p", sequence=seq, tm=60.0, gc=45.0, length=len(seq)), mock_config)
+    assert 0 <= ann["thf_index"] - ann["fluor_index"] - 1 <= 2
+    assert 0 <= ann["quencher_index"] - ann["thf_index"] - 1 <= 2
+    assert ann["quencher_index"] - ann["fluor_index"] <= 5
+
+
 def test_amplicon_map():
     fwd = Primer(id="f", sequence="AAA", tm=60.0, gc=0.0, length=3)
     rev = Primer(id="r", sequence="TTT", tm=60.0, gc=0.0, length=3)
@@ -83,3 +212,73 @@ def test_amplicon_map():
     # Map should look like: >>>---===---<<<
     viz = create_amplicon_map(amp_seq, fwd, rev, probe)
     assert viz == ">>>---===---<<<"
+
+
+def test_candidate_with_a_primer3_probe_is_serialisable(mock_config):
+    """parse_primer3_output puts `probe_annotation` — a plain dict — into the same
+    candidate mapping as the Primer objects, and both the workflow's
+    ranking_details and WorkflowResult.to_dict() serialise that mapping with
+    `v.to_dict()`. When Primer3 does return an internal oligo, that raised
+    AttributeError and took down the whole run.
+
+    Latent for RAA because Primer3's probe size limit (~36 nt) usually leaves the
+    internal oligo unset and the probe comes from find_exo_probe instead — but it
+    is reachable whenever Primer3 can satisfy the probe constraints.
+    """
+    from primerlab.workflows.raa.probe import parse_primer3_output
+
+    probe_seq = MANUAL_EXAMPLE
+    raw = {
+        "PRIMER_LEFT_NUM_RETURNED": 1,
+        "PRIMER_LEFT_0": (0, 31), "PRIMER_LEFT_0_SEQUENCE": "A" * 31,
+        "PRIMER_LEFT_0_TM": 60.0, "PRIMER_LEFT_0_GC_PERCENT": 50.0,
+        "PRIMER_RIGHT_0": (200, 31), "PRIMER_RIGHT_0_SEQUENCE": "T" * 31,
+        "PRIMER_RIGHT_0_TM": 60.0, "PRIMER_RIGHT_0_GC_PERCENT": 50.0,
+        "PRIMER_INTERNAL_0": (100, len(probe_seq)),
+        "PRIMER_INTERNAL_0_SEQUENCE": probe_seq,
+        "PRIMER_INTERNAL_0_TM": 65.0, "PRIMER_INTERNAL_0_GC_PERCENT": 45.0,
+    }
+    cand = parse_primer3_output(raw, mock_config)[0]
+    assert isinstance(cand["probe_annotation"], dict)
+
+    serialised = {k: (v.to_dict() if hasattr(v, "to_dict") else v)
+                  for k, v in cand.items() if v is not None}
+    assert serialised["probe"]["thf_index"] == cand["probe"].thf_index
+
+    # And through the real object, which is where it actually crashed.
+    from primerlab.core.models.workflow_result import WorkflowResult
+    import json
+    src = open("primerlab/core/models/workflow_result.py").read()
+    assert 'hasattr(v, "to_dict")' in src, "WorkflowResult.to_dict is still unguarded"
+    wf_src = open("primerlab/workflows/raa/workflow.py").read()
+    assert 'hasattr(v, "to_dict")' in wf_src, "ranking_details is still unguarded"
+
+
+def test_non_compliant_warning_path_does_not_crash(mock_config):
+    """find_exo_probe warns when no candidate offers a dT-flanked abasic site. A
+    later `logger = get_logger()` inside the same function made `logger` local for
+    the whole body, so that warning raised UnboundLocalError — turning a graceful
+    degradation into a crash."""
+    mock_config["parameters"]["probe"]["tm"] = {"min": 0.0, "max": 200.0}
+    amp = "A" * 30 + "GC" * 40 + "T" * 30      # no usable thymine pair anywhere
+    probe = find_exo_probe(amp, 30, 30, mock_config)
+    assert probe is not None, "a usable amplicon must not be discarded"
+    assert probe.probe_compliant is False
+    assert probe.probe_label_mismatches == 2
+
+    # Guard the shape of the bug, not its wording: `logger` may be assigned only
+    # at module level. A commented mention must not trip this.
+    assignments = [n for n, line in enumerate(
+        open("primerlab/workflows/raa/probe.py"), 1)
+        if line.rstrip().endswith("logger = get_logger()")
+        and not line.lstrip().startswith("#")]
+    assert assignments == [11] or all(
+        not line.startswith(" ") for line in
+        [open("primerlab/workflows/raa/probe.py").readlines()[n - 1] for n in assignments]
+    ), f"logger is rebound inside a function at line(s) {assignments}"
+
+
+def test_no_candidate_path_still_returns_none(mock_config):
+    """The other fail-soft branch must keep working after the logger fix."""
+    mock_config["parameters"]["probe"]["tm"] = {"min": 500.0, "max": 600.0}
+    assert find_exo_probe("A" * 30 + "GC" * 40 + "T" * 30, 30, 30, mock_config) is None
