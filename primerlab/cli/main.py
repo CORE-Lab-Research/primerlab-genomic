@@ -107,6 +107,35 @@ def _run_health_check():
     print("\n" + "=" * 45)
     print("Health check complete.\n")
 
+
+def _csv_number(value):
+    """Return a bare number for a CSV cell.
+
+    Primer.to_dict() formats these for display -- tm becomes "60.5 \u00b0C" and gc
+    becomes "45.2 %" -- so calling round() on them raised
+
+        TypeError: type str doesn't define __round__ method
+
+    and the whole CSV export was skipped by its `except Exception` handler. It had
+    been failing on every run since to_dict() started formatting, silently, because
+    the failure was logged as a warning and nothing depended on the file.
+
+    A CSV is read by tools and spreadsheets, so the unit belongs in the header, not
+    in every cell.
+    """
+    if value is None or value == "":
+        return ""
+    if isinstance(value, (int, float)):
+        return round(value, 2)
+    text = str(value).strip()
+    for unit in ("\u00b0C", "%", "kcal/mol", "nt", "bp"):
+        text = text.replace(unit, "")
+    try:
+        return round(float(text.strip()), 2)
+    except ValueError:
+        return str(value)
+
+
 def main():
     # Debug info for HPC environment
     if os.environ.get("PRIMERLAB_DEBUG_ENV"):
@@ -3358,8 +3387,8 @@ qc:
                                         p.get("id") or role,
                                         p.get("sequence", ""),
                                         p.get("length", ""),
-                                        round(p.get("tm", 0), 2) if p.get("tm") else "",
-                                        round(p.get("gc", 0), 2) if p.get("gc") else "",
+                                        _csv_number(p.get("tm")),
+                                        _csv_number(p.get("gc")),
                                         p.get("start", ""),
                                         p.get("end", "")
                                     ])
